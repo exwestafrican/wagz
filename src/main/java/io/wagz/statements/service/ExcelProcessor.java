@@ -16,7 +16,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 
 @Service
-public class XLSXProcessor {
+public class ExcelProcessor {
 
   public BankStatement process(File file) {
 
