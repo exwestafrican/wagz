@@ -5,12 +5,10 @@ import java.math.BigDecimal;
 
 public record Transaction(String description, BigDecimal amount, TransactionType transactionType) {
   public static Transaction ofSignedAmount(BigDecimal amount, String description) {
-    if (amount.compareTo(BigDecimal.ZERO)
-        > 0) { // positive amount is credit and negative amount is debit
-      return new Transaction(description, amount.abs(), TransactionType.CREDIT);
-    } else {
-      return new Transaction(description, amount.abs(), TransactionType.DEBIT);
-    }
+    // positive amount is credit(inflow) and negative amount is debit (outflow)
+    return amount.compareTo(BigDecimal.ZERO) > 0
+        ? new Transaction(description, amount.abs(), TransactionType.CREDIT)
+        : new Transaction(description, amount.abs(), TransactionType.DEBIT);
   }
 
   public static Transaction of(
