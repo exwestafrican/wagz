@@ -1,7 +1,7 @@
 package io.wagz.statements.service;
 
 import io.wagz.statements.domain.BankStatement;
-import io.wagz.statements.domain.Transaction;
+import io.wagz.statements.domain.LineItem;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -20,7 +20,7 @@ public class ExcelProcessor {
 
   public BankStatement process(File file) {
 
-    List<Transaction> transactions = new ArrayList<>();
+    List<LineItem> lineItems = new ArrayList<>();
 
     try {
       Workbook workbook = new XSSFWorkbook(file);
@@ -32,13 +32,13 @@ public class ExcelProcessor {
 
         var description = row.getCell(4).getStringCellValue();
         var amount = BigDecimal.valueOf(row.getCell(5).getNumericCellValue());
-        transactions.add(Transaction.ofSignedAmount(amount, description));
+        lineItems.add(LineItem.ofSignedAmount(amount, description));
       }
 
     } catch (IOException | InvalidFormatException e) {
       return new BankStatement(Collections.emptyList());
     }
 
-    return new BankStatement(transactions);
+    return new BankStatement(lineItems);
   }
 }
