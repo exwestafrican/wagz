@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.5.6'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'com.diffplug.spotless' version '6.25.0'
 }
 
 group = 'io.wagz'
@@ -20,11 +21,32 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.projectlombok:lombok:1.18.26'
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+	implementation 'commons-io:commons-io:2.11.0'
+	implementation 'com.monitorjbl:xlsx-streamer:2.1.0'
 }
 
 tasks.named('test') {
 	useJUnitPlatform()
+}
+
+spotless {
+	java {
+		// Use the default import order
+		importOrder()
+		// Remove unused imports
+		removeUnusedImports()
+		// Apply Google Java Format
+		googleJavaFormat()
+		// Ensure files end with a newline
+		endWithNewline()
+		// Ensure no trailing whitespace
+		trimTrailingWhitespace()
+	}
 }
