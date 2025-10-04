@@ -28,20 +28,20 @@ class ExcelProcessorTest {
     assertEquals(
         List.of(
             LineItem.of(
-                BigDecimal.valueOf(50.0), "To pocket EUR Holidays from EUR", TransactionType.DEBIT),
-            LineItem.of(BigDecimal.valueOf(25.0), "Transfer to RAYMOND", TransactionType.DEBIT),
-            LineItem.of(BigDecimal.valueOf(50.0), "Transfer from ABAH", TransactionType.CREDIT),
-            LineItem.of(BigDecimal.valueOf(60.0), "An Post", TransactionType.DEBIT),
-            LineItem.of(BigDecimal.valueOf(18.98), "Domino's pizza", TransactionType.DEBIT),
+                BigDecimal.valueOf(50.0), "To pocket EUR Holidays from EUR", TransactionType.DEBIT, BigDecimal.valueOf(1029.62)),
+            LineItem.of(BigDecimal.valueOf(25.0), "Transfer to RAYMOND", TransactionType.DEBIT, BigDecimal.valueOf(1004.62)),
+            LineItem.of(BigDecimal.valueOf(50.0), "Transfer from ABAH", TransactionType.CREDIT, BigDecimal.valueOf(1054.62)),
+            LineItem.of(BigDecimal.valueOf(60.0), "An Post", TransactionType.DEBIT, BigDecimal.valueOf(994.62)),
+            LineItem.of(BigDecimal.valueOf(18.98), "Domino's pizza", TransactionType.DEBIT, BigDecimal.valueOf(975.64)),
             LineItem.of(
-                BigDecimal.valueOf(0.01), "To pocket EUR Savings from EUR", TransactionType.DEBIT),
+                BigDecimal.valueOf(0.01), "To pocket EUR Savings from EUR", TransactionType.DEBIT, BigDecimal.valueOf(975.63)),
             LineItem.of(
-                BigDecimal.valueOf(1.0), "To pocket EUR Savings from EUR", TransactionType.DEBIT),
+                BigDecimal.valueOf(1.0), "To pocket EUR Savings from EUR", TransactionType.DEBIT, BigDecimal.valueOf(974.63)),
             LineItem.of(
-                BigDecimal.valueOf(910.0), "To pocket EUR Rise from EUR", TransactionType.DEBIT),
-            LineItem.of(BigDecimal.valueOf(50.0), "Pocket Withdrawal", TransactionType.CREDIT),
-            LineItem.of(BigDecimal.valueOf(20.0), "Transfer from SEWA", TransactionType.CREDIT),
-            LineItem.of(BigDecimal.valueOf(64.0), "Transfer from FAVOUR", TransactionType.CREDIT)),
+                BigDecimal.valueOf(910.0), "To pocket EUR Rise from EUR", TransactionType.DEBIT, BigDecimal.valueOf(64.63)),
+            LineItem.of(BigDecimal.valueOf(50.0), "Pocket Withdrawal", TransactionType.CREDIT, BigDecimal.valueOf(114.63)),
+            LineItem.of(BigDecimal.valueOf(20.0), "Transfer from SEWA", TransactionType.CREDIT, BigDecimal.valueOf(134.63)),
+            LineItem.of(BigDecimal.valueOf(64.0), "Transfer from FAVOUR", TransactionType.CREDIT, BigDecimal.valueOf(198.63))),
         statement.lineItems());
   }
 }
