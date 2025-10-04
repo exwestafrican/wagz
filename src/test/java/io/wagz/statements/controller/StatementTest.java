@@ -11,7 +11,6 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(Statement.class)
-// @ExtendWith(MockitoExtension.class)
 class StatementTest {
 
   @Autowired private MockMvc mockMvc;

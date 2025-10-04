@@ -35,7 +35,6 @@ public class Statement {
     ProblemDetail problemDetail =
         ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, "File processing failed");
     log.error("Failed to process file for {}", problemDetail.getInstance());
-    System.out.println("Failed to process file for " + problemDetail.getInstance());
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
   }
 }
