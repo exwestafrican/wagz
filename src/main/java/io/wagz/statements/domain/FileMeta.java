@@ -1,4 +1,5 @@
 package io.wagz.statements.domain;
 
-public class FileMeta {
-}
+import java.util.UUID;
+
+public record FileMeta(UUID id, String name, long size) {}
