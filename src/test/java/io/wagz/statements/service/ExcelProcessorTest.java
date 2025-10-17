@@ -23,7 +23,7 @@ class ExcelProcessorTest {
   @DisplayName("User can get bank statement with line items")
   void canConvertToBankStatement() throws IOException {
 
-    Resource stateFile = new ClassPathResource("statement/simple statement.xlsx");
+    Resource stateFile = new ClassPathResource("statement/simple_statement.xlsx");
     var statement = processor.process(stateFile.getFile());
     assertEquals(
         List.of(
