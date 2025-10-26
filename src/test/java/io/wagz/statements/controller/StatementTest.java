@@ -1,8 +1,7 @@
 package io.wagz.statements.controller;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,11 +28,43 @@ class StatementTest {
     mockMvc
         .perform(multipart("/api/statement/save").file(mockFile))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.size").value(1024))
-        .andExpect(jsonPath("$.name").value("test.xlsx"));
+        .andExpect(jsonPath("$.fileMeta.size").value(1024))
+        .andExpect(jsonPath("$.fileMeta.name").value("test.xlsx"));
   }
 
   // ensure we throw error when file size is exceeded
-  // check that when there is an error we return correct error response
+  @Test
+  public void testUploadFilewithLargeSize() throws Exception {
 
+    byte[] largeContent = new byte[3145729]; // 3MB + 1 byte
+
+    MockMultipartFile largeFile =
+        new MockMultipartFile(
+            "file", // form field name
+            "test.xlsx", // original filename
+            "text/csv", // content type
+            largeContent // file content
+            );
+    mockMvc
+        .perform(multipart("/api/statement/save").file(largeFile))
+        .andExpect(status().isPayloadTooLarge())
+        .andExpect(content().string("The size is too large"));
+  }
+
+  // test with empty file
+  @Test
+  public void testEmptyFileThrowsEmptyFileException() throws Exception {
+
+    MockMultipartFile largeFile =
+        new MockMultipartFile(
+            "file", // form field name
+            "test.xlsx", // original filename
+            "text/csv", // content type
+            new byte[0] // file content
+            );
+    mockMvc
+        .perform(multipart("/api/statement/save").file(largeFile))
+        .andExpect(status().isBadRequest())
+        .andExpect(content().string("File Cannot be empty"));
+  }
 }
