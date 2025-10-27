@@ -2,6 +2,7 @@ package io.wagz.statements.service;
 
 import io.wagz.statements.domain.BankStatement;
 import io.wagz.statements.domain.LineItem;
+import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -17,12 +18,13 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class ExcelProcessor {
 
-  public BankStatement process(MultipartFile file) {
+  public BankStatement process(MultipartFile file) throws IOException {
 
     List<LineItem> lineItems = new ArrayList<>();
 
+    Workbook workbook = null;
     try (InputStream inputStream = file.getInputStream()) {
-      Workbook workbook = new XSSFWorkbook(inputStream);
+      workbook = new XSSFWorkbook(inputStream);
 
       Sheet sheet = workbook.getSheetAt(0);
 
@@ -34,10 +36,10 @@ public class ExcelProcessor {
         lineItems.add(LineItem.ofSignedAmount(amount, description));
       }
 
-      workbook.close();
-
-    } catch (Exception e) {
+    } catch (IOException e) {
       return new BankStatement(Collections.emptyList());
+    } finally {
+      workbook.close();
     }
 
     return new BankStatement(lineItems);

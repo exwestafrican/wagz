@@ -3,7 +3,7 @@ package io.wagz.statements.controller;
 import io.wagz.statements.Exceptions.EmptyFileException;
 import io.wagz.statements.Exceptions.FileTooLargeException;
 import io.wagz.statements.domain.BankStatement;
-import io.wagz.statements.domain.StatementResponse;
+import io.wagz.statements.domain.FileMeta;
 import io.wagz.statements.service.ExcelProcessor;
 import io.wagz.statements.service.Upload;
 import java.io.IOException;
@@ -38,14 +38,19 @@ public class Statement {
   // }
 
   @PostMapping("/save")
-  public ResponseEntity<StatementResponse> save(@RequestParam("file") MultipartFile file)
+  public ResponseEntity<FileMeta> save(@RequestParam("file") MultipartFile file)
+      throws IOException {
+    var meta = upload.uploadFile(file);
+    return ResponseEntity.status(HttpStatus.CREATED).body(meta);
+  }
+
+  @PostMapping("/process")
+  public ResponseEntity<BankStatement> process(@RequestParam("file") MultipartFile file)
       throws IOException {
 
-    var meta = upload.uploadFile(file);
     // send this file for processing
-    BankStatement bankStatement = excelProcessor.process(file);
-    StatementResponse statementResponse = new StatementResponse(meta, bankStatement);
-    return ResponseEntity.status(HttpStatus.CREATED).body(statementResponse);
+    var bankStatement = excelProcessor.process(file);
+    return ResponseEntity.status(HttpStatus.CREATED).body(bankStatement);
   }
 
   @ExceptionHandler(IOException.class)

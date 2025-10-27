@@ -28,8 +28,8 @@ class StatementTest {
     mockMvc
         .perform(multipart("/api/statement/save").file(mockFile))
         .andExpect(status().isCreated())
-        .andExpect(jsonPath("$.fileMeta.size").value(1024))
-        .andExpect(jsonPath("$.fileMeta.name").value("test.xlsx"));
+        .andExpect(jsonPath("$.size").value(1024))
+        .andExpect(jsonPath("$.name").value("test.xlsx"));
   }
 
   // ensure we throw error when file size is exceeded
