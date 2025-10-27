@@ -1,6 +1,10 @@
 package io.wagz.statements.controller;
 
-import io.wagz.statements.domain.FileMeta;
+import io.wagz.statements.Exceptions.EmptyFileException;
+import io.wagz.statements.Exceptions.FileTooLargeException;
+import io.wagz.statements.domain.BankStatement;
+import io.wagz.statements.domain.StatementResponse;
+import io.wagz.statements.service.ExcelProcessor;
 import io.wagz.statements.service.Upload;
 import java.io.IOException;
 import lombok.extern.slf4j.Slf4j;
@@ -21,13 +25,27 @@ public class Statement {
 
   private static final Logger log = LoggerFactory.getLogger(Statement.class);
   @Autowired private Upload upload;
+  @Autowired private ExcelProcessor excelProcessor;
+
+  // @PostMapping("/save")
+  // public ResponseEntity<FileMeta> save(@RequestParam("file") MultipartFile file)
+  //     throws IOException {
+
+  //   var meta = upload.uploadFile(file);
+  //   //send this file for processing
+  //   excelProcessor.process(file);
+  //   return ResponseEntity.status(HttpStatus.CREATED).body(meta);
+  // }
 
   @PostMapping("/save")
-  public ResponseEntity<FileMeta> save(@RequestParam("file") MultipartFile file)
+  public ResponseEntity<StatementResponse> save(@RequestParam("file") MultipartFile file)
       throws IOException {
 
     var meta = upload.uploadFile(file);
-    return ResponseEntity.status(HttpStatus.CREATED).body(meta);
+    // send this file for processing
+    BankStatement bankStatement = excelProcessor.process(file);
+    StatementResponse statementResponse = new StatementResponse(meta, bankStatement);
+    return ResponseEntity.status(HttpStatus.CREATED).body(statementResponse);
   }
 
   @ExceptionHandler(IOException.class)
@@ -36,5 +54,17 @@ public class Statement {
         ProblemDetail.forStatusAndDetail(HttpStatus.UNPROCESSABLE_ENTITY, "File processing failed");
     log.error("Failed to process file for {}", problemDetail.getInstance());
     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ex.getMessage());
+  }
+
+  @ExceptionHandler(EmptyFileException.class)
+  public ResponseEntity<String> handleEmptyFileException(EmptyFileException ex) {
+    log.error("Empty file error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+  }
+
+  @ExceptionHandler(FileTooLargeException.class)
+  public ResponseEntity<String> handleFileTooLargeException(FileTooLargeException ex) {
+    log.error("File too large error: {}", ex.getMessage());
+    return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE).body(ex.getMessage());
   }
 }
