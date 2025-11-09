@@ -32,7 +32,8 @@ public class ExcelProcessor {
 
         var description = row.getCell(4).getStringCellValue();
         var amount = BigDecimal.valueOf(row.getCell(5).getNumericCellValue());
-        lineItems.add(LineItem.ofSignedAmount(amount, description));
+        var balance = BigDecimal.valueOf(row.getCell(9).getNumericCellValue());
+        lineItems.add(LineItem.ofSignedAmount(amount, description, balance));
       }
 
     } catch (IOException | InvalidFormatException e) {
