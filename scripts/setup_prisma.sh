@@ -13,7 +13,7 @@ fi
 echo "Setting up Prisma user..."
 
 
-psql "$DB_URL" <<EOF
+psql "$POSTGRES_USER" <<EOF
     DO
     \$do\$
     BEGIN
