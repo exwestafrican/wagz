@@ -153,7 +153,7 @@ describe('AuthController', () => {
           .set('Accept', 'application/json')
           .expect(201);
 
-        const prismaService = app.get<PrismaService>(PrismaService) ;
+        const prismaService = app.get<PrismaService>(PrismaService);
 
         const preVerification = await prismaService.preVerification.findUnique({
           where: { email: signupDetails.email },
