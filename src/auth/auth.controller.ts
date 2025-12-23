@@ -45,7 +45,7 @@ export class AuthController {
   @ApiResponse({ status: 409, description: 'User already exists.' })
   async signup(@Body() signupDto: SignupEmailDto): Promise<void> {
     try {
-      return await this.authService.emailOnlySignup(signupDto.email);
+      return await this.authService.emailOnlySignup(SignupEmailDto.toSignupDetails(signupDto));
     } catch (error) {
       if (error instanceof AccountExistsException) {
         this.logger.error(error);
