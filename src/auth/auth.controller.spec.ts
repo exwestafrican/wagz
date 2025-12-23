@@ -113,7 +113,7 @@ describe('AuthController', () => {
           .send(mockUserSignupDetails({ email: 'test@example.com' }))
           .set('Accept', 'application/json')
           .expect(409);
-        const prismaService = app.get(PrismaService);
+        const prismaService = app.get<PrismaService>(PrismaService);
         const preverifications = await prismaService.preVerification.findMany();
         expect(preverifications).toHaveLength(0);
       });
@@ -153,7 +153,7 @@ describe('AuthController', () => {
           .set('Accept', 'application/json')
           .expect(201);
 
-        const prismaService = app.get(PrismaService);
+        const prismaService = app.get<PrismaService>(PrismaService) ;
 
         const preVerification = await prismaService.preVerification.findUnique({
           where: { email: signupDetails.email },
