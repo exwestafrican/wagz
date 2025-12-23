@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import request from 'supertest';
 
 import { INestApplication } from '@nestjs/common';
-import { createTestApp } from '../test-helpers';
+import { createTestApp } from '../test-helpers/test-app';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
@@ -14,15 +14,27 @@ import {
 import PasswordGenerator from './services/password.generator';
 import { AuthEndpoints } from './consts';
 import { Server } from 'http';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
   let app: INestApplication;
   let mockSupabaseClient: MockSupabaseClient;
 
+
+  function mockUserSignupDetails(signupDetails: Record<string, string>) {
+    let mockDetails = {
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'Example',
+      companyName: 'Example Inc.',
+    };
+    return {...mockDetails, ...signupDetails};
+  }
+
+
   beforeEach(async () => {
     mockSupabaseClient = createMockSupabaseClient();
-
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot()], // Add ConfigModule for setupApp to work
       controllers: [AuthController],
@@ -33,6 +45,7 @@ describe('AuthController', () => {
           provide: SupabaseClient,
           useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
+        PrismaService
       ],
     }).compile();
 
@@ -99,7 +112,7 @@ describe('AuthController', () => {
         });
         return request(getHttpServer(app))
           .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
-          .send({ email: 'test@example.com' })
+          .send(mockUserSignupDetails({ email: 'test@example.com' }))
           .set('Accept', 'application/json')
           .expect(409);
       });
@@ -114,7 +127,7 @@ describe('AuthController', () => {
         });
         return request(getHttpServer(app))
           .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
-          .send({ email: 'test@example.com' })
+          .send(mockUserSignupDetails({ email: 'test@example.com' }))
           .set('Accept', 'application/json')
           .expect(503);
       });
@@ -131,7 +144,7 @@ describe('AuthController', () => {
         });
         return request(getHttpServer(app))
           .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
-          .send({ email: 'test@example.com' })
+          .send(mockUserSignupDetails({ email: 'test@example.com' }))
           .set('Accept', 'application/json')
           .expect(201);
       });
