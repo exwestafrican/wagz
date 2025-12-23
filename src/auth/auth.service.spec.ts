@@ -11,7 +11,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let mockSupabaseClient: MockSupabaseClient = createMockSupabaseClient();
+  const mockSupabaseClient: MockSupabaseClient = createMockSupabaseClient();
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({

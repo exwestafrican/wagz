@@ -1,7 +1,4 @@
 import DbTestContainerManager from './db.test.container';
-import { config } from 'dotenv';
-import { resolve } from 'path';
-import dotenv from 'dotenv';
 
 /**
  * Jest global setup - runs once before all tests
@@ -11,7 +8,7 @@ export default async function globalSetup() {
 
   try {
     const containerManager = await DbTestContainerManager.createContainer();
-    await containerManager.start();
+    containerManager.start();
 
     // put all test environment variables in an object so we can assign them to process.env
     const testEnv = {

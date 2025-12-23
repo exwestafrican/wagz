@@ -22,7 +22,7 @@ describe('AuthController', () => {
   let mockSupabaseClient: MockSupabaseClient;
 
   function mockUserSignupDetails(signupDetails: Record<string, string>) {
-    let mockDetails = {
+    const mockDetails = {
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'Example',

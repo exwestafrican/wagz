@@ -1,16 +1,14 @@
-import { PrismaPg } from '@prisma/adapter-pg';
 import {
   PostgreSqlContainer,
   StartedPostgreSqlContainer,
 } from '@testcontainers/postgresql';
 import { execSync } from 'child_process';
-import { PrismaClient } from '../generated/prisma/client';
 
 export default class DbTestContainerManager {
   private dbContainer: StartedPostgreSqlContainer;
   private static instance: DbTestContainerManager | null = null;
 
-  private constructor(dbContainer) {
+  private constructor(dbContainer: StartedPostgreSqlContainer) {
     this.dbContainer = dbContainer;
   }
 
@@ -34,30 +32,12 @@ export default class DbTestContainerManager {
     }
   }
 
-  async start() {
-    await this.runMigration();
-    await this.verifyTablesExist();
+  start() {
+    this.runMigration();
     return this;
   }
 
-  private async verifyTablesExist() {
-    try {
-      const adapter = new PrismaPg({ connectionString: this.connectionUri });
-      const client = new PrismaClient({ adapter });
-      await client.$connect();
-
-      // Try to query the table to verify it exists
-      await client.$queryRaw`SELECT 1 FROM "PreVerification" LIMIT 1`;
-
-      await client.$disconnect();
-      console.log('✅ Verified PreVerification table exists');
-    } catch (error) {
-      console.error('❌ Table verification failed:', error);
-      throw new Error('Migrations may not have completed successfully');
-    }
-  }
-
-  async reset(): Promise<void> {
+  reset() {
     try {
       execSync(
         `DATABASE_URL="${this.connectionUri}" pnpx prisma migrate reset --force --skip-seed`,
@@ -76,7 +56,7 @@ export default class DbTestContainerManager {
     }
   }
 
-  private async runMigration() {
+  private runMigration() {
     try {
       console.log(
         `🧘🏾‍♂️ Running migrations on test database ${this.connectionUri}...`,
@@ -100,7 +80,7 @@ export default class DbTestContainerManager {
 
   async stop() {
     console.log('🛑 Stopping test container...');
-    this.dbContainer.stop();
+    await this.dbContainer.stop();
     DbTestContainerManager.instance = null;
   }
 
@@ -112,9 +92,7 @@ export default class DbTestContainerManager {
     return this.dbContainer.getId();
   }
 
-  // Add static method to stop container by ID (for use in teardown)
-  static async stopContainerById(containerId: string): Promise<void> {
-    const { execSync } = require('child_process');
+  static stopContainerById(containerId: string) {
     try {
       execSync(`docker stop ${containerId}`, { stdio: 'inherit' });
       console.log(`✅ Stopped container ${containerId}`);
