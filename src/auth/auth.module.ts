@@ -20,6 +20,11 @@ const SupabaseAuthClient = {
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, SupabaseAuthClient, PasswordGenerator, PrismaService],
+  providers: [
+    AuthService,
+    SupabaseAuthClient,
+    PasswordGenerator,
+    PrismaService,
+  ],
 })
 export class AuthModule {}

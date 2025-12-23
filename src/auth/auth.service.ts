@@ -36,10 +36,14 @@ export class AuthService {
     // we need to do things like see if this is a fake email or temproary generated email.
     //TODO: add aditional meta data
 
-    const preVerification = await this.prismaService.preVerification.findUnique({ where: { email: signupDetails.email } });
+    const preVerification = await this.prismaService.preVerification.findUnique(
+      { where: { email: signupDetails.email } },
+    );
 
     if (preVerification !== null) {
-      this.logger.log(`User already exists in the pre verification table Id=${preVerification.id}`);
+      this.logger.log(
+        `User already exists in the pre verification table Id=${preVerification.id}`,
+      );
       return;
     }
 
@@ -52,14 +56,15 @@ export class AuthService {
     });
 
     if (error === null) {
-      const newPreVerification = await this.prismaService.preVerification.create({
-        data: {
-          email: signupDetails.email,
-          firstName: signupDetails.firstName,
-          lastName: signupDetails.lastName,
-          companyName: signupDetails.companyName,
-        }
-      })
+      const newPreVerification =
+        await this.prismaService.preVerification.create({
+          data: {
+            email: signupDetails.email,
+            firstName: signupDetails.firstName,
+            lastName: signupDetails.lastName,
+            companyName: signupDetails.companyName,
+          },
+        });
       this.logger.log(`PreVerification successful Id=${newPreVerification.id}`);
     } else {
       this.logger.error(error);

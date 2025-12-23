@@ -21,7 +21,6 @@ describe('AuthController', () => {
   let app: INestApplication;
   let mockSupabaseClient: MockSupabaseClient;
 
-
   function mockUserSignupDetails(signupDetails: Record<string, string>) {
     let mockDetails = {
       email: 'test@example.com',
@@ -29,9 +28,8 @@ describe('AuthController', () => {
       lastName: 'Example',
       companyName: 'Example Inc.',
     };
-    return {...mockDetails, ...signupDetails};
+    return { ...mockDetails, ...signupDetails };
   }
-
 
   beforeEach(async () => {
     mockSupabaseClient = createMockSupabaseClient();
@@ -45,7 +43,7 @@ describe('AuthController', () => {
           provide: SupabaseClient,
           useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
-        PrismaService
+        PrismaService,
       ],
     }).compile();
 

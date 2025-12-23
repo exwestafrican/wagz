@@ -9,13 +9,11 @@ import PasswordGenerator from './services/password.generator';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
 
-
 describe('AuthService', () => {
   let service: AuthService;
   let mockSupabaseClient: MockSupabaseClient = createMockSupabaseClient();
 
   beforeEach(async () => {
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -25,7 +23,7 @@ describe('AuthService', () => {
           provide: SupabaseClient,
           useValue: mockSupabaseClient,
         },
-        PrismaService
+        PrismaService,
       ],
     }).compile();
 

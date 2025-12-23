@@ -3,7 +3,6 @@ import { IsEmail, IsNotEmpty } from 'class-validator';
 import SignupDetails from '../domain/signup.details';
 
 export class SignupEmailDto {
-
   @ApiProperty({
     description: 'The email address of the user',
     example: 'test@example.com',
@@ -11,7 +10,6 @@ export class SignupEmailDto {
   @IsEmail({}, { message: 'Invalid email address' })
   @IsNotEmpty()
   email: string;
-
 
   @ApiProperty({
     description: 'The first name of the user',
@@ -35,6 +33,11 @@ export class SignupEmailDto {
   companyName: string;
 
   static toSignupDetails(signupDto: SignupEmailDto): SignupDetails {
-    return new SignupDetails(signupDto.email, signupDto.firstName, signupDto.lastName, signupDto.companyName);
+    return new SignupDetails(
+      signupDto.email,
+      signupDto.firstName,
+      signupDto.lastName,
+      signupDto.companyName,
+    );
   }
 }
