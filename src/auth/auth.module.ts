@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import PasswordGenerator from './services/password.generator';
+import { PrismaService } from '../prisma/prisma.service';
 
 const SupabaseAuthClient = {
   provide: SupabaseClient,
@@ -19,6 +20,11 @@ const SupabaseAuthClient = {
 
 @Module({
   controllers: [AuthController],
-  providers: [AuthService, SupabaseAuthClient, PasswordGenerator],
+  providers: [
+    AuthService,
+    SupabaseAuthClient,
+    PasswordGenerator,
+    PrismaService,
+  ],
 })
 export class AuthModule {}

@@ -100,3 +100,4 @@ postgres-data/
 /generated/prisma
 
 /envoye
+src/generated/prisma

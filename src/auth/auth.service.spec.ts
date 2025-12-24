@@ -7,13 +7,13 @@ import {
 } from './test-utils/supabase.mock';
 import PasswordGenerator from './services/password.generator';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '../prisma/prisma.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let mockSupabaseClient: MockSupabaseClient;
+  const mockSupabaseClient: MockSupabaseClient = createMockSupabaseClient();
 
   beforeEach(async () => {
-    mockSupabaseClient = createMockSupabaseClient();
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
@@ -21,8 +21,9 @@ describe('AuthService', () => {
         ConfigService,
         {
           provide: SupabaseClient,
-          useValue: mockSupabaseClient as unknown as SupabaseClient,
+          useValue: mockSupabaseClient,
         },
+        PrismaService,
       ],
     }).compile();
 

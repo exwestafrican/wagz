@@ -48,11 +48,13 @@
     "@nestjs/cli": "^11.0.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.1",
+    "@testcontainers/postgresql": "^11.10.0",
     "@types/express": "^5.0.0",
     "@types/generate-password": "^1.5.3",
     "@types/jest": "^30.0.0",
     "@types/node": "^22.10.7",
     "@types/supertest": "^6.0.2",
+    "dotenv": "^17.2.3",
     "eslint": "^9.18.0",
     "eslint-config-prettier": "^10.0.1",
     "eslint-plugin-prettier": "^5.2.2",
@@ -63,6 +65,7 @@
     "source-map-support": "^0.5.21",
     "supabase": "^2.65.7",
     "supertest": "^7.0.0",
+    "testcontainers": "^11.10.0",
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
@@ -84,6 +87,11 @@
     "collectCoverageFrom": [
       "**/*.(t|j)s"
     ],
+    "setupFilesAfterEnv": [
+      "<rootDir>/test-helpers/jest-setup.ts"
+    ],
+    "globalSetup": "<rootDir>/test-helpers/jest-global-setup.ts",
+    "globalTeardown": "<rootDir>/test-helpers/jest-global-teardown.ts",
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
