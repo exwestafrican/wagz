@@ -3,6 +3,9 @@ WORKDIR /src
 COPY package.json pnpm-lock.yaml ./
 RUN corepack enable && pnpm install --frozen-lockfile
 COPY . .
+
+RUN pnpx prisma generate
+
 RUN pnpm build
 
 FROM node:20-alpine
@@ -24,5 +27,3 @@ USER nestUser
 EXPOSE 3001
 
 CMD ["/usr/local/bin/node", "dist/src/main"]
-
-
