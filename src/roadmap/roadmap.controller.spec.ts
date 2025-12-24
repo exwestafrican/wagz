@@ -9,6 +9,7 @@ import { FeaturesService } from './service/feature.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { ConfigService } from '@nestjs/config';
 import { FeatureStage } from '../generated/prisma/enums';
+import { FeatureDto } from './dto/feature.dto';
 
 describe('RoadmapController', () => {
   let app: INestApplication;
@@ -64,9 +65,10 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      expect(response.body).toHaveLength(2);
-      const stages: FeatureStage[] = response.body.map(
-        (feature) => feature.stage,
+      const body = response.body as FeatureDto[];
+      expect(body).toHaveLength(2);
+      const stages: FeatureStage[] = body.map(
+        (feature) => feature.stage as FeatureStage,
       );
       expect(stages).toEqual(
         expect.arrayContaining([FeatureStage.PLANNED, FeatureStage.COMPLETED]),
