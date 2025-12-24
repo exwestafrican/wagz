@@ -15,6 +15,7 @@ export class FeaturesService {
           in: [FeatureStage.PLANNED, FeatureStage.COMPLETED],
         },
       },
+      take: 100, // we intentionally limit the number of features returned to 100
     });
   }
 }
