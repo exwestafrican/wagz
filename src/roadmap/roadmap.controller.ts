@@ -20,6 +20,7 @@ export class RoadmapController {
   })
   @HttpCode(200)
   getFutureFeatures() {
+    this.logger.log('Getting future features');
     return this.featureService.futureFeatures();
   }
 }
