@@ -1,6 +1,7 @@
 enum FeatureStage {
   PLANNED // we've committed to doing the work
   IN_PROGRESS // what we are currently working on
+  COMPLETED
 }
 
 model Feature {
