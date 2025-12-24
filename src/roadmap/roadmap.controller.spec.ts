@@ -1,0 +1,19 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { RoadmapController } from './roadmap.controller';
+
+describe('RoadmapController', () => {
+  let controller: RoadmapController;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [RoadmapController],
+      providers: [],
+    }).compile();
+
+    controller = module.get<RoadmapController>(RoadmapController);
+  });
+
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
+  });
+});
