@@ -5,11 +5,25 @@ enum FeatureStage {
 }
 
 model Feature {
-  id        String       @id @default(uuid()) @db.Uuid
-  name      String       @unique @db.VarChar(225)
-  votes     Int          @db.SmallInt
-  icon      String       @db.VarChar(15) // string that maps to what icon to use name can be found here: https://lucide.dev/icons/
-  stage     FeatureStage @default(PLANNED)
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id            String                @id @default(uuid()) @db.Uuid
+  name          String                @unique @db.VarChar(225)
+  votes         Int                   @db.SmallInt
+  icon          String                @db.VarChar(15) // string that maps to what icon to use name can be found here: https://lucide.dev/icons/
+  stage         FeatureStage          @default(PLANNED)
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+  subscriptions FeatureSubscription[]
+}
+
+model FeatureSubscription {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @db.VarChar(255)
+  feature   Feature  @relation(fields: [featureId], references: [id], onDelete: Cascade) // Subscriptions deleted when feature is deleted
+  featureId String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, featureId]) // Composite unique: same email can subscribe to different features
+  @@index([email]) // For querying subscriptions by email
+  @@index([featureId])
 }
