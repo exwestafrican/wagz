@@ -5,6 +5,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RoadmapModule } from './roadmap/roadmap.module';
+import { WaitlistModule } from './waitlist/waitlist.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { RoadmapModule } from './roadmap/roadmap.module';
     AuthModule,
     PrismaModule,
     RoadmapModule,
+    WaitlistModule,
   ],
   controllers: [AppController],
   providers: [AppService],
