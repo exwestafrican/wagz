@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { RoadmapController } from './roadmap.controller';
-import { FeaturesService } from './service/feature.service';
+import { RoadmapController } from '@/roadmap/roadmap.controller';
+import { FeaturesService } from '@/roadmap/service/feature.service';
 
 @Module({
   controllers: [RoadmapController],

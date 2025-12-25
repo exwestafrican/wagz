@@ -1,7 +1,7 @@
 import { Controller, Get, HttpCode, Logger } from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { FeaturesService } from './service/feature.service';
-import { FeatureDto } from './dto/feature.dto';
+import { FeaturesService } from '@/roadmap/service/feature.service';
+import { FeatureDto } from '@/roadmap/dto/feature.dto';
 
 @Controller('roadmap')
 @ApiTags('roadmap')
