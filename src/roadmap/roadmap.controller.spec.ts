@@ -11,14 +11,11 @@ import { ConfigService } from '@nestjs/config';
 import { FeatureStage } from '@/generated/prisma/enums';
 import { FeatureDto } from '@/roadmap/dto/feature.dto';
 import featureFactory from '@factories/roadmap/features.factory';
+import getHttpServer from '@/test-helpers/get-http-server';
 
 describe('RoadmapController', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
-
-  function getHttpServer(app: INestApplication): Server {
-    return app.getHttpServer() as unknown as Server;
-  }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
