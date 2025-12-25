@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEnum } from 'class-validator';
-import { FeatureStage } from '../../generated/prisma/enums';
+import { FeatureStage } from '@/generated/prisma/enums';
 
 export class FeatureDto {
   @ApiProperty({ description: 'Id of feature' })

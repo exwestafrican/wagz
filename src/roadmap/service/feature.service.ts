@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '../../prisma/prisma.service';
-import { FeatureStage } from '../../generated/prisma/enums';
+import { PrismaService } from '@/prisma/prisma.service';
+import { FeatureStage } from '@/generated/prisma/enums';
 
 @Injectable()
 export class FeaturesService {
