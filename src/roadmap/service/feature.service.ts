@@ -9,13 +9,24 @@ export class FeaturesService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async futureFeatures() {
-    return await this.prismaService.feature.findMany({
+    return this.prismaService.feature.findMany({
       where: {
         stage: {
           in: [FeatureStage.PLANNED, FeatureStage.IN_PROGRESS],
         },
       },
       take: 100, // we intentionally limit the number of features returned to 100
+    });
+  }
+
+  async mainFeature() {
+    return this.prismaService.feature.findFirst({
+      where: {
+        name: {
+          equals: 'whatsApp inbox integration',
+          mode: 'insensitive', // Case-insensitive search
+        },
+      },
     });
   }
 }
