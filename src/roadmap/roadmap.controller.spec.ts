@@ -71,7 +71,7 @@ describe('RoadmapController', () => {
         (feature) => feature.stage as FeatureStage,
       );
       expect(stages).toEqual(
-        expect.arrayContaining([FeatureStage.PLANNED, FeatureStage.COMPLETED]),
+        expect.arrayContaining([FeatureStage.PLANNED, FeatureStage.IN_PROGRESS]),
       );
       expect(stages).toHaveLength(2); // Ensure no extra items
     });

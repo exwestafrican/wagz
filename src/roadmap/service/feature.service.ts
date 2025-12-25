@@ -12,7 +12,7 @@ export class FeaturesService {
     return await this.prismaService.feature.findMany({
       where: {
         stage: {
-          in: [FeatureStage.PLANNED, FeatureStage.COMPLETED],
+          in: [FeatureStage.PLANNED, FeatureStage.IN_PROGRESS],
         },
       },
       take: 100, // we intentionally limit the number of features returned to 100

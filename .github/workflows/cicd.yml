@@ -25,6 +25,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
+      - name: Check Prisma Schema Format
+        run:  pnpx prisma format --check
+
       - name: Generate Prisma Client
         run: pnpm prisma generate
 
