@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { WaitlistController } from '@/waitlist/waitlist.controller';
 import { WaitlistService } from '@/waitlist/waitlist.service';
-import { FeaturesService } from '@/roadmap/service/feature.service';
+import { RoadmapModule } from '@/roadmap/roadmap.module';
 
 @Module({
+  imports: [RoadmapModule],
   controllers: [WaitlistController],
-  providers: [WaitlistService, FeaturesService],
+  providers: [WaitlistService],
 })
 export class WaitlistModule {}
