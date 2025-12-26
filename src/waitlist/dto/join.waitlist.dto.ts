@@ -8,6 +8,6 @@ export class JoinWaitListDto {
   @IsNotEmpty()
   @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsEmail({}, { message: 'Invalid email address' })
-  @IsNotDisposableEmail()
+  @IsNotDisposableEmail({ message: 'Invalid email address' })
   public email: string;
 }
