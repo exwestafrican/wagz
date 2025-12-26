@@ -55,7 +55,6 @@ describe('AuthController', () => {
     await app.close();
   });
 
-
   function getHttpServer(app: INestApplication): Server {
     return app.getHttpServer() as unknown as Server;
   }
@@ -149,8 +148,6 @@ describe('AuthController', () => {
           .send(signupDetails)
           .set('Accept', 'application/json')
           .expect(201);
-
-
 
         const preVerification = await prismaService.preVerification.findUnique({
           where: { email: signupDetails.email },
