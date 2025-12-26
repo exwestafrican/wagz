@@ -12,24 +12,18 @@ export default class DbTestContainerManager {
     this.dbContainer = dbContainer;
   }
 
-  static async createContainer(): Promise<DbTestContainerManager> {
-    if (this.instance) {
-      return this.instance;
-    } else {
-      const dbContainer = await new PostgreSqlContainer('postgres:17-alpine')
-        .withDatabase('envoyeTestDb')
-        .withUsername('prismaTestUser')
-        .withPassword('password')
-        .withExposedPorts(5432)
-        .start();
-      console.log(
-        '🚀 Test container started with connection:',
-        dbContainer.getConnectionUri(),
-      );
+  static async createContainerOf(workerId: string) {
+    const dbContainer = await new PostgreSqlContainer('postgres:17-alpine')
+      .withDatabase(`envoyeTestDb_${workerId}`)
+      .withUsername('prismaTestUser')
+      .withPassword('password')
+      .withExposedPorts(5432)
+      .start();
 
-      this.instance = new DbTestContainerManager(dbContainer);
-      return this.instance;
-    }
+    console.log(
+      `🚀 Test container started with connection ${dbContainer.getConnectionUri()} and workerId ${workerId}`,
+    );
+    return new DbTestContainerManager(dbContainer);
   }
 
   start() {
@@ -90,15 +84,5 @@ export default class DbTestContainerManager {
 
   get containerId() {
     return this.dbContainer.getId();
-  }
-
-  static stopContainerById(containerId: string) {
-    try {
-      execSync(`docker stop ${containerId}`, { stdio: 'inherit' });
-      console.log(`✅ Stopped container ${containerId}`);
-    } catch (error) {
-      console.error(`❌ Failed to stop container ${containerId}:`, error);
-      throw error;
-    }
   }
 }

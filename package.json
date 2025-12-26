@@ -76,6 +76,8 @@
     "typescript-eslint": "^8.20.0"
   },
   "jest": {
+    "maxWorkers": "50%",
+    "testTimeout": 30000,
     "moduleFileExtensions": [
       "js",
       "json",
@@ -109,8 +111,6 @@
     "setupFilesAfterEnv": [
       "<rootDir>/test-helpers/jest-setup.ts"
     ],
-    "globalSetup": "<rootDir>/test-helpers/jest-global-setup.ts",
-    "globalTeardown": "<rootDir>/test-helpers/jest-global-teardown.ts",
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
