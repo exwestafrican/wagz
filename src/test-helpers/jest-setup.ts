@@ -41,7 +41,7 @@ beforeAll(async () => {
     dbTestContainerManager = await setupDBContainer(workerId);
   }
 
-}, 30000);
+});
 
 // Reset mocks before each test
 beforeEach(() => {
