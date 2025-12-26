@@ -17,9 +17,9 @@ import { Server } from 'http';
 import { PrismaService } from '../prisma/prisma.service';
 
 describe('AuthController', () => {
-  let controller: AuthController;
   let app: INestApplication;
   let mockSupabaseClient: MockSupabaseClient;
+  let prismaService: PrismaService;
 
   function mockUserSignupDetails(signupDetails: Record<string, string>) {
     const mockDetails = {
@@ -47,17 +47,14 @@ describe('AuthController', () => {
       ],
     }).compile();
 
-    controller = module.get<AuthController>(AuthController);
     app = await createTestApp(module);
+    prismaService = app.get<PrismaService>(PrismaService);
   });
 
   afterAll(async () => {
     await app.close();
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
 
   function getHttpServer(app: INestApplication): Server {
     return app.getHttpServer() as unknown as Server;
@@ -113,7 +110,7 @@ describe('AuthController', () => {
           .send(mockUserSignupDetails({ email: 'test@example.com' }))
           .set('Accept', 'application/json')
           .expect(409);
-        const prismaService = app.get<PrismaService>(PrismaService);
+
         const preverifications = await prismaService.preVerification.findMany();
         expect(preverifications).toHaveLength(0);
       });
@@ -153,7 +150,7 @@ describe('AuthController', () => {
           .set('Accept', 'application/json')
           .expect(201);
 
-        const prismaService = app.get<PrismaService>(PrismaService);
+
 
         const preVerification = await prismaService.preVerification.findUnique({
           where: { email: signupDetails.email },

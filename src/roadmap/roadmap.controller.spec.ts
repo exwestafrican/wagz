@@ -23,7 +23,7 @@ describe('RoadmapController', () => {
     }).compile();
 
     app = await createTestApp(module);
-    prismaService = module.get<PrismaService>(PrismaService);
+    prismaService = app.get<PrismaService>(PrismaService);
   });
 
   afterAll(async () => {

@@ -23,9 +23,10 @@ describe('WaitlistController', () => {
     }).compile();
 
     app = await createTestApp(module);
-    prismaService = module.get(PrismaService);
-    waitlistService = module.get(WaitlistService);
+    prismaService = app.get(PrismaService);
+    waitlistService = app.get(WaitlistService);
   });
+
 
   afterAll(async () => {
     await app.close();
