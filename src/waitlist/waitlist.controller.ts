@@ -7,7 +7,7 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import JoinWaitListDto from '@/waitlist/dto/join.waitlist.dto';
+import { JoinWaitListDto } from '@/waitlist/dto/join.waitlist.dto';
 import { WaitlistService } from '@/waitlist/waitlist.service';
 import NotFoundInDb from '@/common/exceptions/not-found';
 

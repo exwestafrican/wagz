@@ -3,7 +3,7 @@ import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty } from 'class-validator';
 import { IsNotDisposableEmail } from '@/common/validators/is-not-disposable-email.decorator';
 
-class JoinWaitListDto {
+export class JoinWaitListDto {
   @ApiProperty({ description: 'email of user wanting to join wait list' })
   @IsNotEmpty()
   @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
@@ -11,5 +11,3 @@ class JoinWaitListDto {
   @IsNotDisposableEmail()
   public email: string;
 }
-
-export default JoinWaitListDto;

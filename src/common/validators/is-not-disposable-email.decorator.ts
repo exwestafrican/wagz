@@ -30,7 +30,7 @@ export class IsNotDisposableEmailConstraint implements ValidatorConstraintInterf
     return !isDisposableEmail;
   }
   defaultMessage(): string {
-    return 'Invalid email address';
+    return 'Disposable email addresses are not allowed';
   }
 }
 

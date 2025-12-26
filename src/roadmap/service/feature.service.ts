@@ -36,7 +36,7 @@ export class FeaturesService {
       });
     } catch (err) {
       if (err instanceof Prisma.PrismaClientKnownRequestError) {
-        if ((err.code = PRISMA_CODES.NOT_FOUND)) {
+        if (err.code === PRISMA_CODES.NOT_FOUND) {
           this.logger.error(`feature ${featureName} not found`);
           throw new NotFoundInDb('main feature not found');
         }

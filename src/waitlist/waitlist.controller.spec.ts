@@ -1,7 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WaitlistController } from './waitlist.controller';
 import { WaitlistService } from '@/waitlist/waitlist.service';
-import { FeaturesService } from '@/roadmap/service/feature.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
 import request from 'supertest';
@@ -12,6 +10,7 @@ import { WaitListEndpoints } from '@/waitlist/consts';
 import featureFactory from '@/factories/roadmap/features.factory';
 import { MAIN_FEATURE } from '@/roadmap/consts';
 import { PrismaService } from '@/prisma/prisma.service';
+import { WaitlistModule } from '@/waitlist/waitlist.module';
 
 describe('WaitlistController', () => {
   let app: INestApplication;
@@ -20,9 +19,7 @@ describe('WaitlistController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), PrismaModule],
-      controllers: [WaitlistController],
-      providers: [WaitlistService, FeaturesService],
+      imports: [ConfigModule.forRoot(), PrismaModule, WaitlistModule],
     }).compile();
 
     app = await createTestApp(module);
