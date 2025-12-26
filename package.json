@@ -109,8 +109,6 @@
     "setupFilesAfterEnv": [
       "<rootDir>/test-helpers/jest-setup.ts"
     ],
-    "globalSetup": "<rootDir>/test-helpers/jest-global-setup.ts",
-    "globalTeardown": "<rootDir>/test-helpers/jest-global-teardown.ts",
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
   }
