@@ -7,6 +7,13 @@ export function setupApp(app: INestApplication) {
   const isProduction = configService.get<string>('NODE_ENV') === 'production';
   const enableSwagger = !isProduction;
 
+  app.enableCors({
+    origin: '*', //TODO: change this to specific (move to env)
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  });
+
   // Only setup Swagger in development
   if (enableSwagger) {
     const config = new DocumentBuilder() //Setup Swagger config
