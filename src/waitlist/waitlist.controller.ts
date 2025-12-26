@@ -1,7 +1,15 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Post,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import JoinWaitListDto from '@/waitlist/dto/join.waitlist.dto';
 import { WaitlistService } from '@/waitlist/waitlist.service';
+import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Controller('waitlist')
 export class WaitlistController {
@@ -15,6 +23,14 @@ export class WaitlistController {
   })
   @HttpCode(HttpStatus.CREATED)
   async join(@Body() joinWaitListDto: JoinWaitListDto) {
-    await this.waitlistService.join(joinWaitListDto.email);
+    try {
+      await this.waitlistService.join(joinWaitListDto.email);
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
+        throw new NotFoundException(error.message);
+      }
+
+      throw error;
+    }
   }
 }
