@@ -7,6 +7,7 @@ import DbTestContainerManager from '@/test-helpers/db.test.container';
 let dbTestContainerManager: DbTestContainerManager;
 
 const workerId = process.env.JEST_WORKER_ID;
+let containerRefCount = 0;
 
 async function setupDBContainer(workerId: string) {
   try {
@@ -41,9 +42,24 @@ beforeAll(async () => {
     dbTestContainerManager = await setupDBContainer(workerId);
   }
 
+  containerRefCount++;
 });
 
 // Reset mocks before each test
 beforeEach(() => {
   jest.clearAllMocks();
+});
+
+afterAll(async () => {
+    containerRefCount--;
+
+    // Stop container only when all test files in worker are done
+    if (containerRefCount === 0 && dbTestContainerManager) {
+      try {
+        await dbTestContainerManager.stop();
+        console.log(`🍾 Worker ${workerId} database stopped`);
+      } catch (error) {
+        console.warn(`⚠️  Worker ${workerId}: Error stopping container:`, error);
+      }
+    }
 });
