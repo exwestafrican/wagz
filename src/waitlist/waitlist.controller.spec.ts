@@ -27,7 +27,6 @@ describe('WaitlistController', () => {
     waitlistService = app.get(WaitlistService);
   });
 
-
   afterAll(async () => {
     await app.close();
   });
