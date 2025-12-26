@@ -11,8 +11,7 @@ let containerRefCount = 0;
 
 async function setupDBContainer(workerId: string) {
   try {
-    const manager =
-      await DbTestContainerManager.createContainerOf(workerId);
+    const manager = await DbTestContainerManager.createContainerOf(workerId);
     manager.start();
     const testEnv = {
       DOCKER_DB_URL: manager.connectionUri,
@@ -27,9 +26,9 @@ async function setupDBContainer(workerId: string) {
     );
     return manager;
   } catch (error) {
-      console.error('❌ Failed to start test container:', error);
-      throw error;
-    }
+    console.error('❌ Failed to start test container:', error);
+    throw error;
+  }
 }
 
 beforeAll(async () => {
@@ -38,7 +37,7 @@ beforeAll(async () => {
     throw new Error('JEST_WORKER_ID is not set');
   }
 
-  if(!dbTestContainerManager) {
+  if (!dbTestContainerManager) {
     dbTestContainerManager = await setupDBContainer(workerId);
   }
 
@@ -51,15 +50,15 @@ beforeEach(() => {
 });
 
 afterAll(async () => {
-    containerRefCount--;
+  containerRefCount--;
 
-    // Stop container only when all test files in worker are done
-    if (containerRefCount === 0 && dbTestContainerManager) {
-      try {
-        await dbTestContainerManager.stop();
-        console.log(`🍾 Worker ${workerId} database stopped`);
-      } catch (error) {
-        console.warn(`⚠️  Worker ${workerId}: Error stopping container:`, error);
-      }
+  // Stop container only when all test files in worker are done
+  if (containerRefCount === 0 && dbTestContainerManager) {
+    try {
+      await dbTestContainerManager.stop();
+      console.log(`🍾 Worker ${workerId} database stopped`);
+    } catch (error) {
+      console.warn(`⚠️  Worker ${workerId}: Error stopping container:`, error);
     }
+  }
 });
