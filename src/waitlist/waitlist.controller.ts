@@ -1,5 +1,6 @@
 import {
   Body,
+  ConflictException,
   Controller,
   HttpCode,
   HttpStatus,
@@ -10,6 +11,7 @@ import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { JoinWaitListDto } from '@/waitlist/dto/join.waitlist.dto';
 import { WaitlistService } from '@/waitlist/waitlist.service';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 
 @Controller('waitlist')
 export class WaitlistController {
@@ -21,6 +23,10 @@ export class WaitlistController {
     status: 201,
     description: 'Successfully joined waitlist',
   })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'User already joined waitlist',
+  })
   @HttpCode(HttpStatus.CREATED)
   async join(@Body() joinWaitListDto: JoinWaitListDto) {
     try {
@@ -28,8 +34,9 @@ export class WaitlistController {
     } catch (error) {
       if (error instanceof NotFoundInDb) {
         throw new NotFoundException(error.message);
+      } else if (error instanceof ItemAlreadyExistsInDb) {
+        throw new ConflictException(error.message);
       }
-
       throw error;
     }
   }
