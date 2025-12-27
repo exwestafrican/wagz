@@ -106,7 +106,7 @@ We use prisma to generate migrations. Here are some of the steps to achieve this
 #### Prerequisites
 - You will need [docker](https://docs.docker.com/desktop/setup/install/mac-install/) installed on desktop
 
-To Setup your backend run the following
+**[Deprecated]** To Setup your backend run the following
 
 ```bash
 $ make setup
@@ -118,9 +118,23 @@ Alternatively you can start backend with Docker
 
 ```bash
 $ make setup-prisma
+$ make setup-ssl
+```
+
+while running $make setup-ssl, password requested is your system password.
+
+very file exists with
+```bash
+ls -la /etc/letsencrypt/live/api.envoye.co/
+```
+after setup run the following
+
+```bash
 $ pnpx supabase start
 $ docker compose up -d --build
 ```
+
+
 
 ### Email Service
 

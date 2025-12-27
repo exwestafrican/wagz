@@ -6,5 +6,8 @@ setup-db:
 
 setup: setup-db
 
+setup-ssl:
+	./scripts/setup_ssl.sh
+
 setup-prisma:
 	./scripts/setup_prisma.sh
