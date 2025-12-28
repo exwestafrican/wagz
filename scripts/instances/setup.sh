@@ -1,16 +1,40 @@
 # Install docker
 sudo apt update
-sudo apt install -y docker.io docker-compose-plugin
-sudo usermod -aG docker ubuntu #add user to docker group
-logout #logout to apply changes
+
+## check if docker is installed and uninstall with
+sudo apt remove -y docker.io docker-compose-plugin
+sudo apt autoremove -y
+
+## installing docker
+curl -fsSL https://get.docker.com | sudo sh
+sudo apt install -y docker-compose-plugin
+sudo usermod -aG docker ubuntu
+logout
 
 
 # Install certbot
 sudo apt update
 sudo apt install -y certbot
 
-# Get certificate (make sure port 80 is accessible)
-sudo certbot certonly --standalone -d api.envoye.com
+# Get  initial certificate (make sure port 80 is accessible)
+sudo certbot certonly --standalone -d api.envoye.co
+sudo certbot certonly \
+  --webroot \
+  -w /var/www/certbot \
+  -d api.envoye.co
+# using webroot method to avoid port 80 being blocked
 
-# Set up auto-renewal
+# Create webroot directory for renewals
+sudo mkdir -p /var/www/certbot
+
+# Start containers
+echo "🚀 Starting containers..."
+docker compose up -d
+
+# Test renewal
+echo "🧪 Testing certificate renewal..."
 sudo certbot renew --dry-run
+
+
+
+
