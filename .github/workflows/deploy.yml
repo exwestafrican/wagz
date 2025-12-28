@@ -36,7 +36,7 @@ jobs:
           username: ${{ vars.LIGHTSAIL_USERNAME }}
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script: |
-            cd ${{ secrets.APP_DIR }}
+            cd ${{ vars.APP_DIR }}
             git pull origin main
             docker compose build
             docker compose up -d
