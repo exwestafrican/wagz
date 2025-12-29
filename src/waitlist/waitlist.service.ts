@@ -35,7 +35,6 @@ export class WaitlistService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === PRISMA_CODES.EXISTS_IN_DB
       ) {
-        this.logger.warn(`User ${email} already on waitlist`);
         throw new ItemAlreadyExistsInDb('user already on waitlist');
       }
       throw error;
