@@ -131,10 +131,9 @@ after setup run the following
 
 ```bash
 $ pnpx supabase start
+$ pnpx supabase db reset
 $ docker compose up -d --build
 ```
-
-
 
 ### Email Service
 
