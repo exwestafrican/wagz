@@ -32,13 +32,11 @@ describe('WaitlistController', () => {
   });
 
   describe('join waitlist', () => {
-
     beforeAll(async () => {
       await prismaService.feature.create({
         data: featureFactory.build({ name: MAIN_FEATURE }),
       });
     });
-
 
     it('should create subscription for user', async () => {
       const waitlistUserEmail = 'akoduba@gmail.com';
@@ -62,7 +60,7 @@ describe('WaitlistController', () => {
         .expect(400);
     });
 
-    it("should return 201 if user is already on waitlist", async () => {
+    it('should return 201 if user is already on waitlist', async () => {
       const waitlistUserEmail = 'dami@gmail.com';
       await waitlistService.join(waitlistUserEmail);
       await request(getHttpServer(app))
@@ -70,7 +68,6 @@ describe('WaitlistController', () => {
         .send({ email: waitlistUserEmail })
         .set('Accept', 'application/json')
         .expect(201);
-
     });
   });
 });
