@@ -20,7 +20,7 @@ export class WaitlistController {
   @Post('join')
   @ApiOperation({ summary: 'Add user to waitlist' })
   @ApiResponse({
-    status: 201,
+    status: HttpStatus.CREATED,
     description: 'Successfully joined waitlist',
   })
   @ApiResponse({
@@ -35,7 +35,7 @@ export class WaitlistController {
       if (error instanceof NotFoundInDb) {
         throw new NotFoundException(error.message);
       } else if (error instanceof ItemAlreadyExistsInDb) {
-        throw new ConflictException(error.message);
+        return HttpStatus.CREATED;
       }
       throw error;
     }
