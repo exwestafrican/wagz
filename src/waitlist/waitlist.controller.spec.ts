@@ -17,7 +17,7 @@ describe('WaitlistController', () => {
   let prismaService: PrismaService;
   let waitlistService: WaitlistService;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule, WaitlistModule],
     }).compile();
@@ -32,12 +32,15 @@ describe('WaitlistController', () => {
   });
 
   describe('join waitlist', () => {
-    it('should create subscription for user', async () => {
-      const waitlistUserEmail = 'akoduba@gmail.com';
-
+    beforeAll(async () => {
       await prismaService.feature.create({
         data: featureFactory.build({ name: MAIN_FEATURE }),
       });
+    });
+
+    it('should create subscription for user', async () => {
+      const waitlistUserEmail = 'akoduba@gmail.com';
+
       const waitlistUsers = await prismaService.featureSubscription.count();
 
       expect(waitlistUsers).toBe(0);
@@ -55,6 +58,16 @@ describe('WaitlistController', () => {
         .send({ email: 'damilola@10minutemail.com' })
         .set('Accept', 'application/json')
         .expect(400);
+    });
+
+    it('should return 201 if user is already on waitlist', async () => {
+      const waitlistUserEmail = 'dami@gmail.com';
+      await waitlistService.join(waitlistUserEmail);
+      await request(getHttpServer(app))
+        .post(WaitListEndpoints.JOIN)
+        .send({ email: waitlistUserEmail })
+        .set('Accept', 'application/json')
+        .expect(201);
     });
   });
 });
