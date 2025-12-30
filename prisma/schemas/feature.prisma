@@ -27,3 +27,21 @@ model FeatureSubscription {
   @@index([email]) // For querying subscriptions by email
   @@index([featureId])
 }
+
+enum FeatureRequestPriority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+model FeatureRequest {
+  id                   Int                    @id @default(autoincrement())
+  description          String                 @db.VarChar(5000)
+  requestedByUserEmail String                 @db.VarChar(255) // email of requesting user
+  priority             FeatureRequestPriority @default(LOW)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+
+  @@index([requestedByUserEmail]) // For querying request by requestedByUserEmail
+  @@index([priority]) // For querying request by priority
+}
