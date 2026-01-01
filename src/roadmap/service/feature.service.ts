@@ -1,9 +1,10 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { FeatureStage } from '@/generated/prisma/enums';
+import { FeatureStage, FeatureRequestPriority } from '@/generated/prisma/enums';
 import PRISMA_CODES from '@/prisma/consts';
 import { Prisma } from '@/generated/prisma/client';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import Unauthorized from '@/common/exceptions/unauthorized';
 import { MAIN_FEATURE } from '@/roadmap/consts';
 
 @Injectable()
@@ -45,6 +46,43 @@ export class FeaturesService {
         `unknown error ${err} while fetching feature ${featureName}`,
       );
       throw err;
+    }
+  }
+
+  private async userIsInWaitlist(email: string) {
+    const hasSubscribedToMainFeature =
+      await this.prismaService.featureSubscription.findFirst({
+        where: {
+          email: email.toLowerCase().trim(),
+        },
+      });
+    return hasSubscribedToMainFeature ? true : false;
+  }
+
+  async createFeatureRequest(
+    email: string,
+    description: string,
+    priority: FeatureRequestPriority,
+  ) {
+    if (await this.userIsInWaitlist(email)) {
+      const featureRequest = await this.prismaService.featureRequest.create({
+        data: {
+          requestedByUserEmail: email.toLowerCase().trim(),
+          description: description.trim(),
+          priority,
+        },
+      });
+
+      this.logger.log(
+        `Feature request ${featureRequest.id} created with priority ${priority}`,
+      );
+
+      return featureRequest;
+    } else {
+      this.logger.warn(
+        `User attempted to create feature request but is not in waitlist`,
+      );
+      throw new Unauthorized('Not authorized');
     }
   }
 }
