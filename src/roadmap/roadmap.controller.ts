@@ -53,7 +53,7 @@ export class RoadmapController {
       this.logger.log(
         `Creating feature request for ${createFeatureRequestDto.email}`,
       );
-      return await this.featureService.createFeatureRequest(
+      await this.featureService.createFeatureRequest(
         createFeatureRequestDto.email,
         createFeatureRequestDto.description,
         createFeatureRequestDto.priority,

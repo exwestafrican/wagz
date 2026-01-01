@@ -6,7 +6,7 @@ import { createTestApp } from '@/test-helpers/test-app';
 import request from 'supertest';
 import { FeaturesService } from '@/roadmap/service/feature.service';
 import { PrismaService } from '@/prisma/prisma.service';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { FeatureRequestPriority, FeatureStage } from '@/generated/prisma/enums';
 import { FeatureDto } from '@/roadmap/dto/feature.dto';
 import featureFactory from '@/factories/roadmap/features.factory';
