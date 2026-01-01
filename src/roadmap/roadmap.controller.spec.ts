@@ -24,7 +24,7 @@ describe('RoadmapController', () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule, WaitlistModule],
       controllers: [RoadmapController],
-      providers: [FeaturesService],
+      providers: [FeaturesService, WaitlistService],
     }).compile();
 
     app = await createTestApp(module);
@@ -81,30 +81,46 @@ describe('RoadmapController', () => {
       await waitlistService.join(testEmail);
     });
 
-    it('should create a feature request', async () => {
-      const response = await request(getHttpServer(app))
+    it('should create a feature request when user is already in waitlist', async () => {
+      await request(getHttpServer(app))
         .post(RoadmapEndpoints.FEATURE_REQUEST)
         .send({
           email: testEmail,
           description: 'test feature request',
           priority: FeatureRequestPriority.LOW,
         })
-        .set('Accept', 'application/json');
-
-      console.log('Response body:', JSON.stringify(response.body, null, 2));
-      expect(response.status).toBe(201);
+        .set('Accept', 'application/json')
+        .expect(201);
     });
 
-    it('should be unauthorized if user is not on waitlist', async () => {
+    it('should auto-join user to waitlist and create feature request when user is not in waitlist', async () => {
+      const newUserEmail = 'newuser@gmail.com';
+
+      // Verify user is not in waitlist
+      const subscriptionBefore =
+        await prismaService.featureSubscription.findFirst({
+          where: { email: newUserEmail },
+        });
+      expect(subscriptionBefore).toBeNull();
+
+      // Create feature request (should auto-join to waitlist)
       await request(getHttpServer(app))
         .post(RoadmapEndpoints.FEATURE_REQUEST)
         .send({
-          email: 'sammy@gmail.com',
-          description: 'test feature request',
-          priority: FeatureRequestPriority.LOW,
+          email: newUserEmail,
+          description: 'new feature request',
+          priority: FeatureRequestPriority.HIGH,
         })
         .set('Accept', 'application/json')
-        .expect(401);
+        .expect(201);
+
+      // Verify user was added to waitlist
+      const subscriptionAfter =
+        await prismaService.featureSubscription.findFirst({
+          where: { email: newUserEmail },
+        });
+      expect(subscriptionAfter).not.toBeNull();
+      expect(subscriptionAfter?.email).toBe(newUserEmail);
     });
   });
 });

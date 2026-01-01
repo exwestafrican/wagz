@@ -4,7 +4,7 @@ import { WaitlistService } from '@/waitlist/waitlist.service';
 import { RoadmapModule } from '@/roadmap/roadmap.module';
 
 @Module({
-  imports: [RoadmapModule],
+  imports: [],
   controllers: [WaitlistController],
   providers: [WaitlistService],
 })
