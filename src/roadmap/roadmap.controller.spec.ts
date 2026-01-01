@@ -122,5 +122,31 @@ describe('RoadmapController', () => {
       expect(subscriptionAfter).not.toBeNull();
       expect(subscriptionAfter?.email).toBe(newUserEmail);
     });
+
+    describe('validation', () => {
+      it('should return 400 if email is not valid', async () => {
+        await request(getHttpServer(app))
+          .post(RoadmapEndpoints.FEATURE_REQUEST)
+          .send({
+            email: 'invalid-email',
+            description: 'test feature request',
+            priority: FeatureRequestPriority.LOW,
+          })
+          .set('Accept', 'application/json')
+          .expect(400);
+      });
+
+      it('should return 400 if description is more than 5000 characters', async () => {
+        await request(getHttpServer(app))
+          .post(RoadmapEndpoints.FEATURE_REQUEST)
+          .send({
+            email: testEmail,
+            description: 'a'.repeat(5001),
+            priority: FeatureRequestPriority.LOW,
+          })
+          .set('Accept', 'application/json')
+          .expect(400);
+      });
+    });
   });
 });
