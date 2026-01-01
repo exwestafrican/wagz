@@ -1,10 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { FeatureStage, FeatureRequestPriority } from '@/generated/prisma/enums';
-import PRISMA_CODES from '@/prisma/consts';
-import { Prisma } from '@/generated/prisma/client';
-import NotFoundInDb from '@/common/exceptions/not-found';
-import { MAIN_FEATURE } from '@/roadmap/consts';
 import { WaitlistService } from '@/waitlist/waitlist.service';
 
 @Injectable()

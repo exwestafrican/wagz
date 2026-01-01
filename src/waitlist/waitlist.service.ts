@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { FeaturesService } from '@/roadmap/service/feature.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Prisma } from '@/generated/prisma/client';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
