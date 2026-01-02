@@ -129,7 +129,7 @@ very file exists with
 ```bash
 ls -la /etc/letsencrypt/live/api.envoye.co/
 ```
-after setup run the following
+after setup, please use seed to update db and run the following
 
 ```bash
 $ pnpx prisma migrate deploy
