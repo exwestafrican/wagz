@@ -1,10 +1,14 @@
 name: Deploy to Lightsail
 
 on:
-  push:
-    branches:
-      - main
-
+    push:
+      branches:
+        - main
+      paths-ignore:
+        - 'prisma/schemas/**'
+        - 'prisma/migrations/**'
+        - '.gitignore'
+        - '**.md'
 jobs:
   test:
     runs-on: ubuntu-latest
