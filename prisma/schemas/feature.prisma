@@ -13,6 +13,7 @@ model Feature {
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
   subscriptions FeatureSubscription[]
+  voteRecords   FeatureVotes[]
 }
 
 model FeatureSubscription {
@@ -44,4 +45,17 @@ model FeatureRequest {
 
   @@index([requestedByUserEmail]) // For querying request by requestedByUserEmail
   @@index([priority]) // For querying request by priority
+}
+
+model FeatureVotes {
+  id        String   @id @default(uuid()) @db.Uuid
+  email     String   @db.VarChar(255)
+  feature   Feature  @relation(fields: [featureId], references: [id], onDelete: Cascade) // votes deleted when feature is deleted
+  featureId String   @db.Uuid
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([email, featureId]) // Composite unique: same email can vote for different features
+  @@index([email]) // For querying votes by email
+  @@index([featureId])
 }
