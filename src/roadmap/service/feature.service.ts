@@ -3,6 +3,8 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { FeatureStage, FeatureRequestPriority } from '@/generated/prisma/enums';
 import { WaitlistService } from '@/waitlist/waitlist.service';
 import { FeatureVotes, Prisma } from '@/generated/prisma/client';
+import PRISMA_CODES from '@/prisma/consts';
+import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Injectable()
 export class FeaturesService {
@@ -117,6 +119,12 @@ export class FeaturesService {
       });
     } catch (error) {
       this.logger.error(`Transaction failed: ${error}`);
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === PRISMA_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION
+      ) {
+        throw new NotFoundInDb('Feature does not exist');
+      }
       throw error;
     }
   }

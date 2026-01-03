@@ -206,5 +206,16 @@ describe('RoadmapController', () => {
 
       expect((secondResponse.body as Feature).voteCount).toBe(0);
     });
+
+    it('should return 404 if feature does not exist', async () => {
+      await request(getHttpServer(app))
+        .post(RoadmapEndpoints.VOTE)
+        .send({
+          email: 'ore@gmail.com',
+          featureId: 'c14d8c2f-c357-46e4-9342-e6f02a6734c8',
+        })
+        .set('Accept', 'application/json')
+        .expect(404);
+    });
   });
 });
