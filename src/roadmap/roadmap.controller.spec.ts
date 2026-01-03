@@ -15,6 +15,7 @@ import { WaitlistModule } from '@/waitlist/waitlist.module';
 import { WaitlistService } from '@/waitlist/waitlist.service';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { Feature } from '@/generated/prisma/client';
+import { before } from 'node:test';
 
 describe('RoadmapController', () => {
   let app: INestApplication;
@@ -79,12 +80,12 @@ describe('RoadmapController', () => {
     const testEmail = 'test@gmail.com';
 
     beforeAll(async () => {
-      const mainFeature = featureFactory.build(
-        {},
-        { transient: { main: true } },
-      );
-      await prismaService.feature.create({ data: mainFeature });
+      await setupMainFeature(prismaService);
       await waitlistService.join(testEmail);
+    });
+
+    afterAll(async () => {
+      await prismaService.feature.deleteMany();
     });
 
     it('should create a feature request when user is already in waitlist', async () => {
@@ -159,7 +160,7 @@ describe('RoadmapController', () => {
   describe('Toggle votes', () => {
     let feature: Feature;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       feature = featureFactory.build({
         name: 'users can create todolist',
         voteCount: 0,
@@ -168,6 +169,11 @@ describe('RoadmapController', () => {
         data: feature,
       });
       await setupMainFeature(prismaService);
+    });
+
+
+    afterEach(async () => {
+      await prismaService.feature.deleteMany();
     });
 
     it('should add users votes and return vote count', async () => {
