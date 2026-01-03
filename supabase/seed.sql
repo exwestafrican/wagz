@@ -1,6 +1,6 @@
-INSERT INTO "Feature" (id, name, votes, icon, stage, "createdAt", "updatedAt")
+INSERT INTO "Feature" (id, name, voteCount, icon, stage, "createdAt", "updatedAt", description)
 VALUES
-  ('b4dfec35-1c7f-4f6d-8f87-8bcd766df26c', 'whatsApp inbox integration',           0, 'message-circle', 'PLANNED',       CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  (gen_random_uuid(), 'receive Gmail emails in your inbox',   1, 'mail',           'IN_PROGRESS',   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  (gen_random_uuid(), 'send and receive images in chat',      3, 'image',          'IN_PROGRESS',   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP),
-  (gen_random_uuid(), 'receive Instagram messages in your inbox', 2, 'message-square', 'IN_PROGRESS', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+  ('b4dfec35-1c7f-4f6d-8f87-8bcd766df26c', 'whatsApp inbox integration',           0, 'message-circle', 'PLANNED',       CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Connect your WhatsApp Business account to receive and respond to customer messages directly from your unified inbox. Keep all conversations in one place for better customer service'),
+  (gen_random_uuid(), 'receive Gmail emails in your inbox',   1, 'mail',           'IN_PROGRESS',   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Integrate your Gmail account to view and manage email conversations alongside your other communication channels. No more switching between platforms to stay on top of customer inquiries.'),
+  (gen_random_uuid(), 'send and receive images in chat',      3, 'image',          'IN_PROGRESS',   CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Send and receive images within chat conversations to provide visual support, share product photos, or receive customer feedback with screenshots. Make conversations more engaging and effective.'),
+  (gen_random_uuid(), 'receive Instagram messages in your inbox', 2, 'message-square', 'IN_PROGRESS', CURRENT_TIMESTAMP, CURRENT_TIMESTAMP, 'Receive and manage Instagram direct messages directly within your inbox, allowing you to respond to customer inquiries, engage with followers, and handle conversations in one centralized place without switching between platforms.');
