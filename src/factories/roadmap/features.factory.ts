@@ -12,6 +12,7 @@ const featureFactory = Factory.define<Feature, FeatureTransientParams>(
     return {
       id: faker.string.uuid(),
       name: transientParams.main ? MAIN_FEATURE : faker.lorem.words(3),
+      description: faker.lorem.words(55),
       voteCount: faker.number.int({ min: 0, max: 100 }),
       icon: faker.string.alpha(15),
       stage: faker.helpers.arrayElement(Object.values(FeatureStage)),
