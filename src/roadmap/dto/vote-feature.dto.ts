@@ -1,5 +1,6 @@
 import { IsNotDisposableEmail } from '@/common/validators/is-not-disposable-email.decorator';
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
 import { IsEmail, IsNotEmpty, IsUUID } from 'class-validator';
 
 export default class VoteFeatureDto {
@@ -9,6 +10,7 @@ export default class VoteFeatureDto {
   })
   @IsNotEmpty()
   @IsEmail({}, { message: 'Invalid email address' })
+  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsNotDisposableEmail({ message: 'Invalid email address' })
   email: string;
 
