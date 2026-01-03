@@ -2,7 +2,6 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { FeatureStage, FeatureRequestPriority } from '@/generated/prisma/enums';
 import { WaitlistService } from '@/waitlist/waitlist.service';
-import PRISMA_CODES from '@/prisma/consts';
 import { FeatureVotes, Prisma } from '@/generated/prisma/client';
 
 @Injectable()
@@ -117,7 +116,7 @@ export class FeaturesService {
         where: { id: featureId },
       });
     } catch (error) {
-      this.logger.error(`Transaction failed: ${error.message}`);
+      this.logger.error(`Transaction failed: ${error}`);
       throw error;
     }
   }
