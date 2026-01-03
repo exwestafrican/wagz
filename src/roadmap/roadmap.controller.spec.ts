@@ -14,11 +14,17 @@ import getHttpServer from '@/test-helpers/get-http-server';
 import { WaitlistModule } from '@/waitlist/waitlist.module';
 import { WaitlistService } from '@/waitlist/waitlist.service';
 import { PrismaModule } from '@/prisma/prisma.module';
+import { Feature } from '@/generated/prisma/client';
 
 describe('RoadmapController', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let waitlistService: WaitlistService;
+
+  async function setupMainFeature(prismaService: PrismaService) {
+    const mainFeature = featureFactory.build({}, { transient: { main: true } });
+    await prismaService.feature.create({ data: mainFeature });
+  }
 
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -147,6 +153,58 @@ describe('RoadmapController', () => {
           .set('Accept', 'application/json')
           .expect(400);
       });
+    });
+  });
+
+  describe('Toggle votes', () => {
+    let feature: Feature;
+
+    beforeAll(async () => {
+      feature = featureFactory.build({
+        name: 'users can create todolist',
+        voteCount: 0,
+      });
+      await prismaService.feature.create({
+        data: feature,
+      });
+      await setupMainFeature(prismaService);
+    });
+
+    it('should add users votes and return vote count', async () => {
+      const response = await request(getHttpServer(app))
+        .post(RoadmapEndpoints.VOTE)
+        .send({
+          email: 'jenrola@gmail.com',
+          featureId: feature.id,
+        })
+        .set('Accept', 'application/json')
+        .expect(200);
+
+      expect((response.body as Feature).voteCount).toBe(1);
+    });
+
+    it('should toggle users votes when called multiple times', async () => {
+      const firstResponse = await request(getHttpServer(app))
+        .post(RoadmapEndpoints.VOTE)
+        .send({
+          email: 'ore@gmail.com',
+          featureId: feature.id,
+        })
+        .set('Accept', 'application/json')
+        .expect(200);
+
+      expect((firstResponse.body as Feature).voteCount).toBe(1);
+
+      const secondResponse = await request(getHttpServer(app))
+        .post(RoadmapEndpoints.VOTE)
+        .send({
+          email: 'ore@gmail.com',
+          featureId: feature.id,
+        })
+        .set('Accept', 'application/json')
+        .expect(200);
+
+      expect((secondResponse.body as Feature).voteCount).toBe(0);
     });
   });
 });

@@ -11,6 +11,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FeaturesService } from '@/roadmap/service/feature.service';
 import { FeatureDto } from '@/roadmap/dto/feature.dto';
 import { CreateFeatureRequestDto } from '@/roadmap/dto/create-feature-request.dto';
+import VoteFeatureDto from './dto/vote-feature.dto';
 
 @Controller('roadmap')
 @ApiTags('roadmap')
@@ -20,7 +21,7 @@ export class RoadmapController {
   constructor(private readonly featureService: FeaturesService) {}
 
   @Get('future-features')
-  @ApiOperation({ summary: 'Allow user to authenticate with a magic link' })
+  @ApiOperation({ summary: 'Get future features' })
   @ApiResponse({
     status: 200,
     description: 'List of features planned and in progress',
@@ -50,6 +51,20 @@ export class RoadmapController {
       createFeatureRequestDto.email,
       createFeatureRequestDto.description,
       createFeatureRequestDto.priority,
+    );
+  }
+
+  @Post('vote')
+  @ApiOperation({ summary: 'Toggle vote for a feature' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Vote toggled successfully',
+  })
+  @HttpCode(HttpStatus.OK)
+  async toggleVote(@Body() voteFeatureDto: VoteFeatureDto) {
+    return await this.featureService.toggleVote(
+      voteFeatureDto.email,
+      voteFeatureDto.featureId,
     );
   }
 }

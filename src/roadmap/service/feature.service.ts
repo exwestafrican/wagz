@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { FeatureStage, FeatureRequestPriority } from '@/generated/prisma/enums';
 import { WaitlistService } from '@/waitlist/waitlist.service';
+import PRISMA_CODES from '@/prisma/consts';
+import { FeatureVotes, Prisma } from '@/generated/prisma/client';
 
 @Injectable()
 export class FeaturesService {
@@ -27,7 +29,7 @@ export class FeaturesService {
     const hasSubscribedToMainFeature =
       await this.prismaService.featureSubscription.findFirst({
         where: {
-          email: email.toLowerCase().trim(),
+          email: email,
         },
       });
     return hasSubscribedToMainFeature ? true : false;
@@ -38,19 +40,85 @@ export class FeaturesService {
     description: string,
     priority: FeatureRequestPriority,
   ) {
-    const normalizedEmail = email.toLowerCase().trim();
-    const userIsInWaitlist = await this.userIsInWaitlist(normalizedEmail);
+    const userIsInWaitlist = await this.userIsInWaitlist(email);
 
     if (!userIsInWaitlist) {
       this.logger.log(`User not in waitlist, adding them now`);
-      await this.waitlistService.join(normalizedEmail);
+      await this.waitlistService.join(email);
     }
     return this.prismaService.featureRequest.create({
       data: {
-        requestedByUserEmail: normalizedEmail,
+        requestedByUserEmail: email,
         description: description.trim(),
         priority,
       },
     });
+  }
+
+  private async addVote(
+    tx: Prisma.TransactionClient,
+    email: string,
+    featureId: string,
+  ) {
+    await tx.featureVotes.create({
+      data: {
+        email: email,
+        featureId: featureId,
+      },
+    });
+    await tx.feature.update({
+      where: { id: featureId },
+      data: { voteCount: { increment: 1 } },
+    });
+  }
+
+  private async removeVote(
+    tx: Prisma.TransactionClient,
+    existingVote: FeatureVotes,
+  ) {
+    await tx.featureVotes.delete({
+      where: {
+        id: existingVote.id,
+      },
+    });
+    await tx.feature.update({
+      where: { id: existingVote.featureId },
+      data: { voteCount: { decrement: 1 } },
+    });
+  }
+
+  async toggleVote(email: string, featureId: string) {
+    try {
+      await this.prismaService.$transaction(async (tx) => {
+        const existingVote = await tx.featureVotes.findUnique({
+          where: {
+            email_featureId: {
+              email: email,
+              featureId: featureId,
+            },
+          },
+        });
+
+        if (existingVote) {
+          await this.removeVote(tx, existingVote);
+        } else {
+          await this.addVote(tx, email, featureId);
+        }
+      });
+
+      const userIsInWaitlist = await this.userIsInWaitlist(email);
+
+      if (!userIsInWaitlist) {
+        this.logger.log(`User not in waitlist, adding them now`);
+        await this.waitlistService.join(email);
+      }
+
+      return await this.prismaService.feature.findUnique({
+        where: { id: featureId },
+      });
+    } catch (error) {
+      this.logger.error(`Transaction failed: ${error.message}`);
+      throw error;
+    }
   }
 }
