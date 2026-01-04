@@ -86,7 +86,9 @@ export class RoadmapController {
   }
 
   @Get('user-votes')
-  @ApiOperation({ summary: 'Get list of feature IDs that a user has voted for' })
+  @ApiOperation({
+    summary: 'Get list of feature IDs that a user has voted for',
+  })
   @ApiQuery({
     name: 'email',
     required: true,

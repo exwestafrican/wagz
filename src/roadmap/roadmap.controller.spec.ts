@@ -278,9 +278,9 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      expect(response.body.featureIds).toHaveLength(2);
-      expect(response.body.featureIds).toContain(feature1.id);
-      expect(response.body.featureIds).toContain(feature2.id);
+      expect(response.body).toHaveLength(2);
+      expect(response.body).toContain({ featureId: feature1.id });
+      expect(response.body).toContain({ featureId: feature2.id });
     });
 
     it('should only return votes for the specified user', async () => {
@@ -303,9 +303,10 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      expect(response.body.featureIds).toHaveLength(1);
-      expect(response.body.featureIds).toContain(feature1.id);
-      expect(response.body.featureIds).not.toContain(feature2.id);
+      const body = response.body as { featureId: string }[];
+      expect(body).toHaveLength(1);
+      expect(response.body).toContain({ featureId: feature1.id });
+      expect(response.body).not.toContain({ featureId: feature2.id });
     });
 
     it('should return 400 if email is not valid', async () => {

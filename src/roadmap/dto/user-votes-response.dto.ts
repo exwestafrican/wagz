@@ -11,4 +11,3 @@ export class UserVotesResponseDto {
   })
   featureIds: string[];
 }
-
