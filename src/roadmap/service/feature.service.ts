@@ -128,4 +128,17 @@ export class FeaturesService {
       throw error;
     }
   }
+
+  async getUserVotes(email: string): Promise<string[]> {
+    const votes = await this.prismaService.featureVotes.findMany({
+      where: {
+        email: email,
+      },
+      select: {
+        featureId: true,
+      },
+    });
+
+    return votes.map((vote) => vote.featureId);
+  }
 }

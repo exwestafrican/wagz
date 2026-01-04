@@ -7,12 +7,15 @@ import {
   Logger,
   NotFoundException,
   Post,
+  Query,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FeaturesService } from '@/roadmap/service/feature.service';
 import { FeatureDto } from '@/roadmap/dto/feature.dto';
 import { CreateFeatureRequestDto } from '@/roadmap/dto/create-feature-request.dto';
 import VoteFeatureDto from './dto/vote-feature.dto';
+import GetUserVotesDto from './dto/get-user-votes.dto';
+import { UserVotesResponseDto } from './dto/user-votes-response.dto';
 import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Controller('roadmap')
@@ -80,5 +83,28 @@ export class RoadmapController {
         throw error;
       }
     }
+  }
+
+  @Get('user-votes')
+  @ApiOperation({ summary: 'Get list of feature IDs that a user has voted for' })
+  @ApiQuery({
+    name: 'email',
+    required: true,
+    type: String,
+    description: 'Email of the user to get votes for',
+    example: 'user@example.com',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'List of feature IDs that the user has voted for',
+    type: UserVotesResponseDto,
+  })
+  @HttpCode(HttpStatus.OK)
+  async getUserVotes(@Query() getUserVotesDto: GetUserVotesDto) {
+    this.logger.log(`Getting votes for user`);
+    const featureIds = await this.featureService.getUserVotes(
+      getUserVotesDto.email,
+    );
+    return { featureIds };
   }
 }
