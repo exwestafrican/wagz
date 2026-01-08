@@ -88,7 +88,7 @@ export class FeaturesService {
     });
   }
 
-  async toggleVote(email: string, featureId: string) : Promise<Feature>{
+  async toggleVote(email: string, featureId: string): Promise<Feature> {
     try {
       await this.prismaService.$transaction(async (tx) => {
         const existingVote = await tx.featureVotes.findUnique({
@@ -114,7 +114,7 @@ export class FeaturesService {
         await this.waitlistService.join(email);
       }
 
-      return  this.prismaService.feature.findFirstOrThrow({
+      return this.prismaService.feature.findFirstOrThrow({
         where: { id: featureId },
       });
     } catch (error) {
@@ -123,9 +123,14 @@ export class FeaturesService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === PRISMA_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION
       ) {
-        this.logger.error(`Feature does not exist (FK constraint) ${featureId}`);
+        this.logger.error(
+          `Feature does not exist (FK constraint) ${featureId}`,
+        );
         throw new NotFoundInDb('Feature does not exist (FK constraint)');
-      } else if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === PRISMA_CODES.NOT_FOUND) {
+      } else if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === PRISMA_CODES.NOT_FOUND
+      ) {
         this.logger.error(`Feature does not exist ${featureId}`);
         throw new NotFoundInDb('Feature does not exist');
       }

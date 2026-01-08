@@ -27,4 +27,3 @@ export class FeatureResponseDto {
   })
   voteCount: number;
 }
-
