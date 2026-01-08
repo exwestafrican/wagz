@@ -13,15 +13,15 @@ import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FeaturesService } from '@/roadmap/service/feature.service';
 import { FeatureDto } from '@/roadmap/dto/feature.dto';
 import { CreateFeatureRequestDto } from '@/roadmap/dto/create-feature-request.dto';
-import VoteFeatureDto from './dto/vote-feature.dto';
-import GetUserVotesDto from './dto/get-user-votes.dto';
-import { UserVotesResponseDto } from './dto/user-votes-response.dto';
-import { FutureFeatureResponseDto } from './dto/future-features-response.dto';
-import { CreateFeatureRequestResponseDto } from './dto/create-feature-request-response.dto';
+import VoteFeatureDto from '@/roadmap/dto/vote-feature.dto';
+import GetUserVotesDto from '@/roadmap/dto/get-user-votes.dto';
+import { UserVotesResponseDto } from '@/roadmap/dto/user-votes-response.dto';
+import { FutureFeatureResponseDto } from '@/roadmap/dto/future-features-response.dto';
+import { CreateFeatureRequestResponseDto } from '@/roadmap/dto/create-feature-request-response.dto';
 import {
   toFutureFeatureResponseDto,
   toCreateFeatureRequestResponseDto,
-} from './mappers/feature.mapper';
+} from '@/roadmap/mappers/feature.mapper';
 import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Controller('roadmap')
