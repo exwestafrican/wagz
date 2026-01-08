@@ -2,6 +2,7 @@ import { Feature, FeatureRequest } from '@/generated/prisma/client';
 import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
 import { FeatureRequestResponseDto } from '@/roadmap/dto/feature-request-response.dto';
 import { UserVotesResponseDto } from '@/roadmap/dto/user-votes-response.dto';
+import { CreateFeatureRequestResponseDto } from '../dto/create-feature-request-response.dto';
 
 export function toFeatureResponseDto(feature: Feature): FeatureResponseDto {
   return {
@@ -29,3 +30,15 @@ export function toUserVotesResponseDto(
 ): UserVotesResponseDto {
   return { featureIds };
 }
+
+export function toCreateFeatureRequestResponseDto(
+  featureRequest: FeatureRequest,
+): CreateFeatureRequestResponseDto {
+  return {
+    id: featureRequest.id,
+    description: featureRequest.description,
+    priority: featureRequest.priority,
+    createdAt: featureRequest.createdAt,
+  };
+}
+

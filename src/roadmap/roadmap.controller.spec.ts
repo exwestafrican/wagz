@@ -179,6 +179,28 @@ describe('RoadmapController', () => {
         expect(body.property).toMatchObject(['description']);
       });
     });
+
+    it('should return response matching CreateFeatureRequestResponseDto structure', async () => {
+      const response = await request(getHttpServer(app))
+        .post(RoadmapEndpoints.FEATURE_REQUEST)
+        .send({
+          email: testEmail,
+          description: 'test feature request for structure validation',
+          priority: FeatureRequestPriority.MEDIUM,
+        })
+        .set('Accept', 'application/json')
+        .expect(201);
+
+      const featureRequest =
+        response.body as CreateFeatureRequestResponseDto;
+
+      expect(featureRequest).toMatchObject({
+        id: expect.any(Number),
+        description: expect.any(String),
+        priority: expect.any(String),
+        createdAt: expect.any(String),
+      });
+    });
   });
 
   describe('Toggle votes', () => {
