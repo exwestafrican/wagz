@@ -181,7 +181,7 @@ describe('RoadmapController', () => {
       });
     });
 
-    it('should return response matching CreateFeatureRequestResponseDto structure', async () => {
+    it('should return response matching FeatureRequestResponseDto structure', async () => {
       const response = await request(getHttpServer(app))
         .post(RoadmapEndpoints.FEATURE_REQUEST)
         .send({
@@ -193,7 +193,7 @@ describe('RoadmapController', () => {
         .expect(201);
 
       const featureRequest =
-        response.body as CreateFeatureRequestResponseDto;
+        response.body as FeatureRequestResponseDto;
 
       expect(featureRequest).toMatchObject({
         id: expect.any(Number),
