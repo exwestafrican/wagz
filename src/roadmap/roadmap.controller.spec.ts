@@ -396,5 +396,28 @@ describe('RoadmapController', () => {
       const body = response.body as ValidationErrorResponseDto;
       expect(body.property).toMatchObject(['email']);
     });
+
+    it('should return response matching UserVotesResponseDto structure', async () => {
+      await prismaService.featureVotes.createMany({
+        data: [
+          { email: userEmail, featureId: feature1.id },
+          { email: userEmail, featureId: feature2.id },
+        ],
+      });
+
+      const response = await request(getHttpServer(app))
+        .get(RoadmapEndpoints.USER_VOTES)
+        .query({
+          email: userEmail,
+        })
+        .set('Accept', 'application/json')
+        .expect(200);
+
+      const userVotesResponse = response.body as UserVotesResponseDto;
+
+      expect(userVotesResponse).toMatchObject({
+        featureIds: expect.any(Array),
+      });
+    });
   });
 });
