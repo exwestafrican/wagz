@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FeatureStage } from '@/generated/prisma/enums';
-import { IsEnum } from 'class-validator';
 
 export class FeatureResponseDto {
   @ApiProperty({ description: 'Id of feature' })
@@ -19,8 +18,10 @@ export class FeatureResponseDto {
   })
   icon: string;
 
-  @ApiProperty({ description: 'What stage are we in for the feature' })
-  @IsEnum(FeatureStage)
+  @ApiProperty({
+    description: 'What stage are we in for the feature',
+    enum: FeatureStage,
+  })
   stage: FeatureStage;
 
   @ApiProperty({
