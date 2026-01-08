@@ -115,7 +115,9 @@ export class RoadmapController {
     type: UserVotesResponseDto,
   })
   @HttpCode(HttpStatus.OK)
-  async getUserVotes(@Query() getUserVotesDto: GetUserVotesDto) {
+  async getUserVotes(
+    @Query() getUserVotesDto: GetUserVotesDto,
+  ): Promise<UserVotesResponseDto> {
     this.logger.log(`Getting votes for user`);
     const featureIds = await this.featureService.getUserVotes(
       getUserVotesDto.email,
