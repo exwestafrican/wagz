@@ -16,6 +16,8 @@ import { CreateFeatureRequestDto } from '@/roadmap/dto/create-feature-request.dt
 import VoteFeatureDto from './dto/vote-feature.dto';
 import GetUserVotesDto from './dto/get-user-votes.dto';
 import { UserVotesResponseDto } from './dto/user-votes-response.dto';
+import { FutureFeatureResponseDto } from './dto/future-features-response.dto';
+import { toFutureFeatureResponseDto } from './mappers/feature.mapper';
 import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Controller('roadmap')
@@ -30,13 +32,14 @@ export class RoadmapController {
   @ApiResponse({
     status: 200,
     description: 'List of features planned and in progress',
-    type: FeatureDto,
+    type: FutureFeatureResponseDto,
     isArray: true,
   })
   @HttpCode(200)
-  getFutureFeatures() {
+  async getFutureFeatures(): Promise<FutureFeatureResponseDto[]> {
     this.logger.log('Getting future features');
-    return this.featureService.futureFeatures();
+    const features = await this.featureService.futureFeatures();
+    return features.map(toFutureFeatureResponseDto);
   }
 
   @Post('feature-request')
