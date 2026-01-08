@@ -72,6 +72,26 @@ describe('RoadmapController', () => {
       );
       expect(stages).toHaveLength(2); // Ensure no extra items
     });
+
+    it('should return response matching FutureFeatureResponseDto structure', async () => {
+      const response = await request(getHttpServer(app))
+        .get(RoadmapEndpoints.FUTURE_FEATURES)
+        .set('Accept', 'application/json')
+        .expect(200);
+
+      const features = response.body as FutureFeatureResponseDto[];
+
+      expect(features.length).toBeGreaterThan(0);
+
+      features.forEach((feature) => {
+        expect(feature).toMatchObject({
+          id: expect.any(String),
+          name: expect.any(String),
+          icon: expect.any(String),
+          stage: expect.any(String),
+        });
+      });
+    });
   });
 
   describe('Create feature request', () => {
