@@ -8,7 +8,6 @@ import { FeaturesService } from '@/roadmap/service/feature.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { FeatureRequestPriority, FeatureStage } from '@/generated/prisma/enums';
-import { FeatureDto } from '@/roadmap/dto/feature.dto';
 import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
 import { FeatureRequestResponseDto } from '@/roadmap/dto/feature-request-response.dto';
 import { UserVotesResponseDto } from '@/roadmap/dto/user-votes-response.dto';
@@ -63,7 +62,7 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      const body = response.body as FeatureDto[];
+      const body = response.body as FeatureResponseDto[];
       expect(body).toHaveLength(2);
       const stages: FeatureStage[] = body.map(
         (feature) => feature.stage as FeatureStage,

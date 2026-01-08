@@ -11,7 +11,6 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { FeaturesService } from '@/roadmap/service/feature.service';
-import { FeatureDto } from '@/roadmap/dto/feature.dto';
 import { CreateFeatureRequestDto } from '@/roadmap/dto/create-feature-request.dto';
 import VoteFeatureDto from '@/roadmap/dto/vote-feature.dto';
 import GetUserVotesDto from '@/roadmap/dto/get-user-votes.dto';
