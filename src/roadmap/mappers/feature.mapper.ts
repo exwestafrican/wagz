@@ -1,6 +1,7 @@
 import { Feature, FeatureRequest } from '@/generated/prisma/client';
 import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
 import { FeatureRequestResponseDto } from '@/roadmap/dto/feature-request-response.dto';
+import { UserVotesResponseDto } from '@/roadmap/dto/user-votes-response.dto';
 
 export function toFeatureResponseDto(
   feature: Feature,
@@ -23,5 +24,11 @@ export function toFeatureRequestResponseDto(
     priority: featureRequest.priority,
     createdAt: featureRequest.createdAt,
   };
+}
+
+export function toUserVotesResponseDto(
+  featureIds: string[],
+): UserVotesResponseDto {
+  return { featureIds };
 }
 

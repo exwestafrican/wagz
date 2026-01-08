@@ -21,6 +21,7 @@ import { FeatureRequestResponseDto } from '@/roadmap/dto/feature-request-respons
 import {
   toFeatureResponseDto,
   toFeatureRequestResponseDto,
+  toUserVotesResponseDto,
 } from '@/roadmap/mappers/feature.mapper';
 import NotFoundInDb from '@/common/exceptions/not-found';
 
@@ -122,6 +123,6 @@ export class RoadmapController {
     const featureIds = await this.featureService.getUserVotes(
       getUserVotesDto.email,
     );
-    return { featureIds };
+    return toUserVotesResponseDto(featureIds);
   }
 }
