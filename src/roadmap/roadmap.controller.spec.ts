@@ -9,8 +9,6 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { FeatureRequestPriority, FeatureStage } from '@/generated/prisma/enums';
 import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
-import { FeatureRequestResponseDto } from '@/roadmap/dto/feature-request-response.dto';
-import { UserVotesResponseDto } from '@/roadmap/dto/user-votes-response.dto';
 import featureFactory from '@/factories/roadmap/features.factory';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { WaitlistModule } from '@/waitlist/waitlist.module';
