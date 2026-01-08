@@ -73,9 +73,9 @@ export class RoadmapController {
     description: 'Feature not found',
   })
   @HttpCode(HttpStatus.OK)
-  async toggleVote(@Body() voteFeatureDto: VoteFeatureDto) {
+  async toggleVote(@Body() voteFeatureDto: VoteFeatureDto): Promise<void> {
     try {
-      return await this.featureService.toggleVote(
+      await this.featureService.toggleVote(
         voteFeatureDto.email,
         voteFeatureDto.featureId,
       );
