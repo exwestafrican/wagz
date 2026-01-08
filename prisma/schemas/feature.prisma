@@ -65,6 +65,7 @@ model FeatureVotes {
 model FeatureFeedback {
   id        String  @id @default(uuid()) @db.Uuid
   text      String
+  email     String  @default("john.done@envoye.co") @db.VarChar(255)
   feature   Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
   featureId String  @db.Uuid
 }
