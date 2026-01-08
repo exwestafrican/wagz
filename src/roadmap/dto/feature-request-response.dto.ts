@@ -19,6 +19,9 @@ export class FeatureRequestResponseDto {
 
   @ApiProperty({
     description: 'Timestamp when the feature request was created',
+    type: String,
+    format: 'date-time',
+    example: '2024-01-15T10:30:00.000Z',
   })
   createdAt: Date;
 }
