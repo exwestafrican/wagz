@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { FeatureRequestPriority } from '@/generated/prisma/enums';
 
-export class CreateFeatureRequestResponseDto {
+export class FeatureRequestResponseDto {
   @ApiProperty({ description: 'Id of the created feature request' })
   id: number;
 

@@ -1,6 +1,6 @@
 import { Feature, FeatureRequest } from '@/generated/prisma/client';
 import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
-import { CreateFeatureRequestResponseDto } from '@/roadmap/dto/create-feature-request-response.dto';
+import { FeatureRequestResponseDto } from '@/roadmap/dto/feature-request-response.dto';
 
 export function toFeatureResponseDto(
   feature: Feature,
@@ -14,9 +14,9 @@ export function toFeatureResponseDto(
   };
 }
 
-export function toCreateFeatureRequestResponseDto(
+export function toFeatureRequestResponseDto(
   featureRequest: FeatureRequest,
-): CreateFeatureRequestResponseDto {
+): FeatureRequestResponseDto {
   return {
     id: featureRequest.id,
     description: featureRequest.description,
