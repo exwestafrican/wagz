@@ -26,5 +26,14 @@ export function setupApp(app: INestApplication) {
     SwaggerModule.setup('api', app, document);
   }
 
-  app.useGlobalPipes(new ValidationPipe()); //enable validation globally
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true, // Strip properties that don't have decorators
+      forbidNonWhitelisted: true, // Throw error if non-whitelisted properties are present
+      transform: true, // Automatically transform payloads to DTO instances
+      transformOptions: {
+        enableImplicitConversion: true, // Enable implicit type conversion
+      },
+    }),
+  ); //enable validation globally
 }

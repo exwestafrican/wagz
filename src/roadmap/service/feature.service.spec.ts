@@ -234,4 +234,70 @@ describe('FeatureService', () => {
       });
     });
   });
+
+  describe('Get user votes', () => {
+    let feature1: Feature;
+    let feature2: Feature;
+    const userEmail = 'voter@example.com';
+
+    beforeEach(async () => {
+      const mainFeature = featureFactory.build(
+        {},
+        { transient: { main: true } },
+      );
+      feature1 = featureFactory.build({
+        name: 'Feature 1',
+        voteCount: 0,
+      });
+      feature2 = featureFactory.build({
+        name: 'Feature 2',
+        voteCount: 0,
+      });
+      await prismaService.feature.createMany({
+        data: [mainFeature, feature1, feature2],
+      });
+      await waitlistService.join(userEmail);
+    });
+
+    afterEach(async () => {
+      await prismaService.featureVotes.deleteMany();
+      await prismaService.feature.deleteMany();
+    });
+
+    it('should return empty array when user has no votes', async () => {
+      const votes = await service.getUserVotes(userEmail);
+      expect(votes).toEqual([]);
+    });
+
+    it('should return list of feature IDs that user has voted for', async () => {
+      await prismaService.featureVotes.createMany({
+        data: [
+          { email: userEmail, featureId: feature1.id },
+          { email: userEmail, featureId: feature2.id },
+        ],
+      });
+
+      const votes = await service.getUserVotes(userEmail);
+      expect(votes).toHaveLength(2);
+      expect(votes).toContain(feature1.id);
+      expect(votes).toContain(feature2.id);
+    });
+
+    it('should only return votes for the specified user', async () => {
+      const otherUserEmail = 'other@example.com';
+      await waitlistService.join(otherUserEmail);
+
+      await prismaService.featureVotes.createMany({
+        data: [
+          { email: userEmail, featureId: feature1.id },
+          { email: otherUserEmail, featureId: feature2.id },
+        ],
+      });
+
+      const votes = await service.getUserVotes(userEmail);
+      expect(votes).toHaveLength(1);
+      expect(votes).toContain(feature1.id);
+      expect(votes).not.toContain(feature2.id);
+    });
+  });
 });
