@@ -89,6 +89,7 @@ describe('RoadmapController', () => {
           name: expect.any(String),
           icon: expect.any(String),
           stage: expect.any(String),
+          voteCount: expect.any(Number),
         });
       });
     });
@@ -271,6 +272,27 @@ describe('RoadmapController', () => {
         })
         .set('Accept', 'application/json')
         .expect(404);
+    });
+
+    it('should return response matching FeatureResponseDto structure', async () => {
+      const response = await request(getHttpServer(app))
+        .post(RoadmapEndpoints.VOTE)
+        .send({
+          email: 'test@example.com',
+          featureId: feature.id,
+        })
+        .set('Accept', 'application/json')
+        .expect(200);
+
+      const toggleVoteResponse = response.body as FeatureResponseDto;
+
+      expect(toggleVoteResponse).toMatchObject({
+        id: expect.any(String),
+        name: expect.any(String),
+        icon: expect.any(String),
+        stage: expect.any(String),
+        voteCount: expect.any(Number),
+      });
     });
   });
 
