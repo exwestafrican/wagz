@@ -16,10 +16,10 @@ import { CreateFeatureRequestDto } from '@/roadmap/dto/create-feature-request.dt
 import VoteFeatureDto from '@/roadmap/dto/vote-feature.dto';
 import GetUserVotesDto from '@/roadmap/dto/get-user-votes.dto';
 import { UserVotesResponseDto } from '@/roadmap/dto/user-votes-response.dto';
-import { FutureFeatureResponseDto } from '@/roadmap/dto/future-features-response.dto';
+import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
 import { CreateFeatureRequestResponseDto } from '@/roadmap/dto/create-feature-request-response.dto';
 import {
-  toFutureFeatureResponseDto,
+  toFeatureResponseDto,
   toCreateFeatureRequestResponseDto,
 } from '@/roadmap/mappers/feature.mapper';
 import NotFoundInDb from '@/common/exceptions/not-found';
@@ -36,14 +36,14 @@ export class RoadmapController {
   @ApiResponse({
     status: 200,
     description: 'List of features planned and in progress',
-    type: FutureFeatureResponseDto,
+    type: FeatureResponseDto,
     isArray: true,
   })
   @HttpCode(200)
-  async getFutureFeatures(): Promise<FutureFeatureResponseDto[]> {
+  async getFutureFeatures(): Promise<FeatureResponseDto[]> {
     this.logger.log('Getting future features');
     const features = await this.featureService.futureFeatures();
-    return features.map(toFutureFeatureResponseDto);
+    return features.map(toFeatureResponseDto);
   }
 
   @Post('feature-request')
@@ -73,18 +73,22 @@ export class RoadmapController {
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Vote toggled successfully',
+    type: FeatureResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.NOT_FOUND,
     description: 'Feature not found',
   })
   @HttpCode(HttpStatus.OK)
-  async toggleVote(@Body() voteFeatureDto: VoteFeatureDto): Promise<void> {
+  async toggleVote(
+    @Body() voteFeatureDto: VoteFeatureDto,
+  ): Promise<FeatureResponseDto> {
     try {
-      await this.featureService.toggleVote(
+      const feature = await this.featureService.toggleVote(
         voteFeatureDto.email,
         voteFeatureDto.featureId,
       );
+      return toFeatureResponseDto(feature);
     } catch (error) {
       if (error instanceof NotFoundInDb) {
         throw new NotFoundException(error);

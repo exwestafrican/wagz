@@ -1,15 +1,16 @@
 import { Feature, FeatureRequest } from '@/generated/prisma/client';
-import { FutureFeatureResponseDto } from '@/roadmap/dto/future-features-response.dto';
+import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
 import { CreateFeatureRequestResponseDto } from '@/roadmap/dto/create-feature-request-response.dto';
 
-export function toFutureFeatureResponseDto(
+export function toFeatureResponseDto(
   feature: Feature,
-): FutureFeatureResponseDto {
+): FeatureResponseDto {
   return {
     id: feature.id,
     name: feature.name,
     icon: feature.icon,
     stage: feature.stage,
+    voteCount: feature.voteCount,
   };
 }
 

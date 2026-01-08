@@ -9,7 +9,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { FeatureRequestPriority, FeatureStage } from '@/generated/prisma/enums';
 import { FeatureDto } from '@/roadmap/dto/feature.dto';
-import { FutureFeatureResponseDto } from '@/roadmap/dto/future-features-response.dto';
+import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
 import { CreateFeatureRequestResponseDto } from '@/roadmap/dto/create-feature-request-response.dto';
 import featureFactory from '@/factories/roadmap/features.factory';
 import getHttpServer from '@/test-helpers/get-http-server';
@@ -76,13 +76,13 @@ describe('RoadmapController', () => {
       expect(stages).toHaveLength(2); // Ensure no extra items
     });
 
-    it('should return response matching FutureFeatureResponseDto structure', async () => {
+    it('should return response matching FeatureResponseDto structure', async () => {
       const response = await request(getHttpServer(app))
         .get(RoadmapEndpoints.FUTURE_FEATURES)
         .set('Accept', 'application/json')
         .expect(200);
 
-      const features = response.body as FutureFeatureResponseDto[];
+      const features = response.body as FeatureResponseDto[];
 
       expect(features.length).toBeGreaterThan(0);
 
@@ -92,6 +92,7 @@ describe('RoadmapController', () => {
           name: expect.any(String),
           icon: expect.any(String),
           stage: expect.any(String),
+          voteCount: expect.any(Number),
         });
       });
     });
@@ -228,7 +229,8 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      expect((response.body as Feature).voteCount).toBe(1);
+      const toggleVoteResponse = response.body as FeatureResponseDto;
+      expect(toggleVoteResponse.voteCount).toBe(1);
     });
 
     it('should toggle users votes when called multiple times', async () => {
@@ -241,7 +243,9 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      expect((firstResponse.body as Feature).voteCount).toBe(1);
+      const firstToggleVoteResponse =
+        firstResponse.body as FeatureResponseDto;
+      expect(firstToggleVoteResponse.voteCount).toBe(1);
 
       const secondResponse = await request(getHttpServer(app))
         .post(RoadmapEndpoints.VOTE)
@@ -252,7 +256,9 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      expect((secondResponse.body as Feature).voteCount).toBe(0);
+      const secondToggleVoteResponse =
+        secondResponse.body as FeatureResponseDto;
+      expect(secondToggleVoteResponse.voteCount).toBe(0);
     });
 
     it('should return 404 if feature does not exist', async () => {
@@ -264,6 +270,27 @@ describe('RoadmapController', () => {
         })
         .set('Accept', 'application/json')
         .expect(404);
+    });
+
+    it('should return response matching FeatureResponseDto structure', async () => {
+      const response = await request(getHttpServer(app))
+        .post(RoadmapEndpoints.VOTE)
+        .send({
+          email: 'test@example.com',
+          featureId: feature.id,
+        })
+        .set('Accept', 'application/json')
+        .expect(200);
+
+      const toggleVoteResponse = response.body as FeatureResponseDto;
+
+      expect(toggleVoteResponse).toMatchObject({
+        id: expect.any(String),
+        name: expect.any(String),
+        icon: expect.any(String),
+        stage: expect.any(String),
+        voteCount: expect.any(Number),
+      });
     });
   });
 
