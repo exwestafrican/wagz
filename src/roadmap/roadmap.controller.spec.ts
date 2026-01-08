@@ -10,6 +10,7 @@ import { ConfigModule } from '@nestjs/config';
 import { FeatureRequestPriority, FeatureStage } from '@/generated/prisma/enums';
 import { FeatureDto } from '@/roadmap/dto/feature.dto';
 import { FutureFeatureResponseDto } from '@/roadmap/dto/future-features-response.dto';
+import { CreateFeatureRequestResponseDto } from '@/roadmap/dto/create-feature-request-response.dto';
 import featureFactory from '@/factories/roadmap/features.factory';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { WaitlistModule } from '@/waitlist/waitlist.module';
@@ -173,6 +174,28 @@ describe('RoadmapController', () => {
           })
           .set('Accept', 'application/json')
           .expect(400);
+      });
+    });
+
+    it('should return response matching CreateFeatureRequestResponseDto structure', async () => {
+      const response = await request(getHttpServer(app))
+        .post(RoadmapEndpoints.FEATURE_REQUEST)
+        .send({
+          email: testEmail,
+          description: 'test feature request for structure validation',
+          priority: FeatureRequestPriority.MEDIUM,
+        })
+        .set('Accept', 'application/json')
+        .expect(201);
+
+      const featureRequest =
+        response.body as CreateFeatureRequestResponseDto;
+
+      expect(featureRequest).toMatchObject({
+        id: expect.any(Number),
+        description: expect.any(String),
+        priority: expect.any(String),
+        createdAt: expect.any(String),
       });
     });
   });

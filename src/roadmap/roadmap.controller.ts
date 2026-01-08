@@ -17,7 +17,11 @@ import VoteFeatureDto from './dto/vote-feature.dto';
 import GetUserVotesDto from './dto/get-user-votes.dto';
 import { UserVotesResponseDto } from './dto/user-votes-response.dto';
 import { FutureFeatureResponseDto } from './dto/future-features-response.dto';
-import { toFutureFeatureResponseDto } from './mappers/feature.mapper';
+import { CreateFeatureRequestResponseDto } from './dto/create-feature-request-response.dto';
+import {
+  toFutureFeatureResponseDto,
+  toCreateFeatureRequestResponseDto,
+} from './mappers/feature.mapper';
 import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Controller('roadmap')
@@ -47,19 +51,21 @@ export class RoadmapController {
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Feature request created successfully',
+    type: CreateFeatureRequestResponseDto,
   })
   @HttpCode(HttpStatus.CREATED)
   async createFeatureRequest(
     @Body() createFeatureRequestDto: CreateFeatureRequestDto,
-  ) {
+  ): Promise<CreateFeatureRequestResponseDto> {
     this.logger.log(
       `Creating feature request for ${createFeatureRequestDto.email}`,
     );
-    await this.featureService.createFeatureRequest(
+    const featureRequest = await this.featureService.createFeatureRequest(
       createFeatureRequestDto.email,
       createFeatureRequestDto.description,
       createFeatureRequestDto.priority,
     );
+    return toCreateFeatureRequestResponseDto(featureRequest);
   }
 
   @Post('vote')
