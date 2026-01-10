@@ -15,6 +15,7 @@ import { WaitlistModule } from '@/waitlist/waitlist.module';
 import { WaitlistService } from '@/waitlist/waitlist.service';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { Feature } from '@/generated/prisma/client';
+import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 
 describe('RoadmapController', () => {
   let app: INestApplication;
@@ -131,7 +132,7 @@ describe('RoadmapController', () => {
 
     describe('validation', () => {
       it('should return 400 if email is not valid', async () => {
-        await request(getHttpServer(app))
+        const response = await request(getHttpServer(app))
           .post(RoadmapEndpoints.FEATURE_REQUEST)
           .send({
             email: 'invalid-email',
@@ -140,10 +141,13 @@ describe('RoadmapController', () => {
           })
           .set('Accept', 'application/json')
           .expect(400);
+
+        const body = response.body as ValidationErrorResponseDto;
+        expect(body.property).toMatchObject(['email']);
       });
 
       it('should return 400 if description is more than 5000 characters', async () => {
-        await request(getHttpServer(app))
+        const response = await request(getHttpServer(app))
           .post(RoadmapEndpoints.FEATURE_REQUEST)
           .send({
             email: testEmail,
@@ -152,6 +156,9 @@ describe('RoadmapController', () => {
           })
           .set('Accept', 'application/json')
           .expect(400);
+
+        const body = response.body as ValidationErrorResponseDto;
+        expect(body.property).toMatchObject(['description']);
       });
     });
   });
@@ -312,13 +319,16 @@ describe('RoadmapController', () => {
     });
 
     it('should return 400 if email is not valid', async () => {
-      await request(getHttpServer(app))
+      const response = await request(getHttpServer(app))
         .get(RoadmapEndpoints.USER_VOTES)
         .query({
           email: 'invalid-email',
         })
         .set('Accept', 'application/json')
         .expect(400);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['email']);
     });
   });
 });
