@@ -8,7 +8,7 @@ import { FeaturesService } from '@/roadmap/service/feature.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { FeatureRequestPriority, FeatureStage } from '@/generated/prisma/enums';
-import { FeatureDto } from '@/roadmap/dto/feature.dto';
+import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
 import featureFactory from '@/factories/roadmap/features.factory';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { WaitlistModule } from '@/waitlist/waitlist.module';
@@ -61,11 +61,9 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      const body = response.body as FeatureDto[];
+      const body = response.body as FeatureResponseDto[];
       expect(body).toHaveLength(2);
-      const stages: FeatureStage[] = body.map(
-        (feature) => feature.stage as FeatureStage,
-      );
+      const stages: FeatureStage[] = body.map((feature) => feature.stage);
       expect(stages).toEqual(
         expect.arrayContaining([
           FeatureStage.PLANNED,
@@ -191,7 +189,8 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      expect((response.body as Feature).voteCount).toBe(1);
+      const toggleVoteResponse = response.body as FeatureResponseDto;
+      expect(toggleVoteResponse.voteCount).toBe(1);
     });
 
     it('should toggle users votes when called multiple times', async () => {
@@ -204,7 +203,8 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      expect((firstResponse.body as Feature).voteCount).toBe(1);
+      const firstToggleVoteResponse = firstResponse.body as FeatureResponseDto;
+      expect(firstToggleVoteResponse.voteCount).toBe(1);
 
       const secondResponse = await request(getHttpServer(app))
         .post(RoadmapEndpoints.VOTE)
@@ -215,7 +215,9 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(200);
 
-      expect((secondResponse.body as Feature).voteCount).toBe(0);
+      const secondToggleVoteResponse =
+        secondResponse.body as FeatureResponseDto;
+      expect(secondToggleVoteResponse.voteCount).toBe(0);
     });
 
     it('should return 404 if feature does not exist', async () => {
