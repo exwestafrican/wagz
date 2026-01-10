@@ -97,7 +97,7 @@ describe('AuthController', () => {
       it('should return 400 if the email is invalid', async () => {
         const response = await request(getHttpServer(app))
           .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
-          .send({ email: 'invalid-email' })
+          .send(mockUserSignupDetails({ email: 'invalid-email' }))
           .set('Accept', 'application/json')
           .expect(400);
 
