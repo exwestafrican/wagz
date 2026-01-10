@@ -1,4 +1,9 @@
-import { INestApplication, ValidationPipe } from '@nestjs/common';
+import {
+  BadRequestException,
+  INestApplication,
+  ValidationError,
+  ValidationPipe,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
@@ -33,6 +38,18 @@ export function setupApp(app: INestApplication) {
       transform: true, // Automatically transform payloads to DTO instances
       transformOptions: {
         enableImplicitConversion: true, // Enable implicit type conversion
+      },
+      exceptionFactory(errors: ValidationError[]) {
+        return new BadRequestException({
+          statusCode: 400,
+          error: 'Bad Request',
+
+          message: errors.flatMap(
+            (e: ValidationError) =>
+              e.constraints && Object.values(e.constraints),
+          ),
+          property: errors.map((e: ValidationError) => e.property),
+        });
       },
     }),
   ); //enable validation globally

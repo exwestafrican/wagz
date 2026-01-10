@@ -23,6 +23,7 @@ import {
   toUserVotesResponseDto,
 } from '@/roadmap/mappers/feature.mapper';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import ApiBadRequestResponse from '@/common/decorators/bad-response';
 
 @Controller('roadmap')
 @ApiTags('roadmap')
@@ -53,6 +54,7 @@ export class RoadmapController {
     description: 'Feature request created successfully',
     type: FeatureRequestResponseDto,
   })
+  @ApiBadRequestResponse()
   @HttpCode(HttpStatus.CREATED)
   async createFeatureRequest(
     @Body() createFeatureRequestDto: CreateFeatureRequestDto,
@@ -79,6 +81,7 @@ export class RoadmapController {
     status: HttpStatus.NOT_FOUND,
     description: 'Feature not found',
   })
+  @ApiBadRequestResponse()
   @HttpCode(HttpStatus.OK)
   async toggleVote(
     @Body() voteFeatureDto: VoteFeatureDto,
@@ -114,6 +117,7 @@ export class RoadmapController {
     description: 'List of feature IDs that the user has voted for',
     type: UserVotesResponseDto,
   })
+  @ApiBadRequestResponse()
   @HttpCode(HttpStatus.OK)
   async getUserVotes(
     @Query() getUserVotesDto: GetUserVotesDto,

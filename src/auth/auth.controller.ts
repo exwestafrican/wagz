@@ -13,6 +13,7 @@ import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { MagicLinkAuthDto } from './dto/magic-link-auth';
 import { SignupEmailDto } from './dto/signup.dto';
 import { AccountExistsException } from './exceptions/account.exists';
+import ApiBadRequestResponse from '@/common/decorators/bad-response';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -43,6 +44,7 @@ export class AuthController {
     description: 'Something went wrong when signing up user.',
   })
   @ApiResponse({ status: 409, description: 'User already exists.' })
+  @ApiBadRequestResponse()
   async signup(@Body() signupDto: SignupEmailDto): Promise<void> {
     try {
       return await this.authService.emailOnlySignup(

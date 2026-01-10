@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty } from 'class-validator';
 import SignupDetails from '../domain/signup.details';
+import { IsNotDisposableEmail } from '@/common/validators/is-not-disposable-email.decorator';
 
 export class SignupEmailDto {
   @ApiProperty({
@@ -9,6 +10,7 @@ export class SignupEmailDto {
   })
   @IsEmail({}, { message: 'Invalid email address' })
   @IsNotEmpty()
+  @IsNotDisposableEmail({ message: 'Invalid email address' })
   email: string;
 
   @ApiProperty({
