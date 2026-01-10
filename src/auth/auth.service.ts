@@ -8,8 +8,10 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { AccountExistsException } from './exceptions/account.exists';
 import PasswordGenerator from './services/password.generator';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import SignupDetails from './domain/signup.details';
+import { PreVerification, Prisma } from '@/generated/prisma/client';
+import PRISMA_CODES from '@/prisma/consts';
 
 @Injectable()
 export class AuthService {
@@ -31,22 +33,45 @@ export class AuthService {
     return await this.signup(signupDetails, password);
   }
 
-  async signup(signupDetails: SignupDetails, password: string): Promise<void> {
-    //TODO: check if the email is valid throw error or return void
-    // we need to do things like see if this is a fake email or temproary generated email.
-    //TODO: add aditional meta data
-
-    const preVerification = await this.prismaService.preVerification.findUnique(
-      { where: { email: signupDetails.email } },
+  private existsInDBError(error: unknown): boolean {
+    return (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === PRISMA_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION
     );
+  }
 
-    if (preVerification !== null) {
-      this.logger.log(
-        `User already exists in the pre verification table Id=${preVerification.id}`,
-      );
-      return;
+  private async storePreverificationDetails(
+    signupDetails: SignupDetails,
+  ): Promise<PreVerification> {
+    try {
+      const preVerification = await this.prismaService.preVerification.create({
+        data: {
+          email: signupDetails.email,
+          firstName: signupDetails.firstName,
+          lastName: signupDetails.lastName,
+          companyName: signupDetails.companyName,
+        },
+      });
+      this.logger.log(`PreVerification successful Id=${preVerification.id}`);
+      return preVerification;
+    } catch (e) {
+      if (this.existsInDBError(e)) {
+        const preVerification =
+          await this.prismaService.preVerification.findUniqueOrThrow({
+            where: { email: signupDetails.email },
+          });
+
+        this.logger.log(
+          `User already exists in the pre verification table Id=${preVerification.id}`,
+        );
+        return preVerification;
+      } else {
+        throw e;
+      }
     }
+  }
 
+  async signup(signupDetails: SignupDetails, password: string): Promise<void> {
     const { error } = await this.supabaseClient.auth.signUp({
       email: signupDetails.email,
       password,
@@ -56,20 +81,11 @@ export class AuthService {
     });
 
     if (error === null) {
-      const newPreVerification =
-        await this.prismaService.preVerification.create({
-          data: {
-            email: signupDetails.email,
-            firstName: signupDetails.firstName,
-            lastName: signupDetails.lastName,
-            companyName: signupDetails.companyName,
-          },
-        });
-      this.logger.log(`PreVerification successful Id=${newPreVerification.id}`);
+      await this.storePreverificationDetails(signupDetails);
     } else {
       this.logger.error(error);
       if (error.code === 'user_already_exists') {
-        throw new AccountExistsException(error.message);
+        throw new AccountExistsException(error.message); // this is thrown when user has verified email
       } else {
         //TODO: we need to alert outselves of every error here except for the AccountExistsException
         // store this users email and contact them.
