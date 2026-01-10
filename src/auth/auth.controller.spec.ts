@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import request from 'supertest';
 
 import { INestApplication } from '@nestjs/common';
-import { createTestApp } from '../test-helpers/test-app';
+import { createTestApp } from '@/test-helpers/test-app';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
@@ -14,7 +14,7 @@ import {
 import PasswordGenerator from './services/password.generator';
 import { AuthEndpoints } from './consts';
 import { Server } from 'http';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 
 describe('AuthController', () => {
@@ -58,6 +58,16 @@ describe('AuthController', () => {
 
   function getHttpServer(app: INestApplication): Server {
     return app.getHttpServer() as unknown as Server;
+  }
+
+  function mockSupabaseSuccess(signupDetails: Record<string, string>) {
+    mockSupabaseClient.auth.signUp.mockResolvedValue({
+      data: {
+        user: { id: '123', ...signupDetails },
+        session: null,
+      },
+      error: null,
+    });
   }
 
   describe('magic link request', () => {
@@ -138,21 +148,69 @@ describe('AuthController', () => {
           .set('Accept', 'application/json')
           .expect(503);
       });
+
+      it('returns bad request when national number is missing', async () => {
+        const response = await request(getHttpServer(app))
+          .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
+          .send({
+            ...mockUserSignupDetails({}),
+            phoneNumber: {
+              countryCallingCode: '+234',
+            },
+          })
+          .set('Accept', 'application/json')
+          .expect(400);
+
+        const body = response.body as ValidationErrorResponseDto;
+        expect(body.property).toMatchObject(['phoneNumber']);
+      });
+
+      it('returns bad request when country call code is missing', async () => {
+        const response = await request(getHttpServer(app))
+          .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
+          .send({
+            ...mockUserSignupDetails({}),
+            phoneNumber: {
+              nationalNumber: '8190086655',
+            },
+          })
+          .set('Accept', 'application/json')
+          .expect(400);
+
+        const body = response.body as ValidationErrorResponseDto;
+        expect(body.property).toMatchObject(['phoneNumber']);
+      });
+
+      test.each([
+        { countryCallingCode: '234', nationalNumber: '8169087765' },
+        { countryCallingCode: '+234', nationalNumber: '816908776' },
+      ])(
+        'returns bad request when phone number is invalid',
+        async (phoneNumber: {
+          countryCallingCode: string;
+          nationalNumber: string;
+        }) => {
+          const response = await request(getHttpServer(app))
+            .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
+            .send({
+              ...mockUserSignupDetails({}),
+              phoneNumber: phoneNumber,
+            })
+            .set('Accept', 'application/json')
+            .expect(400);
+
+          const body = response.body as ValidationErrorResponseDto;
+          expect(body.property).toMatchObject(['phoneNumber']);
+        },
+      );
     });
 
     describe('successful signup', () => {
       it('should return 201 when email is valid', async () => {
-        mockSupabaseClient.auth.signUp.mockResolvedValue({
-          data: {
-            user: { id: '123', email: 'test@example.com' },
-            session: null,
-          },
-          error: null,
-        });
-
         const signupDetails = mockUserSignupDetails({
           email: 'test@example.com',
         });
+        mockSupabaseSuccess(signupDetails);
         await request(getHttpServer(app))
           .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
           .send(signupDetails)
@@ -164,6 +222,25 @@ describe('AuthController', () => {
         });
         expect(preVerification).not.toBeNull();
         expect(preVerification?.email).toBe(signupDetails.email);
+      });
+
+      it('should be successful with valid phone number', async () => {
+        const signupDetails = mockUserSignupDetails({
+          email: 'test@example.com',
+        });
+        mockSupabaseSuccess(signupDetails);
+
+        await request(getHttpServer(app))
+          .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
+          .send({
+            ...signupDetails,
+            phoneNumber: {
+              countryCallingCode: '+234',
+              nationalNumber: '8190086655',
+            },
+          })
+          .set('Accept', 'application/json')
+          .expect(201);
       });
     });
   });
