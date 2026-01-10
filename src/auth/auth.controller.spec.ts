@@ -94,12 +94,15 @@ describe('AuthController', () => {
 
   describe('signup', () => {
     describe('unsuccessful signup', () => {
-      it('should return 400 if the email is invalid', () => {
-        return request(getHttpServer(app))
+      it('should return 400 if the email is invalid', async () => {
+        const response = await request(getHttpServer(app))
           .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
           .send({ email: 'invalid-email' })
           .set('Accept', 'application/json')
           .expect(400);
+
+        const body = response.body as ValidationErrorResponseDto;
+        expect(body.property).toMatchObject(['email']);
       });
 
       it('should return 400 when email is already registered', async () => {
