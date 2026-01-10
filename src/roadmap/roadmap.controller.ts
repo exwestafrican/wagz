@@ -17,6 +17,7 @@ import VoteFeatureDto from './dto/vote-feature.dto';
 import GetUserVotesDto from './dto/get-user-votes.dto';
 import { UserVotesResponseDto } from './dto/user-votes-response.dto';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import ApiBadRequestResponse from '@/common/decorators/bad-response';
 
 @Controller('roadmap')
 @ApiTags('roadmap')
@@ -45,6 +46,7 @@ export class RoadmapController {
     status: HttpStatus.CREATED,
     description: 'Feature request created successfully',
   })
+  @ApiBadRequestResponse()
   @HttpCode(HttpStatus.CREATED)
   async createFeatureRequest(
     @Body() createFeatureRequestDto: CreateFeatureRequestDto,
@@ -69,6 +71,7 @@ export class RoadmapController {
     status: HttpStatus.NOT_FOUND,
     description: 'Feature not found',
   })
+  @ApiBadRequestResponse()
   @HttpCode(HttpStatus.OK)
   async toggleVote(@Body() voteFeatureDto: VoteFeatureDto) {
     try {
@@ -101,6 +104,7 @@ export class RoadmapController {
     description: 'List of feature IDs that the user has voted for',
     type: UserVotesResponseDto,
   })
+  @ApiBadRequestResponse()
   @HttpCode(HttpStatus.OK)
   async getUserVotes(@Query() getUserVotesDto: GetUserVotesDto) {
     this.logger.log(`Getting votes for user`);
