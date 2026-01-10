@@ -36,7 +36,7 @@ export class AuthService {
   private existsInDBError(error: unknown): boolean {
     return (
       error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === PRISMA_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION
+      error.code === PRISMA_CODES.DUPLICATE_KEY_CONSTRAINT_VIOLATION
     );
   }
 
@@ -66,6 +66,7 @@ export class AuthService {
         );
         return preVerification;
       } else {
+        this.logger.error(e);
         throw e;
       }
     }
