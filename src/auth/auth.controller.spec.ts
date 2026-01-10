@@ -15,6 +15,7 @@ import PasswordGenerator from './services/password.generator';
 import { AuthEndpoints } from './consts';
 import { Server } from 'http';
 import { PrismaService } from '../prisma/prisma.service';
+import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -60,20 +61,26 @@ describe('AuthController', () => {
   }
 
   describe('magic link request', () => {
-    it('should return 400 if the email is invalid', () => {
-      return request(getHttpServer(app))
+    it('should return 400 if the email is invalid', async () => {
+      const response = await request(getHttpServer(app))
         .post(AuthEndpoints.REQUEST_MAGIC_LINK)
         .send({ email: 'invalid-email' })
         .set('Accept', 'application/json')
         .expect(400);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['email']);
     });
 
-    it('should return 400 when email is blank', () => {
-      return request(getHttpServer(app))
+    it('should return 400 when email is blank', async () => {
+      const response = await request(getHttpServer(app))
         .post(AuthEndpoints.REQUEST_MAGIC_LINK)
         .send({ email: '' })
         .set('Accept', 'application/json')
         .expect(400);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['email']);
     });
 
     it('should return 200 when email is valid', () => {
