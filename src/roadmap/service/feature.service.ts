@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { FeatureStage, FeatureRequestPriority } from '@/generated/prisma/enums';
 import { WaitlistService } from '@/waitlist/waitlist.service';
-import { FeatureVotes, Prisma } from '@/generated/prisma/client';
+import { Feature, FeatureVotes, Prisma } from '@/generated/prisma/client';
 import PRISMA_CODES from '@/prisma/consts';
 import NotFoundInDb from '@/common/exceptions/not-found';
 
@@ -88,7 +88,7 @@ export class FeaturesService {
     });
   }
 
-  async toggleVote(email: string, featureId: string) {
+  async toggleVote(email: string, featureId: string): Promise<Feature> {
     try {
       await this.prismaService.$transaction(async (tx) => {
         const existingVote = await tx.featureVotes.findUnique({
@@ -114,7 +114,7 @@ export class FeaturesService {
         await this.waitlistService.join(email);
       }
 
-      return await this.prismaService.feature.findUnique({
+      return this.prismaService.feature.findFirstOrThrow({
         where: { id: featureId },
       });
     } catch (error) {
@@ -123,6 +123,15 @@ export class FeaturesService {
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === PRISMA_CODES.FOREIGN_KEY_CONSTRAINT_VIOLATION
       ) {
+        this.logger.error(
+          `Feature does not exist (FK constraint) ${featureId}`,
+        );
+        throw new NotFoundInDb('Feature does not exist (FK constraint)');
+      } else if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === PRISMA_CODES.NOT_FOUND
+      ) {
+        this.logger.error(`Feature does not exist ${featureId}`);
         throw new NotFoundInDb('Feature does not exist');
       }
       throw error;
