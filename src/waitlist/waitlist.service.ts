@@ -63,4 +63,15 @@ export class WaitlistService {
       throw error;
     }
   }
+
+  async userIsInWaitlist(email: string): Promise<boolean> {
+    const hasSubscribedToMainFeature =
+      await this.prismaService.featureSubscription.findFirst({
+        where: {
+          email: email,
+          feature: await this.mainFeature(),
+        },
+      });
+    return hasSubscribedToMainFeature ? true : false;
+  }
 }

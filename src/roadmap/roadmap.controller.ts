@@ -21,16 +21,23 @@ import {
   toFeatureResponseDto,
   toFeatureRequestResponseDto,
   toUserVotesResponseDto,
+  toFeatureFeedbackDto,
 } from '@/roadmap/mappers/feature.mapper';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
+import { CreateFeedbackDto } from './dto/create-feedback-dto';
+import { FeedbackService } from './service/feedback.service';
+import FeatureFeedbackResponse from './interfaces/feature-feedback-response';
 
 @Controller('roadmap')
 @ApiTags('roadmap')
 export class RoadmapController {
   logger = new Logger(RoadmapController.name);
 
-  constructor(private readonly featureService: FeaturesService) {}
+  constructor(
+    private readonly featureService: FeaturesService,
+    private readonly feedbackService: FeedbackService,
+  ) {}
 
   @Get('future-features')
   @ApiOperation({ summary: 'Get future features' })
@@ -127,5 +134,24 @@ export class RoadmapController {
       getUserVotesDto.email,
     );
     return toUserVotesResponseDto(featureIds);
+  }
+
+  @Post('feedback')
+  @ApiOperation({ summary: 'Create feedback for feature' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Feedback created successfully',
+  })
+  @ApiBadRequestResponse()
+  @HttpCode(HttpStatus.CREATED)
+  async sendFeedback(
+    @Body() createFeedbackDto: CreateFeedbackDto,
+  ): Promise<FeatureFeedbackResponse> {
+    const featureFeedback = await this.feedbackService.sendFeedback(
+      createFeedbackDto.email,
+      createFeedbackDto.feedback,
+      createFeedbackDto.featureId,
+    );
+    return toFeatureFeedbackDto(featureFeedback);
   }
 }
