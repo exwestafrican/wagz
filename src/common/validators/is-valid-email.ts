@@ -5,7 +5,7 @@ import { IsNotDisposableEmail } from './is-not-disposable-email.decorator';
 
 export function IsValidEmail() {
   return applyDecorators(
-    Transform(({ value }) =>
+    Transform(({ value }): string =>
       typeof value === 'string' ? value.trim().toLowerCase() : value,
     ),
     IsNotEmpty(),

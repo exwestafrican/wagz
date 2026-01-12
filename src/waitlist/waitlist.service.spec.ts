@@ -71,7 +71,6 @@ describe('WaitlistService', () => {
   });
 
   describe('user in waitlist', () => {
-
     beforeAll(async () => {
       await setupMainFeature(prismaService);
     });

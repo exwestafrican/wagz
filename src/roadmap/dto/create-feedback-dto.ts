@@ -1,14 +1,6 @@
 import { IsValidEmail } from '@/common/validators/is-valid-email';
-import { IsNotDisposableEmail } from '@/common/validators/is-not-disposable-email.decorator';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
-import {
-  IsUUID,
-  IsEmail,
-  IsNotEmpty,
-  IsString,
-  MaxLength,
-} from 'class-validator';
+import { IsUUID, IsNotEmpty, IsString, MaxLength } from 'class-validator';
 
 export class CreateFeedbackDto {
   @ApiProperty({
