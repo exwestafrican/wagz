@@ -22,7 +22,8 @@ const DISPOSABLE_EMAIL_DOMAINS = [
 
 @ValidatorConstraint({ async: false })
 export class IsNotDisposableEmailConstraint implements ValidatorConstraintInterface {
-  validate(email: string): boolean {
+  validate(email?: string): boolean {
+    if (!email) return false;
     const domain = email.split('@')[1]?.toLowerCase();
     if (!domain) return false;
 
