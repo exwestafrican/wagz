@@ -6,7 +6,6 @@ import {
 import { FeatureResponseDto } from '@/roadmap/dto/feature-response.dto';
 import { FeatureRequestResponseDto } from '@/roadmap/dto/feature-request-response.dto';
 import { UserVotesResponseDto } from '@/roadmap/dto/user-votes-response.dto';
-import { CreateFeatureRequestResponseDto } from '../dto/create-feature-request-response.dto';
 import FeatureFeedbackResponse from '../interfaces/feature-feedback-response';
 
 export function toFeatureResponseDto(feature: Feature): FeatureResponseDto {
@@ -34,17 +33,6 @@ export function toUserVotesResponseDto(
   featureIds: string[],
 ): UserVotesResponseDto {
   return { featureIds };
-}
-
-export function toCreateFeatureRequestResponseDto(
-  featureRequest: FeatureRequest,
-): CreateFeatureRequestResponseDto {
-  return {
-    id: featureRequest.id,
-    description: featureRequest.description,
-    priority: featureRequest.priority,
-    createdAt: featureRequest.createdAt,
-  };
 }
 
 export function toFeatureFeedbackDto(

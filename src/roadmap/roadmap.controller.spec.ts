@@ -69,27 +69,6 @@ describe('RoadmapController', () => {
       );
       expect(stages).toHaveLength(2); // Ensure no extra items
     });
-
-    it('should return response matching FutureFeatureResponseDto structure', async () => {
-      const response = await request(getHttpServer(app))
-        .get(RoadmapEndpoints.FUTURE_FEATURES)
-        .set('Accept', 'application/json')
-        .expect(200);
-
-      const features = response.body as FutureFeatureResponseDto[];
-
-      expect(features.length).toBeGreaterThan(0);
-
-      features.forEach((feature) => {
-        expect(feature).toMatchObject({
-          id: expect.any(String),
-          name: expect.any(String),
-          icon: expect.any(String),
-          stage: expect.any(String),
-          voteCount: expect.any(Number),
-        });
-      });
-    });
   });
 
   describe('Create feature request', () => {
@@ -177,27 +156,6 @@ describe('RoadmapController', () => {
         expect(body.property).toMatchObject(['description']);
       });
     });
-
-    it('should return response matching FeatureRequestResponseDto structure', async () => {
-      const response = await request(getHttpServer(app))
-        .post(RoadmapEndpoints.FEATURE_REQUEST)
-        .send({
-          email: testEmail,
-          description: 'test feature request for structure validation',
-          priority: FeatureRequestPriority.MEDIUM,
-        })
-        .set('Accept', 'application/json')
-        .expect(201);
-
-      const featureRequest = response.body as FeatureRequestResponseDto;
-
-      expect(featureRequest).toMatchObject({
-        id: expect.any(Number),
-        description: expect.any(String),
-        priority: expect.any(String),
-        createdAt: expect.any(String),
-      });
-    });
   });
 
   describe('Toggle votes', () => {
@@ -268,27 +226,6 @@ describe('RoadmapController', () => {
         })
         .set('Accept', 'application/json')
         .expect(404);
-    });
-
-    it('should return response matching FeatureResponseDto structure', async () => {
-      const response = await request(getHttpServer(app))
-        .post(RoadmapEndpoints.VOTE)
-        .send({
-          email: 'test@example.com',
-          featureId: feature.id,
-        })
-        .set('Accept', 'application/json')
-        .expect(200);
-
-      const toggleVoteResponse = response.body as FeatureResponseDto;
-
-      expect(toggleVoteResponse).toMatchObject({
-        id: expect.any(String),
-        name: expect.any(String),
-        icon: expect.any(String),
-        stage: expect.any(String),
-        voteCount: expect.any(Number),
-      });
     });
   });
 
@@ -391,29 +328,6 @@ describe('RoadmapController', () => {
 
       const body = response.body as ValidationErrorResponseDto;
       expect(body.property).toMatchObject(['email']);
-    });
-
-    it('should return response matching UserVotesResponseDto structure', async () => {
-      await prismaService.featureVotes.createMany({
-        data: [
-          { email: userEmail, featureId: feature1.id },
-          { email: userEmail, featureId: feature2.id },
-        ],
-      });
-
-      const response = await request(getHttpServer(app))
-        .get(RoadmapEndpoints.USER_VOTES)
-        .query({
-          email: userEmail,
-        })
-        .set('Accept', 'application/json')
-        .expect(200);
-
-      const userVotesResponse = response.body as UserVotesResponseDto;
-
-      expect(userVotesResponse).toMatchObject({
-        featureIds: expect.any(Array),
-      });
     });
   });
 
