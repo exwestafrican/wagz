@@ -47,7 +47,7 @@ export class AuthController {
   @ApiBadRequestResponse()
   async signup(@Body() signupDto: SignupEmailDto): Promise<void> {
     try {
-      return await this.authService.emailOnlySignup(
+      await this.authService.emailOnlySignup(
         SignupEmailDto.toSignupDetails(signupDto),
       );
     } catch (error) {
