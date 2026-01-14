@@ -47,7 +47,6 @@ export function toCreateFeatureRequestResponseDto(
   };
 }
 
-
 export function toFeatureFeedbackDto(
   featureFeedback: FeatureFeedback,
 ): FeatureFeedbackResponse {

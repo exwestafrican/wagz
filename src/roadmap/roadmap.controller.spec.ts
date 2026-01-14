@@ -189,8 +189,7 @@ describe('RoadmapController', () => {
         .set('Accept', 'application/json')
         .expect(201);
 
-      const featureRequest =
-        response.body as FeatureRequestResponseDto;
+      const featureRequest = response.body as FeatureRequestResponseDto;
 
       expect(featureRequest).toMatchObject({
         id: expect.any(Number),
