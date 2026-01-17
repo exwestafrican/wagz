@@ -3,6 +3,7 @@ import {
   ConflictException,
   Controller,
   HttpCode,
+  HttpStatus,
   InternalServerErrorException,
   Logger,
   Post,
@@ -34,16 +35,22 @@ export class AuthController {
   @Post('signup/email-only')
   @ApiOperation({ summary: 'Allow user to sign up' })
   @ApiBody({ type: SignupEmailDto })
-  @ApiResponse({ status: 201, description: 'User signed up successfully' })
   @ApiResponse({
-    status: 503,
+    status: HttpStatus.CREATED,
+    description: 'User signed up successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.SERVICE_UNAVAILABLE,
     description: 'Sign up process is currently unavailable.',
   })
   @ApiResponse({
-    status: 500,
+    status: HttpStatus.INTERNAL_SERVER_ERROR,
     description: 'Something went wrong when signing up user.',
   })
-  @ApiResponse({ status: 409, description: 'User already exists.' })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'User already exists.',
+  })
   @ApiBadRequestResponse()
   async signup(@Body() signupDto: SignupEmailDto): Promise<void> {
     try {
