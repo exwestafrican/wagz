@@ -5,11 +5,14 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { RoadmapModule } from '@/roadmap/roadmap.module';
 import { INestApplication } from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
-import featureFactory from '@/factories/roadmap/features.factory';
 import { PrismaService } from '@/prisma/prisma.service';
 import { faker } from '@faker-js/faker';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
-import { Feature } from '@/generated/prisma/client';
+import {
+  addFeature,
+  setupMainFeature,
+  subscribeToFeature,
+} from '@/test-helpers/feature-helpers';
 
 describe('WaitlistService', () => {
   let service: WaitlistService;
@@ -35,11 +38,12 @@ describe('WaitlistService', () => {
   });
 
   describe('join', () => {
-    let mainFeature: Feature;
-
     beforeAll(async () => {
-      mainFeature = featureFactory.build({}, { transient: { main: true } });
-      await prismaService.feature.create({ data: mainFeature });
+      await setupMainFeature(prismaService);
+    });
+
+    afterAll(async () => {
+      await prismaService.feature.deleteMany();
     });
 
     it('join waitlist should create subscription to main feature', async () => {
@@ -63,6 +67,23 @@ describe('WaitlistService', () => {
       await expect(service.join(userEmail)).rejects.toThrow(
         ItemAlreadyExistsInDb,
       );
+    });
+  });
+
+  describe('user in waitlist', () => {
+    beforeAll(async () => {
+      await setupMainFeature(prismaService);
+    });
+
+    afterAll(async () => {
+      await prismaService.feature.deleteMany();
+    });
+
+    it('should return false if user has not subscribed to waitlist', async () => {
+      const userEmail = 'user@envoye.co';
+      const feature = await addFeature(prismaService, 'really cool feature');
+      await subscribeToFeature(prismaService, userEmail, feature);
+      expect(await service.userIsInWaitlist(userEmail)).toBe(false);
     });
   });
 });
