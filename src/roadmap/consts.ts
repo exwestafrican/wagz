@@ -3,6 +3,7 @@ export const RoadmapEndpoints = {
   FEATURE_REQUEST: '/roadmap/feature-request',
   VOTE: '/roadmap/vote',
   USER_VOTES: '/roadmap/user-votes',
+  FEEDBACK: '/roadmap/feedback',
 };
 
 export const MAIN_FEATURE = 'whatsApp inbox integration';

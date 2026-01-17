@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RoadmapController } from '@/roadmap/roadmap.controller';
 import { RoadmapEndpoints } from '@/roadmap/consts';
-import { INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
 import request from 'supertest';
 import { FeaturesService } from '@/roadmap/service/feature.service';
@@ -16,22 +16,19 @@ import { WaitlistService } from '@/waitlist/waitlist.service';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { Feature } from '@/generated/prisma/client';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
+import { FeedbackService } from './service/feedback.service';
+import { addFeature, setupMainFeature } from '@/test-helpers/feature-helpers';
 
 describe('RoadmapController', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let waitlistService: WaitlistService;
 
-  async function setupMainFeature(prismaService: PrismaService) {
-    const mainFeature = featureFactory.build({}, { transient: { main: true } });
-    await prismaService.feature.create({ data: mainFeature });
-  }
-
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule, WaitlistModule],
       controllers: [RoadmapController],
-      providers: [FeaturesService, WaitlistService],
+      providers: [FeaturesService, WaitlistService, FeedbackService],
     }).compile();
 
     app = await createTestApp(module);
@@ -331,6 +328,93 @@ describe('RoadmapController', () => {
 
       const body = response.body as ValidationErrorResponseDto;
       expect(body.property).toMatchObject(['email']);
+    });
+  });
+
+  describe('Create feedback', () => {
+    describe('Bad request', () => {
+      it('should return 400 if email is not valid', async () => {
+        await request(getHttpServer(app))
+          .post(RoadmapEndpoints.FEEDBACK)
+          .send({
+            email: 'invalid-email',
+            feedback: 'test feature request',
+            featureId: 'c14d8c2f-c357-46e4-9342-e6f02a6734c8',
+          })
+          .set('Accept', 'application/json')
+          .expect(400);
+      });
+
+      it('should return 400 if feedback is greater than 5000 characters', async () => {
+        await request(getHttpServer(app))
+          .post(RoadmapEndpoints.FEEDBACK)
+          .send({
+            email: 'laura@envoye.co',
+            feedback: 'f'.repeat(5001),
+            featureId: 'c14d8c2f-c357-46e4-9342-e6f02a6734c8',
+          })
+          .set('Accept', 'application/json')
+          .expect(400);
+      });
+
+      it('should return 400 if featureID is not UUID', async () => {
+        await request(getHttpServer(app))
+          .post(RoadmapEndpoints.FEEDBACK)
+          .send({
+            email: 'laura@envoye.co',
+            feedback: 'test feature request',
+            featureId: 'hello',
+          })
+          .set('Accept', 'application/json')
+          .expect(400);
+      });
+    });
+
+    describe('With valid input', () => {
+      const lauraEmail = 'laura@envoye.co';
+      let feature: Feature;
+      beforeEach(async () => {
+        await prismaService.featureFeedback.deleteMany();
+        await setupMainFeature(prismaService);
+        feature = await addFeature(prismaService, 'testing feature');
+      });
+
+      afterEach(async () => {
+        await prismaService.feature.deleteMany();
+      });
+
+      it('creates feedback for user already in waitlist', async () => {
+        await waitlistService.join(lauraEmail);
+        await request(getHttpServer(app))
+          .post(RoadmapEndpoints.FEEDBACK)
+          .send({
+            email: lauraEmail,
+            feedback: 'test feature request',
+            featureId: feature.id,
+          })
+          .set('Accept', 'application/json')
+          .expect(HttpStatus.CREATED);
+        const userFeedback = await prismaService.featureFeedback.findFirst({
+          where: { email: lauraEmail, featureId: feature.id },
+        });
+        expect(userFeedback).not.toBeNull();
+      });
+
+      it('creates feedback for user not in waitlist', async () => {
+        await request(getHttpServer(app))
+          .post(RoadmapEndpoints.FEEDBACK)
+          .send({
+            email: lauraEmail,
+            feedback: 'test feature request',
+            featureId: feature.id,
+          })
+          .set('Accept', 'application/json')
+          .expect(HttpStatus.CREATED);
+        const userFeedback = await prismaService.featureFeedback.findFirst({
+          where: { email: lauraEmail, featureId: feature.id },
+        });
+        expect(userFeedback).not.toBeNull();
+      });
     });
   });
 });

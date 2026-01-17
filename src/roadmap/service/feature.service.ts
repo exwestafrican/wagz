@@ -26,22 +26,12 @@ export class FeaturesService {
     });
   }
 
-  private async userIsInWaitlist(email: string) {
-    const hasSubscribedToMainFeature =
-      await this.prismaService.featureSubscription.findFirst({
-        where: {
-          email: email,
-        },
-      });
-    return hasSubscribedToMainFeature ? true : false;
-  }
-
   async createFeatureRequest(
     email: string,
     description: string,
     priority: FeatureRequestPriority,
   ) {
-    const userIsInWaitlist = await this.userIsInWaitlist(email);
+    const userIsInWaitlist = await this.waitlistService.userIsInWaitlist(email);
 
     if (!userIsInWaitlist) {
       this.logger.log(`User not in waitlist, adding them now`);
@@ -107,7 +97,8 @@ export class FeaturesService {
         }
       });
 
-      const userIsInWaitlist = await this.userIsInWaitlist(email);
+      const userIsInWaitlist =
+        await this.waitlistService.userIsInWaitlist(email);
 
       if (!userIsInWaitlist) {
         this.logger.log(`User not in waitlist, adding them now`);
