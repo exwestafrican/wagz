@@ -29,4 +29,18 @@ export class FeatureResponseDto {
     example: 5,
   })
   voteCount: number;
+
+  @ApiProperty({
+    description: 'Description of the feature',
+    example: 'This feature connects you to your whatsapp',
+  })
+  description: string;
+
+  @ApiProperty({
+    description: 'Time the feature was last updated',
+    type: String,
+    format: ' date-time',
+    example: '2024-01-15T10:30:00.000Z',
+  })
+  updatedAt: Date;
 }
