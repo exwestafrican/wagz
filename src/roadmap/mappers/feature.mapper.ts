@@ -15,6 +15,8 @@ export function toFeatureResponseDto(feature: Feature): FeatureResponseDto {
     icon: feature.icon,
     stage: feature.stage,
     voteCount: feature.voteCount,
+    description: feature.description,
+    updatedAt: feature.updatedAt,
   };
 }
 
