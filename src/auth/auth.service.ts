@@ -73,11 +73,12 @@ export class AuthService {
   }
 
   async signup(signupDetails: SignupDetails, password: string): Promise<void> {
+    const siteUrl = this.configService.get<string>('SITE_URL');
     const { error } = await this.supabaseClient.auth.signUp({
       email: signupDetails.email,
       password,
       options: {
-        emailRedirectTo: this.configService.get<string>('EMAIL_REDIRECT_URL'),
+        emailRedirectTo: `${siteUrl}/setup/workspace`,
       },
     });
 
