@@ -8,6 +8,6 @@ model CompanyProfile {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  @@map("company_profiles")
   @@index([pointOfContactEmail])
+  @@map("company_profiles")
 }
