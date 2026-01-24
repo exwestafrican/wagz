@@ -2,8 +2,8 @@ import {
   Injectable,
   Logger,
   ServiceUnavailableException,
+  UnauthorizedException,
 } from '@nestjs/common';
-import { MagicLinkAuthDto } from './dto/magic-link-auth';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AccountExistsException } from './exceptions/account.exists';
 import PasswordGenerator from './services/password.generator';
@@ -23,9 +23,19 @@ export class AuthService {
     private readonly prismaService: PrismaService,
   ) {}
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  requestMagicLink(_magicLinkAuthDto: MagicLinkAuthDto): void {
-    // ...
+  async requestMagicLink(email: string): Promise<void> {
+    const { error } = await this.supabaseClient.auth.signInWithOtp({
+      email: email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: this.dashboardUrl('1'),
+      },
+    });
+
+    if (error) {
+      this.logger.error(error);
+      throw new UnauthorizedException();
+    }
   }
 
   async emailOnlySignup(signupDetails: SignupDetails): Promise<void> {
@@ -72,13 +82,22 @@ export class AuthService {
     }
   }
 
-  async signup(signupDetails: SignupDetails, password: string): Promise<void> {
+  private dashboardUrl(id: string): string {
     const siteUrl = this.configService.get<string>('SITE_URL');
+    return `${siteUrl}/${id}/workspace`;
+  }
+
+  private get setupDashboardUrl(): string {
+    const siteUrl = this.configService.get<string>('SITE_URL');
+    return `${siteUrl}/setup/workspace`;
+  }
+
+  async signup(signupDetails: SignupDetails, password: string): Promise<void> {
     const { error } = await this.supabaseClient.auth.signUp({
       email: signupDetails.email,
       password,
       options: {
-        emailRedirectTo: `${siteUrl}/setup/workspace`,
+        emailRedirectTo: this.setupDashboardUrl,
       },
     });
 
