@@ -29,7 +29,7 @@ export class AuthService {
       email: email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: this.dashboardUrl,
+        emailRedirectTo: this.dashboardUrl('1'),
       },
     });
 
@@ -83,7 +83,12 @@ export class AuthService {
     }
   }
 
-  private get dashboardUrl(): string {
+  private dashboardUrl(id: string): string {
+    const siteUrl = this.configService.get<string>('SITE_URL');
+    return `${siteUrl}/${id}/workspace`;
+  }
+
+  private get setupDashboardUrl(): string {
     const siteUrl = this.configService.get<string>('SITE_URL');
     return `${siteUrl}/setup/workspace`;
   }
@@ -93,7 +98,7 @@ export class AuthService {
       email: signupDetails.email,
       password,
       options: {
-        emailRedirectTo: this.dashboardUrl,
+        emailRedirectTo: this.setupDashboardUrl,
       },
     });
 
