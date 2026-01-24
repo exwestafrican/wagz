@@ -4,7 +4,6 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { MagicLinkAuthDto } from './dto/magic-link-auth';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AccountExistsException } from './exceptions/account.exists';
 import PasswordGenerator from './services/password.generator';
