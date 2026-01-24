@@ -26,10 +26,17 @@ export class AuthController {
   @Post('magic-link/request')
   @ApiOperation({ summary: 'Allow user to authenticate with a magic link' })
   @ApiBody({ type: MagicLinkAuthDto })
-  @ApiResponse({ status: 200, description: 'Magic link sent successfully' })
-  @HttpCode(200)
-  requestMagicLink(@Body() magicLinkAuthDto: MagicLinkAuthDto): void {
-    this.authService.requestMagicLink(magicLinkAuthDto);
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Magic link sent successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Magic link request failed',
+  })
+  @HttpCode(HttpStatus.OK)
+  requestMagicLink(@Body() magicLinkAuthDto: MagicLinkAuthDto): Promise<void> {
+    return this.authService.requestMagicLink(magicLinkAuthDto.email);
   }
 
   @Post('signup/email-only')
