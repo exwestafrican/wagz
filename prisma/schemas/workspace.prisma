@@ -9,8 +9,8 @@ model CompanyProfile {
   updatedAt           DateTime    @updatedAt
   workspaces          Workspace[]
 
-  @@map("company_profiles")
   @@index([pointOfContactEmail])
+  @@map("company_profiles")
 }
 
 enum WorkspaceStatus {
