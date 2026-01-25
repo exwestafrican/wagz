@@ -17,6 +17,11 @@ export const PERMISSIONS = {
     'Allows user to add or remove team members',
     'manage_teammates',
   ),
+  MESSAGE_TEAMMATES: Permission.of(
+    'Message Team Members',
+    'Allows user to send and receive internal messages with other team members',
+    'message_teammates',
+  ),
   MANAGE_CHANNELS: Permission.of(
     'Connect Messaging Platforms',
     'Allows user to connect supported messaging platforms, like whatsapp etc',
@@ -34,6 +39,9 @@ export const ROLES = {
   SupportStaff: Role.of('SupportStaff', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
     PERMISSIONS.REPLY_SUPPORT_CONVERSATIONS,
+  ]),
+  WorkspaceMember: Role.of('WorkspaceMember', [
+    PERMISSIONS.MESSAGE_TEAMMATES,
   ]),
 };
 
