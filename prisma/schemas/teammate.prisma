@@ -13,6 +13,8 @@ model Teammate {
   workspaceId Int
   status      TeammateStatus @default(ACTIVE)
   avatarUrl   String?        @db.VarChar(600)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 
   @@unique([email, workspaceId])
   @@map("teammate")
