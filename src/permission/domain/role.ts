@@ -12,4 +12,8 @@ export class Role {
   static of(code: string, permissions: Permission[]) {
     return new Role(code, permissions);
   }
+
+  toString(): string {
+    return `Role(${this.code})`;
+  }
 }
