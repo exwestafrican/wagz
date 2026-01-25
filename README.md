@@ -166,6 +166,7 @@ Check out a few resources that may come in handy when working with NestJS:
 - Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
 - To learn about setting up [supabase](https://www.reddit.com/r/Supabase/comments/1m87gqb/how_to_configure_supabases_local_development/) for local development
 - Prisma fields [docs](https://www.prisma.io/docs/orm/reference/prisma-schema-reference#model-fields)
+- How to create schema [example](https://github.com/exwestafrican/wagz/pull/15#issue-3751650684)
 
 ## Notes
 To run supabase commands we need to add prefix pnpx e.g
