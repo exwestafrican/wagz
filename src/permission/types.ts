@@ -40,9 +40,7 @@ export const ROLES = {
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
     PERMISSIONS.REPLY_SUPPORT_CONVERSATIONS,
   ]),
-  WorkspaceMember: Role.of('WorkspaceMember', [
-    PERMISSIONS.MESSAGE_TEAMMATES,
-  ]),
+  WorkspaceMember: Role.of('WorkspaceMember', [PERMISSIONS.MESSAGE_TEAMMATES]),
 };
 
 export type PermissionKey = keyof typeof PERMISSIONS;
