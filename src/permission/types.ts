@@ -4,7 +4,7 @@ import { Role } from '@/permission/domain/role';
 export const PERMISSIONS = {
   READ_SUPPORT_CONVERSATIONS: Permission.of(
     'Read Support Messages',
-    'Allows user viewing support messages in the inbox',
+    'Allows user view support messages in the inbox',
     'read_support_messages',
   ),
   REPLY_SUPPORT_CONVERSATIONS: Permission.of(
