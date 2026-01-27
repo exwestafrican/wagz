@@ -1,7 +1,8 @@
 import { Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { WorkspaceDetails } from '@/workspace/domain/WorkspaceDetails';
+import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
+import { ROLES } from '@/permission/types';
 
 export class CreateTeammateStep implements PostSetupStep {
   logger = new Logger(CreateTeammateStep.name);
@@ -15,6 +16,7 @@ export class CreateTeammateStep implements PostSetupStep {
         firstName: pointOfContact.firstName,
         lastName: pointOfContact.lastName,
         workspaceId: workspaceDetails.workspaceId,
+        groups: [ROLES.WorkspaceAdmin.code],
       },
     });
     this.logger.log(
