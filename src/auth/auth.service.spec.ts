@@ -7,7 +7,7 @@ import {
 } from './test-utils/supabase.mock';
 import PasswordGenerator from './services/password.generator';
 import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 
 describe('AuthService', () => {
   let service: AuthService;
