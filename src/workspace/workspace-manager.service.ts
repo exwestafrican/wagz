@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { CompanyProfile, PreVerification } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { generate } from 'generate-password';
-import { WorkspaceDetails } from '@/workspace/domain/WorkspaceDetails';
-import { PointOfContact } from '@/workspace/domain/PointOfContact';
+import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
+import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
 import { CreateTeammateStep } from '@/workspace/steps/create-teammate';
 
@@ -42,6 +42,14 @@ export class WorkspaceManager {
       );
 
       return WorkspaceDetails.from(workspace, pointOfContact);
+    });
+  }
+
+  private async rollBackPreWorkspaceCreationSteps(
+    workspaceDetails: WorkspaceDetails,
+  ): Promise<void> {
+    await this.prismaService.companyProfile.delete({
+      where: { id: workspaceDetails.ownedByCompanyId },
     });
   }
 
@@ -84,7 +92,7 @@ export class WorkspaceManager {
       for (const step of reversedCompletedSteps) {
         await step.compensate(workspaceDetails);
       }
-
+      await this.rollBackPreWorkspaceCreationSteps(workspaceDetails);
       throw error;
     }
   }
