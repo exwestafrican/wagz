@@ -4,8 +4,8 @@ import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
 import { ROLES } from '@/permission/types';
 
-export class CreateTeammateStep implements PostSetupStep {
-  logger = new Logger(CreateTeammateStep.name);
+export class CreateWorkspaceAdminStep implements PostSetupStep {
+  logger = new Logger(CreateWorkspaceAdminStep.name);
   constructor(private readonly prismaService: PrismaService) {}
 
   async execute(workspaceDetails: WorkspaceDetails): Promise<void> {

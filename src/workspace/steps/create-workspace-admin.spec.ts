@@ -3,7 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { INestApplication } from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
-import { CreateTeammateStep } from '@/workspace/steps/create-teammate';
+import { CreateWorkspaceAdminStep } from '@/workspace/steps/create-workspace-admin';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import {
   CompanyProfile,
@@ -14,8 +14,8 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 
-describe('CreateTeammateStep', () => {
-  let step: CreateTeammateStep;
+describe('CreateWorkspaceAdminStep', () => {
+  let step: CreateWorkspaceAdminStep;
   let app: INestApplication;
   let prismaService: PrismaService;
 
@@ -49,7 +49,7 @@ describe('CreateTeammateStep', () => {
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
-    step = new CreateTeammateStep(prismaService);
+    step = new CreateWorkspaceAdminStep(prismaService);
   });
 
   afterEach(async () => {

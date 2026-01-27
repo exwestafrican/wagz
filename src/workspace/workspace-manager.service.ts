@@ -5,7 +5,7 @@ import { generate } from 'generate-password';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
-import { CreateTeammateStep } from '@/workspace/steps/create-teammate';
+import { CreateWorkspaceAdminStep } from '@/workspace/steps/create-workspace-admin';
 
 @Injectable()
 export class WorkspaceManager {
@@ -68,7 +68,7 @@ export class WorkspaceManager {
 
   async setup(email: string) {
     const postWorkspaceSetupSteps: PostSetupStep[] = [
-      new CreateTeammateStep(this.prismaService),
+      new CreateWorkspaceAdminStep(this.prismaService),
     ];
     const completedSteps: PostSetupStep[] = [];
     const preverificationDetails =
