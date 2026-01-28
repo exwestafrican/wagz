@@ -10,6 +10,7 @@
     "check:format": "prettier --check \"src/**/*.ts\" \"test/**/*.ts\"",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "format:schema": "pnpx prisma format",
+    "generate:client": "pnpx prisma generate",
     "start": "nest start",
     "start:dev": "pnpm install && nest start --watch",
     "start:container-dev": "pnpx supabase start && docker compose up --build",

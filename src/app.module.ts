@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { RoadmapModule } from './roadmap/roadmap.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { PermissionModule } from './permission/permission.module';
+import { WorkspaceModule } from './workspace/workspace.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { PermissionModule } from './permission/permission.module';
     RoadmapModule,
     WaitlistModule,
     PermissionModule,
+    WorkspaceModule,
   ],
   controllers: [AppController],
   providers: [AppService],
