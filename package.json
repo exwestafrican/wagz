@@ -34,15 +34,18 @@
     "@prisma/adapter-pg": "^7.2.0",
     "@prisma/client": "^7.3.0",
     "@supabase/supabase-js": "^2.87.1",
+    "@types/nodemailer": "^7.0.9",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "generate-password": "^1.7.1",
     "libphonenumber-js": "^1.12.33",
+    "nodemailer": "^7.0.13",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.1",
-    "typeorm": "^0.3.28"
+    "typeorm": "^0.3.28",
+    "zeptomail": "^7.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",

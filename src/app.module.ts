@@ -8,6 +8,7 @@ import { RoadmapModule } from './roadmap/roadmap.module';
 import { WaitlistModule } from './waitlist/waitlist.module';
 import { PermissionModule } from './permission/permission.module';
 import { WorkspaceModule } from './workspace/workspace.module';
+import { MessagingModule } from './messaging/messaging.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { WorkspaceModule } from './workspace/workspace.module';
     WaitlistModule,
     PermissionModule,
     WorkspaceModule,
+    MessagingModule,
   ],
   controllers: [AppController],
   providers: [AppService],
