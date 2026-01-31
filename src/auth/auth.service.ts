@@ -87,23 +87,23 @@ export class AuthService {
     return `${siteUrl}/${id}/workspace`;
   }
 
-  private get setupDashboardUrl(): string {
+  private setupDashboardUrl(preverificationId: string): string {
     const siteUrl = this.configService.get<string>('SITE_URL');
-    return `${siteUrl}/setup/workspace`;
+    return `${siteUrl}/setup/${preverificationId}/workspace`;
   }
 
   async signup(signupDetails: SignupDetails, password: string): Promise<void> {
+    const preverificationDetails =
+      await this.storePreverificationDetails(signupDetails);
     const { error } = await this.supabaseClient.auth.signUp({
       email: signupDetails.email,
       password,
       options: {
-        emailRedirectTo: this.setupDashboardUrl,
+        emailRedirectTo: this.setupDashboardUrl(preverificationDetails.id),
       },
     });
 
-    if (error === null) {
-      await this.storePreverificationDetails(signupDetails);
-    } else {
+    if (error) {
       this.logger.error(error);
       if (error.code === 'user_already_exists') {
         throw new AccountExistsException(error.message); // this is thrown when user has verified email
