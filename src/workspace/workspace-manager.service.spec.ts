@@ -6,7 +6,10 @@ import { ConfigModule } from '@nestjs/config';
 import { createTestApp } from '@/test-helpers/test-app';
 import { INestApplication } from '@nestjs/common';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
-import { PreVerification } from '@/generated/prisma/client';
+import {
+  PreVerification,
+  PreVerificationStatus,
+} from '@/generated/prisma/client';
 import { ROLES } from '@/permission/types';
 
 describe('WorkspaceService', () => {
@@ -36,7 +39,7 @@ describe('WorkspaceService', () => {
 
   async function assertRequiredStepsRun(details: PreVerification) {
     const companyProfile = await prismaService.companyProfile.findFirst({
-      where: { pointOfContactEmail: preVerificationDetails.email },
+      where: { pointOfContactEmail: details.email },
     });
     expect(companyProfile).toBeTruthy();
 
@@ -56,6 +59,12 @@ describe('WorkspaceService', () => {
         where: { pointOfContactEmail: details.email },
       }),
     ).toBe(1);
+
+    const preverification =
+      await prismaService.preVerification.findUniqueOrThrow({
+        where: { id: details.id },
+      });
+    expect(preverification.status).toBe(PreVerificationStatus.VERIFIED);
   }
 
   async function assertRollbackHappened(details: PreVerification) {
@@ -76,6 +85,12 @@ describe('WorkspaceService', () => {
         where: { email: details.email },
       }),
     ).toBe(0);
+
+    const preverification =
+      await prismaService.preVerification.findUniqueOrThrow({
+        where: { id: details.id },
+      });
+    expect(preverification.status).toBe(PreVerificationStatus.PENDING);
   }
 
   describe('setup', () => {
@@ -86,8 +101,10 @@ describe('WorkspaceService', () => {
             where: { email: preVerificationDetails.email },
           }),
         ).toBe(0);
-
-        await service.setup(preVerificationDetails.email);
+        expect(preVerificationDetails.status).toBe(
+          PreVerificationStatus.PENDING,
+        );
+        await service.setup(preVerificationDetails.id);
         const teammate = await prismaService.teammate.findFirstOrThrow({
           where: { email: preVerificationDetails.email },
         });
@@ -101,9 +118,9 @@ describe('WorkspaceService', () => {
           .spyOn(prismaService.teammate, 'create')
           .mockRejectedValue(new Error('Database error'));
 
-        await expect(
-          service.setup(preVerificationDetails.email),
-        ).rejects.toThrow('Database error');
+        await expect(service.setup(preVerificationDetails.id)).rejects.toThrow(
+          'Database error',
+        );
 
         await assertRollbackHappened(preVerificationDetails);
       });

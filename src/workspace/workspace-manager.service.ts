@@ -1,5 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CompanyProfile, PreVerification } from '@/generated/prisma/client';
+import {
+  CompanyProfile,
+  PreVerification,
+  PreVerificationStatus,
+} from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { generate } from 'generate-password';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
@@ -66,14 +70,14 @@ export class WorkspaceManager {
     });
   }
 
-  async setup(email: string) {
+  async setup(preVerificationId: string): Promise<WorkspaceDetails> {
     const postWorkspaceSetupSteps: PostSetupStep[] = [
       new CreateWorkspaceAdminStep(this.prismaService),
     ];
     const completedSteps: PostSetupStep[] = [];
     const preverificationDetails =
       await this.prismaService.preVerification.findUniqueOrThrow({
-        where: { email: email },
+        where: { id: preVerificationId },
       });
     const workspaceDetails = await this.runPreWorkspaceCreationSteps(
       preverificationDetails,
@@ -83,6 +87,13 @@ export class WorkspaceManager {
         await step.execute(workspaceDetails);
         completedSteps.push(step);
       }
+      await this.prismaService.preVerification.update({
+        where: { id: preVerificationId },
+        data: {
+          status: PreVerificationStatus.VERIFIED,
+        },
+      });
+      return workspaceDetails;
     } catch (error) {
       this.logger.error(
         `Workspace setup failed, rolling back completed steps; steps=[${completedSteps.map((step) => step.constructor.name).join(', ')}] preverificationId=${preverificationDetails.id} `,
