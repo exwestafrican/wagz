@@ -25,6 +25,7 @@ export function setupApp(app: INestApplication) {
       .setTitle('Envoye API')
       .setDescription('All endpoints for the Envoye API')
       .setVersion('1.0')
+      .addBearerAuth()
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
