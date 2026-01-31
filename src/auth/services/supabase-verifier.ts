@@ -8,7 +8,7 @@ import {
   JWTPayload,
   jwtVerify,
 } from 'jose';
-import { Logger } from '@nestjs/common';
+import { ForbiddenException, Logger } from '@nestjs/common';
 
 export class SupabaseVerifier implements JwtVerifier {
   logger = new Logger(SupabaseVerifier.name);
@@ -40,23 +40,20 @@ export class SupabaseVerifier implements JwtVerifier {
       'SUPABASE_JWT_ISSUER_URL',
       '',
     ); // we need another env variable because and couldn't use ``${supabaseBaseUrl}/auth/v1/` because of  https://github.com/exwestafrican/wagz/issues/67#issue-3879877203
-
     try {
-      const payload = await jwtVerify(token, this.supaBaseJwtKeys, {
+      return await jwtVerify(token, this.supaBaseJwtKeys, {
         issuer: supabaseJwtIssuerUrl,
       })
         .catch((e) => {
           // We need this because it seems some async error happens :-(
           // https://github.com/exwestafrican/wagz/issues/67#issuecomment-3829126275
           this.logger.error(e);
+          throw new ForbiddenException('Invalid Token');
         })
-        .then((result) => result?.payload);
-
-      return payload || ({} as JWTPayload);
+        .then((result) => result.payload);
     } catch (e) {
       this.logger.error('cannot verify token', e);
-      // throw new UnauthorizedException('Invalid Token');
-      return {} as JWTPayload;
+      throw new ForbiddenException('Invalid Token');
     }
   }
 }
