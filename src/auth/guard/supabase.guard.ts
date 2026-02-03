@@ -9,6 +9,7 @@ import {
 import { JWT_VERIFIER } from '@/auth/consts';
 import type JwtVerifier from '@/auth/services/jwt-verifier';
 import type { Request } from 'express';
+import RequestUser from '@/auth/domain/request-user';
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
@@ -19,10 +20,14 @@ export class SupabaseAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest<Request>();
-
     const token = this.extractJWTFromBearerToken(request);
-    //TODO: set request user ?
-    return await this.jwtVerifier.verify(token);
+    const verify = await this.jwtVerifier.verify(token);
+    if (verify) {
+      const payload = await this.jwtVerifier.decode(token);
+      request.user = new RequestUser(payload.email);
+      return true;
+    }
+    return false;
   }
 
   private extractJWTFromBearerToken(request: Request): string {

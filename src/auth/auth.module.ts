@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -30,6 +30,7 @@ const JwtVerifierProvider = {
   },
 };
 
+@Global() //TODO make only JwtVerifierProvider globally available
 @Module({
   imports: [PassportModule],
   controllers: [AuthController],
@@ -40,5 +41,6 @@ const JwtVerifierProvider = {
     PrismaService,
     JwtVerifierProvider,
   ],
+  exports: [JWT_VERIFIER],
 })
 export class AuthModule {}

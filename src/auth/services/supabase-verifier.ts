@@ -1,11 +1,10 @@
-import JwtVerifier from '@/auth/services/jwt-verifier';
+import JwtVerifier, { AuthJwtPayload } from '@/auth/services/jwt-verifier';
 import { ConfigService } from '@nestjs/config';
 import {
   createRemoteJWKSet,
   FlattenedJWSInput,
   JSONWebKeySet,
   JWSHeaderParameters,
-  JWTPayload,
   jwtVerify,
 } from 'jose';
 import { ForbiddenException, Logger } from '@nestjs/common';
@@ -35,7 +34,7 @@ export class SupabaseVerifier implements JwtVerifier {
     return Object.values(tokenPayload).length !== 0;
   }
 
-  async decode(token: string): Promise<JWTPayload> {
+  async decode(token: string): Promise<AuthJwtPayload> {
     const supabaseJwtIssuerUrl = this.configService.get<string>(
       'SUPABASE_JWT_ISSUER_URL',
       '',
@@ -44,13 +43,12 @@ export class SupabaseVerifier implements JwtVerifier {
       return await jwtVerify(token, this.supaBaseJwtKeys, {
         issuer: supabaseJwtIssuerUrl,
       })
-        .catch((e) => {
+        .catch(() => {
           // We need this because it seems some async error happens :-(
           // https://github.com/exwestafrican/wagz/issues/67#issuecomment-3829126275
-          this.logger.error(e);
-          throw new ForbiddenException('Invalid Token');
+          return { payload: {} as AuthJwtPayload };
         })
-        .then((result) => result.payload);
+        .then((result) => result.payload as AuthJwtPayload);
     } catch (e) {
       this.logger.error('cannot verify token', e);
       throw new ForbiddenException('Invalid Token');

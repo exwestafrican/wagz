@@ -16,6 +16,7 @@ import { AuthEndpoints } from './consts';
 import { Server } from 'http';
 import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
+import preverificationFactory from '@/factories/roadmap/preverification.factory';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -53,6 +54,7 @@ describe('AuthController', () => {
   });
 
   afterAll(async () => {
+    await prismaService.preVerification.deleteMany();
     await app.close();
   });
 
@@ -124,6 +126,9 @@ describe('AuthController', () => {
             code: 'user_already_exists',
           },
         });
+        await prismaService.preVerification.create({
+          data: preverificationFactory.build({ email: 'test@example.com' }),
+        });
         await request(getHttpServer(app))
           .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
           .send(mockUserSignupDetails({ email: 'test@example.com' }))
@@ -131,7 +136,7 @@ describe('AuthController', () => {
           .expect(409);
 
         const preverifications = await prismaService.preVerification.findMany();
-        expect(preverifications).toHaveLength(0);
+        expect(preverifications).toHaveLength(1);
       });
 
       it('should return 503 when something unexpected happens with supabase', () => {
