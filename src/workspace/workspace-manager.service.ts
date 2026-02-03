@@ -86,7 +86,7 @@ export class WorkspaceManager {
             email: ownerEmail,
           },
         });
-      this.ensurePrevalidationStateIsValid(preverificationDetails);
+      this.ensurePreverificationStateIsValid(preverificationDetails);
       return preverificationDetails;
     } catch (error) {
       if (
@@ -102,7 +102,7 @@ export class WorkspaceManager {
     }
   }
 
-  private ensurePrevalidationStateIsValid(preVerification: PreVerification) {
+  private ensurePreverificationStateIsValid(preVerification: PreVerification) {
     if (preVerification.status !== PreVerificationStatus.PENDING) {
       throw new InvalidState(
         `invalid state for preVerificationId=${preVerification.id} status=${preVerification.status}`,
