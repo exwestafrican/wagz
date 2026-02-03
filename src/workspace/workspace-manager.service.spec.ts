@@ -12,6 +12,7 @@ import {
 } from '@/generated/prisma/client';
 import { ROLES } from '@/permission/types';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import { InvalidState } from '@/common/exceptions/invalid-state';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -101,7 +102,7 @@ describe('WorkspaceService', () => {
       ).rejects.toThrow(NotFoundInDb);
     });
 
-    it('returns not found when status is not pending', async () => {
+    it('returns conflict when status is not pending', async () => {
       const details = preVerificationFactory.build({
         status: PreVerificationStatus.VERIFIED,
       });
@@ -109,7 +110,7 @@ describe('WorkspaceService', () => {
         data: details,
       });
       await expect(service.setup(details.email, details.id)).rejects.toThrow(
-        NotFoundInDb,
+        InvalidState,
       );
     });
 
