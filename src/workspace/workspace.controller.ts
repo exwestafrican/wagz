@@ -1,4 +1,13 @@
-import { Body, Controller, HttpStatus, Logger, Post } from '@nestjs/common';
+import {
+  Body,
+  ConflictException,
+  NotFoundException,
+  Controller,
+  HttpStatus,
+  Logger,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { AuthController } from '@/auth/auth.controller';
@@ -7,6 +16,11 @@ import SetupWorkspaceDto from '@/workspace/dto/setup-workspace.dto';
 import WorkspaceDetailsResponseDto, {
   toWorkspaceDetailsResponse,
 } from '@/workspace/dto/workspace-details-response.dto';
+import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import { User } from '@/auth/decorator/user.decorator';
+import RequestUser from '@/auth/domain/request-user';
+import { InvalidState } from '@/common/exceptions/invalid-state';
+import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -25,12 +39,24 @@ export class WorkspaceController {
     description: 'User not authorized to setup',
   })
   @ApiBadRequestResponse()
-  //TODO: ensure user is authenticated
+  @UseGuards(SupabaseAuthGuard)
   async setup(
+    @User() requestUser: RequestUser,
     @Body() dto: SetupWorkspaceDto,
   ): Promise<WorkspaceDetailsResponseDto> {
-    const workspaceDetails = await this.workspaceManager.setup(dto.id);
-    //TODO: ensure that request.user.email is same as preverified.user.email
-    return toWorkspaceDetailsResponse(workspaceDetails);
+    try {
+      const workspaceDetails = await this.workspaceManager.setup(
+        requestUser.email,
+        dto.id,
+      );
+      return toWorkspaceDetailsResponse(workspaceDetails);
+    } catch (error) {
+      if (error instanceof InvalidState) {
+        throw new ConflictException();
+      } else if (error instanceof NotFoundInDb) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
   }
 }

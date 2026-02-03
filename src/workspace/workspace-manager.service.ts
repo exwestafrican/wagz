@@ -3,6 +3,7 @@ import {
   CompanyProfile,
   PreVerification,
   PreVerificationStatus,
+  Prisma,
 } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { generate } from 'generate-password';
@@ -10,6 +11,9 @@ import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
 import { CreateWorkspaceAdminStep } from '@/workspace/steps/create-workspace-admin';
+import PRISMA_CODES from '@/prisma/consts';
+import NotFoundInDb from '@/common/exceptions/not-found';
+import { InvalidState } from '@/common/exceptions/invalid-state';
 
 @Injectable()
 export class WorkspaceManager {
@@ -70,18 +74,59 @@ export class WorkspaceManager {
     });
   }
 
-  async setup(preVerificationId: string): Promise<WorkspaceDetails> {
+  private async getDetailsOrThrow(
+    ownerEmail: string,
+    preVerificationId: string,
+  ): Promise<PreVerification> {
+    try {
+      const preverificationDetails =
+        await this.prismaService.preVerification.findUniqueOrThrow({
+          where: {
+            id: preVerificationId,
+            email: ownerEmail,
+          },
+        });
+      this.ensurePrevalidationStateIsValid(preverificationDetails);
+      return preverificationDetails;
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === PRISMA_CODES.NOT_FOUND
+      ) {
+        this.logger.warn(
+          `invalid setup attempt for preVerificationId ${preVerificationId}`,
+        );
+        throw new NotFoundInDb('invalid preverification');
+      }
+      throw error;
+    }
+  }
+
+  private ensurePrevalidationStateIsValid(preVerification: PreVerification) {
+    if (preVerification.status !== PreVerificationStatus.PENDING) {
+      throw new InvalidState(
+        `invalid state for preVerificationId=${preVerification.id} status=${preVerification.status}`,
+      );
+    }
+  }
+
+  async setup(
+    ownerEmail: string,
+    preVerificationId: string,
+  ): Promise<WorkspaceDetails> {
     const postWorkspaceSetupSteps: PostSetupStep[] = [
       new CreateWorkspaceAdminStep(this.prismaService),
     ];
     const completedSteps: PostSetupStep[] = [];
-    const preverificationDetails =
-      await this.prismaService.preVerification.findUniqueOrThrow({
-        where: { id: preVerificationId },
-      });
+    const preverificationDetails = await this.getDetailsOrThrow(
+      ownerEmail,
+      preVerificationId,
+    );
+
     const workspaceDetails = await this.runPreWorkspaceCreationSteps(
       preverificationDetails,
     );
+
     try {
       for (const step of postWorkspaceSetupSteps) {
         await step.execute(workspaceDetails);

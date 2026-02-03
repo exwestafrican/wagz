@@ -11,6 +11,7 @@ import {
   PreVerificationStatus,
 } from '@/generated/prisma/client';
 import { ROLES } from '@/permission/types';
+import NotFoundInDb from '@/common/exceptions/not-found';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -94,6 +95,24 @@ describe('WorkspaceService', () => {
   }
 
   describe('setup', () => {
+    it('returns not found when email and id do not match', async () => {
+      await expect(
+        service.setup('somrandomEmail', preVerificationDetails.id),
+      ).rejects.toThrow(NotFoundInDb);
+    });
+
+    it('returns not found when status is not pending', async () => {
+      const details = preVerificationFactory.build({
+        status: PreVerificationStatus.VERIFIED,
+      });
+      await prismaService.preVerification.create({
+        data: details,
+      });
+      await expect(service.setup(details.email, details.id)).rejects.toThrow(
+        NotFoundInDb,
+      );
+    });
+
     describe('Teammate', () => {
       it('it runs teammate create step successfully', async () => {
         expect(
@@ -104,7 +123,10 @@ describe('WorkspaceService', () => {
         expect(preVerificationDetails.status).toBe(
           PreVerificationStatus.PENDING,
         );
-        await service.setup(preVerificationDetails.id);
+        await service.setup(
+          preVerificationDetails.email,
+          preVerificationDetails.id,
+        );
         const teammate = await prismaService.teammate.findFirstOrThrow({
           where: { email: preVerificationDetails.email },
         });
@@ -118,9 +140,12 @@ describe('WorkspaceService', () => {
           .spyOn(prismaService.teammate, 'create')
           .mockRejectedValue(new Error('Database error'));
 
-        await expect(service.setup(preVerificationDetails.id)).rejects.toThrow(
-          'Database error',
-        );
+        await expect(
+          service.setup(
+            preVerificationDetails.email,
+            preVerificationDetails.id,
+          ),
+        ).rejects.toThrow('Database error');
 
         await assertRollbackHappened(preVerificationDetails);
       });
