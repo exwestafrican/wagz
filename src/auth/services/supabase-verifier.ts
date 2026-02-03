@@ -46,7 +46,6 @@ export class SupabaseVerifier implements JwtVerifier {
         .catch((e) => {
           // We need this because it seems some async error happens :-(
           // https://github.com/exwestafrican/wagz/issues/67#issuecomment-3829126275
-          this.logger.warn(e);
           return { payload: {} as AuthJwtPayload };
         })
         .then((result) => result.payload as AuthJwtPayload);
