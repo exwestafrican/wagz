@@ -43,7 +43,7 @@ export class SupabaseVerifier implements JwtVerifier {
       return await jwtVerify(token, this.supaBaseJwtKeys, {
         issuer: supabaseJwtIssuerUrl,
       })
-        .catch((e) => {
+        .catch(() => {
           // We need this because it seems some async error happens :-(
           // https://github.com/exwestafrican/wagz/issues/67#issuecomment-3829126275
           return { payload: {} as AuthJwtPayload };
