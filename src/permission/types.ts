@@ -39,6 +39,7 @@ export const ROLES = {
   SupportStaff: Role.of('SupportStaff', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
     PERMISSIONS.REPLY_SUPPORT_CONVERSATIONS,
+    PERMISSIONS.MESSAGE_TEAMMATES,
   ]),
   WorkspaceMember: Role.of('WorkspaceMember', [PERMISSIONS.MESSAGE_TEAMMATES]),
 };
