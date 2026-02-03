@@ -21,10 +21,13 @@ export class SupabaseAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest<Request>();
     const token = this.extractJWTFromBearerToken(request);
-
-    const payload = await this.jwtVerifier.decode(token);
-    request.user = new RequestUser(payload.email);
-    return await this.jwtVerifier.verify(token);
+    const verify = await this.jwtVerifier.verify(token);
+    if (verify) {
+      const payload = await this.jwtVerifier.decode(token);
+      request.user = new RequestUser(payload.email);
+      return true;
+    }
+    return false;
   }
 
   private extractJWTFromBearerToken(request: Request): string {
