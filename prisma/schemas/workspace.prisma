@@ -30,6 +30,7 @@ model Workspace {
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
   teammates     Teammate[]
+  timezone      String          @default("Africa/Lagos") @db.VarChar(255)
 
   @@index([code])
   @@map("workspace")
