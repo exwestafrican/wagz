@@ -1,7 +1,7 @@
 import {
   Body,
-  ConflictException,
   NotFoundException,
+  ConflictException,
   Controller,
   HttpStatus,
   Logger,
@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
-import { AuthController } from '@/auth/auth.controller';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import SetupWorkspaceDto from '@/workspace/dto/setup-workspace.dto';
 import WorkspaceDetailsResponseDto, {
@@ -24,7 +23,7 @@ import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Controller('workspace')
 export class WorkspaceController {
-  logger = new Logger(AuthController.name);
+  logger = new Logger(WorkspaceController.name);
 
   constructor(private readonly workspaceManager: WorkspaceManager) {}
 
@@ -37,6 +36,14 @@ export class WorkspaceController {
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'User not authorized to setup',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Preverification not found or auth user is not the owner',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Preverification already verified or invalid state',
   })
   @ApiBadRequestResponse()
   @UseGuards(SupabaseAuthGuard)
