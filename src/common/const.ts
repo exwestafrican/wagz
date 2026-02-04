@@ -13,4 +13,5 @@ export const AuthEndpoints = {
 
 export const PermissionEndpoints = {
   TEAMMATE_PERMISSIONS: '/permission',
+  INVITE_TEAMMATES: '/workspace/invite-teammates',
 };
