@@ -1,10 +1,10 @@
 import {
   CanActivate,
   ExecutionContext,
+  ForbiddenException,
   Inject,
   Injectable,
   Logger,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { JWT_VERIFIER } from '@/jwt-verifier/consts';
 import type JwtVerifier from '@/jwt-verifier/jwt-verifier.interface';
@@ -21,22 +21,21 @@ export class SupabaseAuthGuard implements CanActivate {
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest<Request>();
     const token = this.extractJWTFromBearerToken(request);
-    const verify = await this.jwtVerifier.verify(token);
-    if (verify) {
-      const payload = await this.jwtVerifier.decode(token);
+
+    const { isValid, payload } = await this.jwtVerifier.verifyAndDecode(token);
+
+    if (isValid) {
       request.user = new RequestUser(payload.email);
-      return true;
     }
-    return false;
+
+    return isValid;
   }
 
   private extractJWTFromBearerToken(request: Request): string {
     const authHeader = request.headers.authorization;
     const [, token] = authHeader?.split(' ') || ['Bearer', ''];
     if (!token) {
-      throw new UnauthorizedException(
-        'Missing or invalid authorization header',
-      );
+      throw new ForbiddenException('Missing or invalid authorization header');
     }
     return token;
   }

@@ -16,9 +16,12 @@ export async function createTestApp(module: TestingModule) {
 }
 
 function makeMockJwtVerifier(user: RequestUser): JwtVerifier {
+  const mockPayload = { email: user.email };
   return {
-    verify: jest.fn().mockResolvedValue(true),
-    decode: jest.fn().mockResolvedValue({ email: user.email }),
+    verifyAndDecode: jest.fn().mockResolvedValue({
+      isValid: true,
+      payload: mockPayload,
+    }),
   };
 }
 
