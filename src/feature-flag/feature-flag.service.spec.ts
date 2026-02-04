@@ -72,8 +72,6 @@ describe('FeatureFlagService', () => {
     await prismaService.companyProfile.deleteMany();
     await app.close();
   });
-  // returns true for app 6
-  // returns false for any other app
   it('should return true for envoye workspace', async () => {
     const envoyeWorkspace: Workspace =
       await buildEnvoyeWorkspace(prismaService);
