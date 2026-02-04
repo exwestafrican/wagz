@@ -8,4 +8,5 @@ export const AuthEndpoints = {
   SIGNUP_EMAIL_ONLY: '/auth/signup/email-only',
   REQUEST_MAGIC_LINK: '/auth/magic-link/request',
   SETUP_WORKSPACE: '/workspace/setup',
+  INVITE_TEAMMATES: '/workspace/invite-teammates',
 };
