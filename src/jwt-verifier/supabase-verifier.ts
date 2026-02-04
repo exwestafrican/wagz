@@ -1,4 +1,7 @@
-import JwtVerifier, { AuthJwtPayload } from './jwt-verifier.interface';
+import JwtVerifier, {
+  AuthJwtPayload,
+  VerifyAndDecodeResult,
+} from './jwt-verifier.interface';
 import { ConfigService } from '@nestjs/config';
 import {
   createRemoteJWKSet,
@@ -7,7 +10,7 @@ import {
   JWSHeaderParameters,
   jwtVerify,
 } from 'jose';
-import { ForbiddenException, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 
 export class SupabaseVerifier implements JwtVerifier {
   logger = new Logger(SupabaseVerifier.name);
@@ -29,12 +32,7 @@ export class SupabaseVerifier implements JwtVerifier {
     );
   }
 
-  async verify(token: string): Promise<boolean> {
-    const tokenPayload = await this.decode(token);
-    return Object.values(tokenPayload).length !== 0;
-  }
-
-  async decode(token: string): Promise<AuthJwtPayload> {
+  async verifyAndDecode(token: string): Promise<VerifyAndDecodeResult> {
     const supabaseJwtIssuerUrl = this.configService.get<string>(
       'SUPABASE_JWT_ISSUER_URL',
       '',
@@ -46,12 +44,18 @@ export class SupabaseVerifier implements JwtVerifier {
         .catch(() => {
           // We need this because it seems some async error happens :-(
           // https://github.com/exwestafrican/wagz/issues/67#issuecomment-3829126275
-          return { payload: {} as AuthJwtPayload };
+          return { isValid: false, payload: {} as AuthJwtPayload };
         })
-        .then((result) => result.payload as AuthJwtPayload);
+        .then((result) => ({
+          isValid: Object.values(result.payload).length !== 0,
+          payload: result.payload as AuthJwtPayload,
+        }));
     } catch (e) {
       this.logger.error('cannot verify token', e);
-      throw new ForbiddenException('Invalid Token');
+      return {
+        isValid: false,
+        payload: {} as AuthJwtPayload,
+      };
     }
   }
 }
