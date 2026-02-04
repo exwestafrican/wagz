@@ -10,7 +10,7 @@ import {
   JWSHeaderParameters,
   jwtVerify,
 } from 'jose';
-import { ForbiddenException, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 
 export class SupabaseVerifier implements JwtVerifier {
   logger = new Logger(SupabaseVerifier.name);
