@@ -40,8 +40,7 @@ describe('WorkspaceController', () => {
   });
 
   function buildEmails(size: number) {
-    const emptyArray = new Array(size);
-    return emptyArray.map(() => faker.internet.email());
+    return new Array(size).fill(0).map(() => faker.internet.email());
   }
 
   describe('Setup', () => {
