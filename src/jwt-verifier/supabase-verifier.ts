@@ -44,7 +44,7 @@ export class SupabaseVerifier implements JwtVerifier {
         .catch(() => {
           // We need this because it seems some async error happens :-(
           // https://github.com/exwestafrican/wagz/issues/67#issuecomment-3829126275
-          return { payload: {} as AuthJwtPayload };
+          return { isValid: false, payload: {} as AuthJwtPayload };
         })
         .then((result) => ({
           isValid: Object.values(result.payload).length !== 0,
@@ -52,7 +52,10 @@ export class SupabaseVerifier implements JwtVerifier {
         }));
     } catch (e) {
       this.logger.error('cannot verify token', e);
-      throw new ForbiddenException('Invalid Token');
+      return {
+        isValid: false,
+        payload: {} as AuthJwtPayload,
+      };
     }
   }
 }
