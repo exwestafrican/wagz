@@ -1,4 +1,4 @@
-import { FeatureFlag } from '@/feature-flag/domain/feature-flag';
+import { FeatureFlag } from '@/feature-flag-depreciated/domain/feature-flag';
 
 export const FEATURE_FLAG_LOADER = Symbol('FEATURE_FLAG_LOADER');
 

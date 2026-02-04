@@ -1,6 +1,6 @@
 import { FeatureFlagLoader } from '@/permission/loader/feature-flag-loader';
-import { FeatureFlag } from '@/feature-flag/domain/feature-flag';
-import { FeatureStatus } from '@/feature-flag/domain/feature-status';
+import { FeatureFlag } from '@/feature-flag-depreciated/domain/feature-flag';
+import { FeatureStatus } from '@/feature-flag-depreciated/domain/feature-status';
 
 class HardcodedFeatureFlagLoader implements FeatureFlagLoader {
   load(): FeatureFlag[] {

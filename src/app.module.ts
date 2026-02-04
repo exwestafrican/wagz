@@ -10,6 +10,8 @@ import { WaitlistModule } from './waitlist/waitlist.module';
 import { PermissionModule } from './permission/permission.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { MessagingModule } from './messaging/messaging.module';
+import { FeatureFlagModule } from './feature-flag/feature-flag.module';
+import { FeatureFlagManagerService } from './feature-flag-manager/feature-flag-manager.service';
 
 @Module({
   imports: [
@@ -24,8 +26,9 @@ import { MessagingModule } from './messaging/messaging.module';
     PermissionModule,
     WorkspaceModule,
     MessagingModule,
+    FeatureFlagModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, FeatureFlagManagerService],
 })
 export class AppModule {}
