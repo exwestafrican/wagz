@@ -9,6 +9,7 @@ import {
   Post,
   Query,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
@@ -113,6 +114,7 @@ export class WorkspaceController {
   })
   @ApiBadRequestResponse()
   @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
   inviteTeammates(
     @User() requestUser: RequestUser,
     @Body() dto: InviteTeammatesDto,
