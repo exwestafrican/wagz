@@ -23,11 +23,11 @@ export class TestFeatureFlagLoader implements FeatureFlagLoader {
       }),
     ];
   }
-  enabledFeatures(workspaceId: number): Array<string> {
+  enabledFeatures(workspaceCode: string): Array<string> {
     const featureFlags: FeatureFlag[] = this.load();
 
     return featureFlags
-      .filter((featureFlag) => featureFlag.isEnabled(workspaceId))
+      .filter((featureFlag) => featureFlag.isEnabled(workspaceCode))
       .map((featureFlag) => featureFlag.key);
   }
 }

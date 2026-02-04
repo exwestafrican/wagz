@@ -43,15 +43,15 @@ export class FeatureFlagService {
     return isEmpty(this.cache.value);
   }
 
-  public isEnabled(key: string, workspaceId: number) {
+  public isEnabled(key: string, workspaceCode: string) {
     if (this.isCacheEmpty()) {
       this.refresh();
     }
     const featureFlag = this.cache.value.get(key);
-    return featureFlag?.isEnabled(workspaceId);
+    return featureFlag?.isEnabled(workspaceCode);
   }
 
-  public enabledFeatures(workspaceId: number) {
-    return this.featureFlagLoader.enabledFeatures(workspaceId);
+  public enabledFeatures(workspaceCode: string) {
+    return this.featureFlagLoader.enabledFeatures(workspaceCode);
   }
 }

@@ -74,25 +74,25 @@ describe('FeatureFlagService', () => {
   });
   // returns true for app 6
   // returns false for any other app
-  it('should return true f`or envoye workspace', async () => {
+  it('should return true for envoye workspace', async () => {
     const envoyeWorkspace: Workspace =
       await buildEnvoyeWorkspace(prismaService);
     expect(
-      service.isEnabled('can_integrate_whatsapp', envoyeWorkspace.id),
+      service.isEnabled('can_integrate_whatsapp', envoyeWorkspace.code),
     ).toBeTruthy();
   });
 
   it('should return false for non envoye workspace', async () => {
     const someOtherWorkspace = await buildWorkspace(prismaService);
     expect(
-      service.isEnabled('can_integrate_whatsapp', someOtherWorkspace.id),
+      service.isEnabled('can_integrate_whatsapp', someOtherWorkspace.code),
     ).toBeFalsy();
   });
 
   it('should list app features for envoye', async () => {
     const envoyeWorkspace: Workspace =
       await buildEnvoyeWorkspace(prismaService);
-    expect(service.enabledFeatures(envoyeWorkspace.id)).toMatchObject([
+    expect(service.enabledFeatures(envoyeWorkspace.code)).toMatchObject([
       'can_integrate_whatsapp',
       'can_integrate_instagram',
       'can_integrate_gmail',
@@ -101,6 +101,6 @@ describe('FeatureFlagService', () => {
 
   it('should return an empty list for other workspaces', async () => {
     const someOtherWorkspace = await buildWorkspace(prismaService);
-    expect(service.enabledFeatures(someOtherWorkspace.id)).toMatchObject([]);
+    expect(service.enabledFeatures(someOtherWorkspace.code)).toMatchObject([]);
   });
 });
