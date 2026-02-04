@@ -6,8 +6,8 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JWT_VERIFIER } from '@/auth/consts';
-import type JwtVerifier from '@/auth/services/jwt-verifier';
+import { JWT_VERIFIER } from '@/jwt-verifier/consts';
+import type JwtVerifier from '@/jwt-verifier/jwt-verifier.interface';
 import type { Request } from 'express';
 import RequestUser from '@/auth/domain/request-user';
 

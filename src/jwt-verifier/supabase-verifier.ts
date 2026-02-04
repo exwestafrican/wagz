@@ -1,4 +1,4 @@
-import JwtVerifier, { AuthJwtPayload } from '@/auth/services/jwt-verifier';
+import JwtVerifier, { AuthJwtPayload } from './jwt-verifier.interface';
 import { ConfigService } from '@nestjs/config';
 import {
   createRemoteJWKSet,
