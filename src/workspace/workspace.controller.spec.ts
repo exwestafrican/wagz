@@ -20,6 +20,7 @@ import { AuthEndpoints } from '@/common/const';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { MailerProvider } from '@/messaging/messaging.module';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { faker } from '@faker-js/faker';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -46,7 +47,12 @@ describe('WorkspaceController', () => {
     await app.close();
   });
 
-  describe('Auth user owns resource', () => {
+  function buildEmails(size: number) {
+    const emptyArray = new Array(size);
+    return emptyArray.map(() => faker.internet.email());
+  }
+
+  describe('Setup', () => {
     it('returns 201 for  successful preverification', async () => {
       preVerificationDetails = await factory.persist('preverification', () =>
         preVerificationFactory.build({
@@ -123,6 +129,35 @@ describe('WorkspaceController', () => {
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe(' Invite Teammates', () => {
+    it('does not accept empty email list', async () => {
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.INVITE_TEAMMATES)
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails: [] })
+        .expect(HttpStatus.BAD_REQUEST);
+    });
+
+    it('does not accept more than 10 emails', async () => {
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.INVITE_TEAMMATES)
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails: buildEmails(11) })
+        .expect(HttpStatus.BAD_REQUEST);
+    });
+
+    it('accepts up to 10 emails', async () => {
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.INVITE_TEAMMATES)
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails: buildEmails(9) })
+        .expect(HttpStatus.OK);
     });
   });
 });

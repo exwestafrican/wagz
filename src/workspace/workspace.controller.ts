@@ -14,6 +14,7 @@ import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import SetupWorkspaceDto from '@/workspace/dto/setup-workspace.dto';
+import InviteTeammatesDto from '@/workspace/dto/invite-teammates.dto';
 import WorkspaceDetailsResponseDto, {
   toWorkspaceDetailsResponse,
 } from '@/workspace/dto/workspace-details-response.dto';
@@ -98,5 +99,28 @@ export class WorkspaceController {
       }
       throw error;
     }
+  }
+
+  @Post('/invite-teammates')
+  @ApiOperation({ summary: 'Invite teammates by email' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Request accepted (no-op for now)',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User not authorized',
+  })
+  @ApiBadRequestResponse()
+  @UseGuards(SupabaseAuthGuard)
+  inviteTeammates(
+    @User() requestUser: RequestUser,
+    @Body() dto: InviteTeammatesDto,
+  ) {
+    // No-op: invite flow to be implemented
+    return {
+      user: requestUser.email,
+      emails: dto.emails,
+    };
   }
 }
