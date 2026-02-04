@@ -11,7 +11,6 @@ import { PermissionModule } from './permission/permission.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { FeatureFlagModule } from './feature-flag/feature-flag.module';
-import { FeatureFlagManagerService } from './feature-flag-manager/feature-flag-manager.service';
 
 @Module({
   imports: [
@@ -29,6 +28,6 @@ import { FeatureFlagManagerService } from './feature-flag-manager/feature-flag-m
     FeatureFlagModule,
   ],
   controllers: [AppController],
-  providers: [AppService, FeatureFlagManagerService],
+  providers: [AppService],
 })
 export class AppModule {}
