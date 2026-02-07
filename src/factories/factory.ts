@@ -1,6 +1,7 @@
 import { Workspace } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import companyProfileFactory from '@/factories/company-profile.factory';
+import { persistWorkspaceStrategy } from '@/factories/workspace.factory';
 
 export interface PersistStrategy {
   persist: <T>(strategy: string, buildObject: () => T) => Promise<T>;
@@ -12,14 +13,7 @@ function createPersistStrategy(prismaService: PrismaService): PersistStrategy {
       const obj = buildObject();
       switch (strategy) {
         case 'workspace': {
-          const workspace = obj as Workspace;
-          const companyProfile = companyProfileFactory.build({
-            companyName: workspace.name,
-            id: workspace.ownedById,
-            domain: `${workspace.name.toLowerCase()}.co`,
-          });
-          await prismaService.companyProfile.create({ data: companyProfile });
-          await prismaService.workspace.create({ data: workspace });
+          await persistWorkspaceStrategy(prismaService, obj as Workspace);
           return obj;
         }
         default: {
@@ -31,7 +25,8 @@ function createPersistStrategy(prismaService: PrismaService): PersistStrategy {
 }
 
 const Factory = {
-  createStrategy: (prismaService: PrismaService) => createPersistStrategy(prismaService),
+  createStrategy: (prismaService: PrismaService) =>
+    createPersistStrategy(prismaService),
 };
 
 export default Factory;

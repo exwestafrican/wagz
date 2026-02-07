@@ -6,6 +6,7 @@ import {
   ENVOYE_WORKSPACE_CODE,
   ENVOYE_WORKSPACE_ID,
 } from '@/feature-flag/const';
+import { PrismaService } from '@/prisma/prisma.service';
 
 class WorkspaceFactory extends Factory<Workspace> {
   envoyeWorkspace() {
@@ -43,5 +44,18 @@ const workspaceFactory = WorkspaceFactory.define(({ sequence }) => {
     timezone: 'Africa/Lagos',
   };
 });
+
+export async function persistWorkspaceStrategy(
+  prismaService: PrismaService,
+  workspace: Workspace,
+) {
+  const companyProfile = companyProfileFactory.build({
+    companyName: workspace.name,
+    id: workspace.ownedById,
+    domain: `${workspace.name.toLowerCase()}.co`,
+  });
+  await prismaService.companyProfile.create({ data: companyProfile });
+  await prismaService.workspace.create({ data: workspace });
+}
 
 export default workspaceFactory;
