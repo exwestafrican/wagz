@@ -3,15 +3,16 @@ import { PrismaService } from '@/prisma/prisma.service';
 import companyProfileFactory from '@/factories/company-profile.factory';
 
 export interface Strategy {
-  persist: <T>(strategy: string, buildObject: () => T) => Promise<void>;
+  persist: <T>(strategy: string, buildObject: () => T) => Promise<T>;
 }
 
 function CreationStrategy(prismaService: PrismaService): Strategy {
   return {
     persist: async function <T>(strategy: string, buildObject: () => T) {
+      const obj = buildObject();
       switch (strategy) {
         case 'workspace': {
-          const workspace = buildObject() as Workspace;
+          const workspace = obj as Workspace;
           const companyProfile = companyProfileFactory.build({
             companyName: workspace.name,
             id: workspace.ownedById,
@@ -19,6 +20,10 @@ function CreationStrategy(prismaService: PrismaService): Strategy {
           });
           await prismaService.companyProfile.create({ data: companyProfile });
           await prismaService.workspace.create({ data: workspace });
+          return obj;
+        }
+        default: {
+          throw new Error(`Unknown strategy ${strategy}`);
         }
       }
     },
