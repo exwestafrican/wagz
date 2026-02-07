@@ -2,11 +2,11 @@ import { Workspace, WorkspaceStatus } from '@/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 import { Factory } from 'fishery';
 import companyProfileFactory from '@/factories/company-profile.factory';
+import { PrismaService } from '@/prisma/prisma.service';
 import {
   ENVOYE_WORKSPACE_CODE,
   ENVOYE_WORKSPACE_ID,
 } from '@/feature-flag/const';
-import { PrismaService } from '@/prisma/prisma.service';
 
 class WorkspaceFactory extends Factory<Workspace> {
   envoyeWorkspace() {

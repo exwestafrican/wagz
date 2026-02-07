@@ -40,7 +40,9 @@ describe('FeatureFlagService', () => {
   });
 
   it('should return true for envoye workspace', async () => {
-    const envoyeWorkspace = await factory.persist('workspace', () => workspaceFactory.envoyeWorkspace());
+    const envoyeWorkspace = await factory.persist('workspace', () =>
+      workspaceFactory.envoyeWorkspace(),
+    );
 
     expect(
       service.isEnabled('can_integrate_whatsapp', envoyeWorkspace.code),
