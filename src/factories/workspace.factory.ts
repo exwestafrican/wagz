@@ -1,8 +1,33 @@
 import { Workspace, WorkspaceStatus } from '@/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 import { Factory } from 'fishery';
+import companyProfileFactory from '@/factories/company-profile.factory';
+import {
+  ENVOYE_WORKSPACE_CODE,
+  ENVOYE_WORKSPACE_ID,
+} from '@/feature-flag/const';
 
-const workspaceFactory = Factory.define<Workspace>(({ sequence }) => {
+class WorkspaceFactory extends Factory<Workspace> {
+  envoyeWorkspace() {
+    return this.build(
+      {
+        id: ENVOYE_WORKSPACE_ID,
+        code: ENVOYE_WORKSPACE_CODE,
+        name: 'Envoye',
+      },
+      {
+        associations: {
+          ownedById: companyProfileFactory.build({
+            companyName: 'Envoye',
+            domain: 'envoye.co',
+          }).id,
+        },
+      },
+    );
+  }
+}
+
+const workspaceFactory = WorkspaceFactory.define(({ sequence }) => {
   return {
     id: sequence,
     name: faker.company.name(),

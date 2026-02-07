@@ -11,11 +11,14 @@ import { TestFeatureFlagLoader } from './service/test-feature-flag-loader';
 import { Workspace } from '@/generated/prisma/client';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
+import Factory from '@/factories/factory';
+import { Strategy } from '@/factories/factory';
 
 describe('FeatureFlagService', () => {
   let service: FeatureFlagService;
   let prismaService: PrismaService;
   let app: INestApplication;
+  let factory: Strategy;
 
   async function buildEnvoyeWorkspace(prismaService: PrismaService) {
     const companyProfile = await prismaService.companyProfile.create({
@@ -66,15 +69,18 @@ describe('FeatureFlagService', () => {
     app = await createTestApp(module);
     service = app.get<FeatureFlagService>(FeatureFlagService);
     prismaService = app.get<PrismaService>(PrismaService);
+    factory = Factory.setupORM(prismaService);
   });
 
   afterEach(async () => {
     await prismaService.companyProfile.deleteMany();
     await app.close();
   });
+
   it('should return true for envoye workspace', async () => {
-    const envoyeWorkspace: Workspace =
-      await buildEnvoyeWorkspace(prismaService);
+    const envoyeWorkspace = workspaceFactory.envoyeWorkspace();
+    await factory.persist('workspace', () => envoyeWorkspace);
+
     expect(
       service.isEnabled('can_integrate_whatsapp', envoyeWorkspace.code),
     ).toBeTruthy();
