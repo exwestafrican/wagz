@@ -4,6 +4,7 @@ import {
   PreVerificationStatus,
 } from '@/generated/prisma/client';
 import { faker } from '@faker-js/faker';
+import { PrismaService } from '@/prisma/prisma.service';
 
 const preVerificationFactory = Factory.define<PreVerification>(() => {
   return {
@@ -19,5 +20,12 @@ const preVerificationFactory = Factory.define<PreVerification>(() => {
     updatedAt: faker.date.recent(),
   };
 });
+
+export async function persistPreverificationStrategy(
+  prismaService: PrismaService,
+  preVerification: PreVerification,
+) {
+  await prismaService.preVerification.create({ data: preVerification });
+}
 
 export default preVerificationFactory;

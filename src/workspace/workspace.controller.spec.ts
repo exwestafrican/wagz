@@ -12,6 +12,7 @@ import {
   PreVerificationStatus,
 } from '@/generated/prisma/client';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import request from 'supertest';
 
 import { AuthEndpoints } from '@/common/const';
@@ -21,6 +22,7 @@ describe('WorkspaceController', () => {
   let requestUser: RequestUser;
   let app: INestApplication;
   let prismaService: PrismaService;
+  let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
 
   beforeEach(async () => {
@@ -31,6 +33,7 @@ describe('WorkspaceController', () => {
     }).with(requestUser);
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
+    factory = Factory.createStrategy(prismaService);
   });
 
   afterEach(async () => {
@@ -40,13 +43,12 @@ describe('WorkspaceController', () => {
 
   describe('Auth user owns resource', () => {
     it('returns 201 for  successful preverification', async () => {
-      preVerificationDetails = preVerificationFactory.build({
-        email: requestUser.email,
-        status: PreVerificationStatus.PENDING,
-      });
-      await prismaService.preVerification.create({
-        data: preVerificationDetails,
-      });
+      preVerificationDetails = await factory.persist('preverification', () =>
+        preVerificationFactory.build({
+          email: requestUser.email,
+          status: PreVerificationStatus.PENDING,
+        }),
+      );
 
       await request(getHttpServer(app))
         .post(AuthEndpoints.SETUP_WORKSPACE)
@@ -57,13 +59,12 @@ describe('WorkspaceController', () => {
     });
 
     it('it throws conflict when verification is verified', async () => {
-      preVerificationDetails = preVerificationFactory.build({
-        email: requestUser.email,
-        status: PreVerificationStatus.VERIFIED,
-      });
-      await prismaService.preVerification.create({
-        data: preVerificationDetails,
-      });
+      preVerificationDetails = await factory.persist('preverification', () =>
+        preVerificationFactory.build({
+          email: requestUser.email,
+          status: PreVerificationStatus.VERIFIED,
+        }),
+      );
       await request(getHttpServer(app))
         .post(AuthEndpoints.SETUP_WORKSPACE)
         .set('Accept', 'application/json')
@@ -73,13 +74,14 @@ describe('WorkspaceController', () => {
     });
 
     it('it returns not found when auth user is not owner of verification', async () => {
-      const anotherUsersPreverification = preVerificationFactory.build({
-        email: 'someOtherUser@useenvoye.co',
-        status: PreVerificationStatus.PENDING,
-      });
-      await prismaService.preVerification.create({
-        data: anotherUsersPreverification,
-      });
+      const anotherUsersPreverification = await factory.persist(
+        'preverification',
+        () =>
+          preVerificationFactory.build({
+            email: 'someOtherUser@useenvoye.co',
+            status: PreVerificationStatus.PENDING,
+          }),
+      );
       await request(getHttpServer(app))
         .post(AuthEndpoints.SETUP_WORKSPACE)
         .set('Accept', 'application/json')
