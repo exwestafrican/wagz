@@ -1,6 +1,6 @@
-import { Workspace } from '@/generated/prisma/client';
+import { PreVerification, Workspace } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
-import companyProfileFactory from '@/factories/company-profile.factory';
+import { persistPreverificationStrategy } from '@/factories/roadmap/preverification.factory';
 import { persistWorkspaceStrategy } from '@/factories/workspace.factory';
 
 export interface PersistStrategy {
@@ -12,6 +12,13 @@ function createPersistStrategy(prismaService: PrismaService): PersistStrategy {
     persist: async function <T>(strategy: string, buildObject: () => T) {
       const obj = buildObject();
       switch (strategy) {
+        case 'preverification': {
+          await persistPreverificationStrategy(
+            prismaService,
+            obj as PreVerification,
+          );
+          return obj;
+        }
         case 'workspace': {
           await persistWorkspaceStrategy(prismaService, obj as Workspace);
           return obj;
