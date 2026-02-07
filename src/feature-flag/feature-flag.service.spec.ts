@@ -3,12 +3,9 @@ import { FeatureFlagService } from './feature-flag.service';
 import { INestApplication } from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
 import workspaceFactory from '@/factories/workspace.factory';
-import { ENVOYE_WORKSPACE_CODE, ENVOYE_WORKSPACE_ID } from './const';
-import companyProfileFactory from '@/factories/company-profile.factory';
 import { PrismaService } from '@/prisma/prisma.service';
 import FeatureFlagLoader from './service/feature-flag-loader';
 import { TestFeatureFlagLoader } from './service/test-feature-flag-loader';
-import { Workspace } from '@/generated/prisma/client';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
 import Factory from '@/factories/factory';
@@ -19,41 +16,6 @@ describe('FeatureFlagService', () => {
   let prismaService: PrismaService;
   let app: INestApplication;
   let factory: PersistStrategy;
-
-  async function buildEnvoyeWorkspace(prismaService: PrismaService) {
-    const companyProfile = await prismaService.companyProfile.create({
-      data: companyProfileFactory.build({
-        companyName: 'Envoye',
-        domain: 'envoye.co',
-      }),
-    });
-
-    const workspace = await prismaService.workspace.create({
-      data: workspaceFactory.build({
-        id: ENVOYE_WORKSPACE_ID,
-        code: ENVOYE_WORKSPACE_CODE,
-        name: companyProfile.companyName,
-        ownedById: companyProfile.id,
-      }),
-    });
-
-    return workspace;
-  }
-
-  async function buildWorkspace(prismaService: PrismaService) {
-    const companyProfile = await prismaService.companyProfile.create({
-      data: companyProfileFactory.build(),
-    });
-
-    const workspace = await prismaService.workspace.create({
-      data: workspaceFactory.build({
-        name: companyProfile.companyName,
-        ownedById: companyProfile.id,
-      }),
-    });
-
-    return workspace;
-  }
 
   beforeEach(async () => {
     const featureFlagLoader: FeatureFlagLoader = new TestFeatureFlagLoader();
@@ -78,8 +40,7 @@ describe('FeatureFlagService', () => {
   });
 
   it('should return true for envoye workspace', async () => {
-    const envoyeWorkspace = workspaceFactory.envoyeWorkspace();
-    await factory.persist('workspace', () => envoyeWorkspace);
+    const envoyeWorkspace = await factory.persist('workspace', () => workspaceFactory.envoyeWorkspace());
 
     expect(
       service.isEnabled('can_integrate_whatsapp', envoyeWorkspace.code),
@@ -87,15 +48,18 @@ describe('FeatureFlagService', () => {
   });
 
   it('should return false for non envoye workspace', async () => {
-    const someOtherWorkspace = await buildWorkspace(prismaService);
+    const someOtherWorkspace = await factory.persist('workspace', () =>
+      workspaceFactory.build(),
+    );
     expect(
       service.isEnabled('can_integrate_whatsapp', someOtherWorkspace.code),
     ).toBeFalsy();
   });
 
   it('should list app features for envoye', async () => {
-    const envoyeWorkspace: Workspace =
-      await buildEnvoyeWorkspace(prismaService);
+    const envoyeWorkspace = await factory.persist('workspace', () =>
+      workspaceFactory.envoyeWorkspace(),
+    );
     expect(service.enabledFeatures(envoyeWorkspace.code)).toMatchObject([
       'can_integrate_whatsapp',
       'can_integrate_instagram',
@@ -104,7 +68,9 @@ describe('FeatureFlagService', () => {
   });
 
   it('should return an empty list for other workspaces', async () => {
-    const someOtherWorkspace = await buildWorkspace(prismaService);
+    const someOtherWorkspace = await factory.persist('workspace', () =>
+      workspaceFactory.build(),
+    );
     expect(service.enabledFeatures(someOtherWorkspace.code)).toMatchObject([]);
   });
 });
