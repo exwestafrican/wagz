@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { createTestApp } from '@/test-helpers/test-app';
 import { INestApplication } from '@nestjs/common';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import {
   PreVerification,
   PreVerificationStatus,
@@ -18,6 +19,7 @@ describe('WorkspaceService', () => {
   let service: WorkspaceManager;
   let app: INestApplication;
   let prismaService: PrismaService;
+  let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
 
   beforeEach(async () => {
@@ -28,10 +30,10 @@ describe('WorkspaceService', () => {
     app = await createTestApp(module);
     service = app.get<WorkspaceManager>(WorkspaceManager);
     prismaService = app.get<PrismaService>(PrismaService);
-    preVerificationDetails = preVerificationFactory.build();
-    await prismaService.preVerification.create({
-      data: preVerificationDetails,
-    });
+    factory = Factory.createStrategy(prismaService);
+    preVerificationDetails = await factory.persist('preverification', () =>
+      preVerificationFactory.build(),
+    );
   });
 
   afterEach(async () => {
@@ -103,12 +105,11 @@ describe('WorkspaceService', () => {
     });
 
     it('returns conflict when status is not pending', async () => {
-      const details = preVerificationFactory.build({
-        status: PreVerificationStatus.VERIFIED,
-      });
-      await prismaService.preVerification.create({
-        data: details,
-      });
+      const details = await factory.persist('preverification', () =>
+        preVerificationFactory.build({
+          status: PreVerificationStatus.VERIFIED,
+        }),
+      );
       await expect(service.setup(details.email, details.id)).rejects.toThrow(
         InvalidState,
       );

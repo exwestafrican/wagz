@@ -16,12 +16,14 @@ import { AuthEndpoints } from './consts';
 import { Server } from 'http';
 import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
-import preverificationFactory from '@/factories/roadmap/preverification.factory';
+import preVerificationFactory from '@/factories/roadmap/preverification.factory';
+import Factory, { PersistStrategy } from '@/factories/factory';
 
 describe('AuthController', () => {
   let app: INestApplication;
   let mockSupabaseClient: MockSupabaseClient;
   let prismaService: PrismaService;
+  let factory: PersistStrategy;
 
   function mockUserSignupDetails(signupDetails: Record<string, string>) {
     const mockDetails = {
@@ -51,9 +53,10 @@ describe('AuthController', () => {
 
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
+    factory = Factory.createStrategy(prismaService);
   });
 
-  afterAll(async () => {
+  afterEach(async () => {
     await prismaService.preVerification.deleteMany();
     await app.close();
   });
@@ -126,9 +129,9 @@ describe('AuthController', () => {
             code: 'user_already_exists',
           },
         });
-        await prismaService.preVerification.create({
-          data: preverificationFactory.build({ email: 'test@example.com' }),
-        });
+        await factory.persist('preverification', () =>
+          preVerificationFactory.build({ email: 'test@example.com' }),
+        );
         await request(getHttpServer(app))
           .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
           .send(mockUserSignupDetails({ email: 'test@example.com' }))
