@@ -12,13 +12,13 @@ import { Workspace } from '@/generated/prisma/client';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
 import Factory from '@/factories/factory';
-import { Strategy } from '@/factories/factory';
+import { PersistStrategy } from '@/factories/factory';
 
 describe('FeatureFlagService', () => {
   let service: FeatureFlagService;
   let prismaService: PrismaService;
   let app: INestApplication;
-  let factory: Strategy;
+  let factory: PersistStrategy;
 
   async function buildEnvoyeWorkspace(prismaService: PrismaService) {
     const companyProfile = await prismaService.companyProfile.create({
@@ -69,7 +69,7 @@ describe('FeatureFlagService', () => {
     app = await createTestApp(module);
     service = app.get<FeatureFlagService>(FeatureFlagService);
     prismaService = app.get<PrismaService>(PrismaService);
-    factory = Factory.setupORM(prismaService);
+    factory = Factory.createStrategy(prismaService);
   });
 
   afterEach(async () => {

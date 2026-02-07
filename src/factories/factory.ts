@@ -2,11 +2,11 @@ import { Workspace } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import companyProfileFactory from '@/factories/company-profile.factory';
 
-export interface Strategy {
+export interface PersistStrategy {
   persist: <T>(strategy: string, buildObject: () => T) => Promise<T>;
 }
 
-function CreationStrategy(prismaService: PrismaService): Strategy {
+function createPersistStrategy(prismaService: PrismaService): PersistStrategy {
   return {
     persist: async function <T>(strategy: string, buildObject: () => T) {
       const obj = buildObject();
@@ -31,7 +31,7 @@ function CreationStrategy(prismaService: PrismaService): Strategy {
 }
 
 const Factory = {
-  setupORM: (prismaService: PrismaService) => CreationStrategy(prismaService),
+  createStrategy: (prismaService: PrismaService) => createPersistStrategy(prismaService),
 };
 
 export default Factory;
