@@ -18,5 +18,5 @@
 
 ### Reverse table alteration via prisma:
 1. Delete the prisma migration file that was created
-2. Reverse changes you made to the prisma schema document
-3. Run ‘npx prisma migrate reset’ to reset DB
+2. Reverse changes you made to the prisma schema file
+3. Run ‘pnpx prisma migrate reset’ to reset DB
