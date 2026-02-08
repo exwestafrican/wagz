@@ -30,7 +30,7 @@ jobs:
         run: pnpm prisma generate
 
       - name: Run Lint
-        run: pnpm lint
+        run: pnpm lint --no-cache
 
       - name: Run Format Check
         run: pnpm check:format
