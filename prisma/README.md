@@ -14,3 +14,9 @@
 
 ### Generate client with command:
 1. `pnpx prisma generate`
+
+
+### Reverse table alteration via prisma:
+1. Delete the prisma migration file that was created
+2. Reverse changes you made to the prisma schema document
+3. Run ‘npx prisma migrate reset’ to reset DB
