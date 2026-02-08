@@ -20,18 +20,41 @@ enum WorkspaceStatus {
 }
 
 model Workspace {
-  id            Int             @id @default(autoincrement())
-  name          String          @db.VarChar(255)
-  status        WorkspaceStatus @default(ACTIVE)
-  ownedBy       CompanyProfile  @relation(fields: [ownedById], references: [id], onDelete: Cascade)
+  id            Int               @id @default(autoincrement())
+  name          String            @db.VarChar(255)
+  status        WorkspaceStatus   @default(ACTIVE)
+  ownedBy       CompanyProfile    @relation(fields: [ownedById], references: [id], onDelete: Cascade)
   ownedById     Int
-  code          String          @db.VarChar(6)
-  hasActivePlan Boolean         @default(true) //A workspace could be active but not have a plan
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
+  code          String            @db.VarChar(6)
+  hasActivePlan Boolean           @default(true) //A workspace could be active but not have a plan
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
   teammates     Teammate[]
-  timezone      String          @default("Africa/Lagos") @db.VarChar(255)
+  invites       WorkspaceInvite[]
+  timezone      String            @default("Africa/Lagos") @db.VarChar(255)
 
   @@index([code])
   @@map("workspace")
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+}
+
+model WorkspaceInvite {
+  id             Int          @id @default(autoincrement())
+  recipientEmail String       @db.VarChar(255)
+  workspaceId    Int
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  inviteCode     String       @db.VarChar(6)
+  status         InviteStatus @default(PENDING)
+  senderId       Int
+  sender         Teammate     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  validTill      DateTime
+  acceptedAt     DateTime?
+
+  @@index([workspaceId])
+  @@map("workspace_invite")
 }
