@@ -18,7 +18,7 @@ jobs:
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
-          version: 10
+          version: latest
 
       - name: Install dependencies
         run: pnpm install
@@ -30,7 +30,7 @@ jobs:
         run: pnpm prisma generate
 
       - name: Run Lint
-        run: pnpm lint --no-cache
+        run: pnpm lint
 
       - name: Run Format Check
         run: pnpm check:format
