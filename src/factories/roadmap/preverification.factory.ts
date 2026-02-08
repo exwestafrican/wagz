@@ -18,6 +18,7 @@ const preVerificationFactory = Factory.define<PreVerification>(() => {
     status: PreVerificationStatus.PENDING,
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
+    timezone: 'Africa/Lagos',
   };
 });
 
