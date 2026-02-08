@@ -7,6 +7,7 @@ on:
       paths-ignore:
         - 'prisma/schemas/**'
         - 'prisma/migrations/**'
+        - 'src/factories/**'
         - '.gitignore'
         - '**.md'
 jobs:
