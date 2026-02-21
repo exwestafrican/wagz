@@ -1,11 +1,11 @@
 -- CreateEnum
-CREATE TYPE "InviteStatus" AS ENUM ('PENDING', 'ACCEPTED');
+CREATE TYPE "InviteStatus" AS ENUM ('PENDING', 'SENT', 'ACCEPTED');
 
 -- CreateTable
 CREATE TABLE "workspace_invite" (
     "id" SERIAL NOT NULL,
     "recipientEmail" VARCHAR(255) NOT NULL,
-    "workspaceId" INTEGER NOT NULL,
+    "workspaceCode" INTEGER NOT NULL,
     "inviteCode" VARCHAR(6) NOT NULL,
     "status" "InviteStatus" NOT NULL DEFAULT 'PENDING',
     "senderId" INTEGER NOT NULL,
@@ -17,10 +17,10 @@ CREATE TABLE "workspace_invite" (
 );
 
 -- CreateIndex
-CREATE INDEX "workspace_invite_workspaceId_idx" ON "workspace_invite"("workspaceId");
+CREATE INDEX "workspace_invite_workspaceCode_idx" ON "workspace_invite"("workspaceCode");
 
 -- AddForeignKey
-ALTER TABLE "workspace_invite" ADD CONSTRAINT "workspace_invite_workspaceId_fkey" FOREIGN KEY ("workspaceId") REFERENCES "workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "workspace_invite" ADD CONSTRAINT "workspace_invite_workspaceCode_fkey" FOREIGN KEY ("workspaceCode") REFERENCES "workspace"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "workspace_invite" ADD CONSTRAINT "workspace_invite_senderId_fkey" FOREIGN KEY ("senderId") REFERENCES "teammate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
