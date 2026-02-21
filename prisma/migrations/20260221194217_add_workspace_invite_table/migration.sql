@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "InviteStatus" AS ENUM ('PENDING', 'SENT', 'ACCEPTED');
+CREATE TYPE "InviteStatus" AS ENUM ('PENDING', 'SENT', 'FAILED', 'ACCEPTED');
 
 -- CreateTable
 CREATE TABLE "workspace_invite" (
