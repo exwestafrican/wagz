@@ -39,14 +39,15 @@ model Workspace {
 
 enum InviteStatus {
   PENDING
+  SENT
   ACCEPTED
 }
 
 model WorkspaceInvite {
   id             Int          @id @default(autoincrement())
   recipientEmail String       @db.VarChar(255)
-  workspaceId    Int
-  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  workspaceCode  Int
+  workspace      Workspace    @relation(fields: [workspaceCode], references: [id], onDelete: Cascade)
   inviteCode     String       @db.VarChar(6)
   status         InviteStatus @default(PENDING)
   senderId       Int
@@ -55,6 +56,6 @@ model WorkspaceInvite {
   validTill      DateTime
   acceptedAt     DateTime?
 
-  @@index([workspaceId])
+  @@index([workspaceCode])
   @@map("workspace_invite")
 }
