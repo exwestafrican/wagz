@@ -33,7 +33,6 @@ model Workspace {
   timezone         String            @default("Africa/Lagos") @db.VarChar(255)
   workspaceInvites WorkspaceInvite[]
 
-  @@index([code])
   @@map("workspace")
 }
 
