@@ -48,7 +48,7 @@ export class WorkspaceManager {
         data: {
           name: companyProfile.companyName,
           ownedById: companyProfile.id,
-          code: this.generateWorkspaceCode(),
+          code: this.generateCode(),
         },
       });
 
@@ -68,7 +68,7 @@ export class WorkspaceManager {
     });
   }
 
-  private generateWorkspaceCode() {
+  private generateCode() {
     //TODO move this to a service using factory?
     return generate({
       length: 6,
@@ -175,6 +175,16 @@ export class WorkspaceManager {
     role: Role,
   ): Promise<WorkspaceInvite> {
     // create successfull or failed invite
+    this.prismaService.workspaceInvite.create({
+      data: {
+        recipientEmail: recepientEmail,
+        workspaceCode: workspaceCode,
+        inviteCode: this.generateCode(),
+        status: InviteStatus.SENT,
+        senderId: senderId,
+        validTill: Date.now() //TODO: stay valid for 30 mins
+      }
+    })
   }
   //
   // async inviteTeammateIfEligible() {
