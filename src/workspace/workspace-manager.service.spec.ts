@@ -8,9 +8,9 @@ import { INestApplication } from '@nestjs/common';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import {
+  InviteStatus,
   PreVerification,
   PreVerificationStatus,
-  InviteStatus,
   Workspace,
 } from '@/generated/prisma/client';
 import { ROLES } from '@/permission/types';
@@ -101,6 +101,20 @@ describe('WorkspaceService', () => {
     expect(preverification.status).toBe(PreVerificationStatus.PENDING);
   }
 
+  async function assertRecipientHasNoInvite(
+    workspace: Workspace,
+    email: string,
+  ) {
+    expect(
+      await prismaService.workspaceInvite.count({
+        where: {
+          workspace: workspace,
+          recipientEmail: email,
+        },
+      }),
+    ).toBe(0);
+  }
+
   describe('setup', () => {
     it('returns not found when email and id do not match', async () => {
       await expect(
@@ -158,20 +172,6 @@ describe('WorkspaceService', () => {
     });
   });
 
-  async function assertRecipientHasNoInvite(
-    workspace: Workspace,
-    email: string,
-  ) {
-    expect(
-      await prismaService.workspaceInvite.count({
-        where: {
-          workspace: workspace,
-          recipientEmail: email,
-        },
-      }),
-    ).toBe(0);
-  }
-
   describe('inviteTeammateIfEligible', () => {
     describe('Teammate is new and has no Invites', () => {
       it('creates invite', async () => {
@@ -202,7 +202,7 @@ describe('WorkspaceService', () => {
             where: {
               workspace: workspace,
               senderId: admin.id,
-              status: InviteStatus.PENDING,
+              status: InviteStatus.SENT,
               recipientEmail: recipientEmail,
             },
           }),
