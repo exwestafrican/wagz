@@ -10,10 +10,14 @@ import Factory, { PersistStrategy } from '@/factories/factory';
 import {
   PreVerification,
   PreVerificationStatus,
+  InviteStatus,
+  Workspace,
 } from '@/generated/prisma/client';
 import { ROLES } from '@/permission/types';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import { InvalidState } from '@/common/exceptions/invalid-state';
+import workspaceFactory from '@/factories/workspace.factory';
+import teammateFactory from '@/factories/teammate.factory';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -150,6 +154,59 @@ describe('WorkspaceService', () => {
         ).rejects.toThrow('Database error');
 
         await assertRollbackHappened(preVerificationDetails);
+      });
+    });
+  });
+
+  async function assertRecipientHasNoInvite(
+    workspace: Workspace,
+    email: string,
+  ) {
+    expect(
+      await prismaService.workspaceInvite.count({
+        where: {
+          workspace: workspace,
+          recipientEmail: email,
+        },
+      }),
+    ).toBe(0);
+  }
+
+  describe('inviteTeammateIfEligible', () => {
+    describe('Teammate is new and has no Invites', () => {
+      it('creates invite', async () => {
+        const workspace = await factory.persist('workspace', () =>
+          workspaceFactory.envoyeWorkspace(),
+        );
+
+        const admin = await factory.persist('teammate', () =>
+          teammateFactory.build({
+            groups: [ROLES.WorkspaceAdmin.code],
+            workspaceId: workspace.id,
+          }),
+        );
+
+        const recipientEmail = 'tumise@usewaggz.com';
+
+        await assertRecipientHasNoInvite(workspace, recipientEmail);
+
+        await service.inviteTeammateIfEligible(
+          workspace.code,
+          recipientEmail,
+          admin.id,
+          ROLES.SupportStaff,
+        );
+
+        expect(
+          await prismaService.workspaceInvite.count({
+            where: {
+              workspace: workspace,
+              senderId: admin.id,
+              status: InviteStatus.PENDING,
+              recipientEmail: recipientEmail,
+            },
+          }),
+        ).toBe(1);
       });
     });
   });
