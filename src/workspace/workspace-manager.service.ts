@@ -16,11 +16,8 @@ import { CreateWorkspaceAdminStep } from '@/workspace/steps/create-workspace-adm
 import PRISMA_CODES from '@/prisma/consts';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import { InvalidState } from '@/common/exceptions/invalid-state';
-import Invitee from '@/workspace/domain/admin.invite';
-import { groupBy } from '@/common/utils';
-
-import AdminInvite from '@/workspace/domain/admin.invite';
 import { Role } from '@/permission/domain/role';
+import { Time } from '@/common/utils';
 
 @Injectable()
 export class WorkspaceManager {
@@ -160,12 +157,25 @@ export class WorkspaceManager {
     }
   }
 
-  private hasPendingInvite(): Promise<boolean> {
-    return false;
+  private validTill(): Date {
+    const currentTime = Date.now();
+    const expiresOnDay = currentTime + Time.durationInMilliseconds.days(2);
+    const endOfTodayUtc = new Date(expiresOnDay);
+    return new Date(endOfTodayUtc.setUTCHours(23, 59, 59, 999));
   }
 
-  private isActiveTeammate(): Promise<boolean> {
-    return false;
+  private async teammateAlreadyExistsInWorkspace(
+    workspaceCode: string,
+    email: string,
+  ) {
+    return (
+      (await this.prismaService.teammate.count({
+        where: {
+          email: email,
+          workspaceCode: workspaceCode,
+        },
+      })) > 0
+    );
   }
 
   async inviteTeammateIfEligible(
@@ -174,17 +184,26 @@ export class WorkspaceManager {
     senderId: number,
     role: Role,
   ): Promise<WorkspaceInvite> {
-    // create successfull or failed invite
-    this.prismaService.workspaceInvite.create({
-      data: {
-        recipientEmail: recepientEmail,
-        workspaceCode: workspaceCode,
-        inviteCode: this.generateCode(),
-        status: InviteStatus.SENT,
-        senderId: senderId,
-        validTill: Date.now() //TODO: stay valid for 30 mins
-      }
-    })
+    const baseSetup = {
+      recipientEmail: recepientEmail,
+      workspaceCode: workspaceCode,
+      inviteCode: this.generateCode(),
+      senderId: senderId,
+      recipientRole: role.code,
+      validTill: this.validTill(),
+    };
+
+    if (
+      await this.teammateAlreadyExistsInWorkspace(workspaceCode, recepientEmail)
+    ) {
+      return this.prismaService.workspaceInvite.create({
+        data: { ...baseSetup, status: InviteStatus.SENT },
+      });
+    } else {
+      return this.prismaService.workspaceInvite.create({
+        data: { ...baseSetup, status: InviteStatus.SENT },
+      });
+    }
   }
   //
   // async inviteTeammateIfEligible() {
@@ -192,49 +211,49 @@ export class WorkspaceManager {
   // }
   // ensure user is admin, and belongs to workspace => only user with role adim can call endpoint
   //
-  async invite(
-    workspaceCode: string,
-    senderId: number,
-    adminInvites: Array<AdminInvite>,
-  ) {
-    // we want to debounce emails? if we already send an invite.
-    // let give about 5 minutes
-
-    // const workspaceInvites = await this.prismaService.workspaceInvite.findMany({
-    //   where: {
-    //     workspaceCode: workspaceCode,
-    //     recipientEmail: {
-    //       in: adminInvites.map((invitee) => invitee.email),
-    //     },
-    //   },
-    // });
-    //
-    // const groupedWorkspaceInvites = groupBy(
-    //   workspaceInvites,
-    //   (workspaceInvite) => workspaceInvite.recipientEmail,
-    // );
-
-    // take the most recent per person
-    for (const adminInvite of adminInvites) {
-      const workspaceInvite =
-        await this.prismaService.workspaceInvite.findFirst({
-          where: {
-            workspaceCode: workspaceCode,
-            recipientEmail: adminInvite.email,
-          },
-          orderBy: {
-            createdAt: 'desc',
-          },
-        });
-
-      if (!workspaceInvite) {
-        // send email
-      }
-      //if invite has expired -> create new invite then send
-      // if invite is pending -> skip
-      // if invite is accepted ->  if teammate is still active (skip) else send
-    }
-  }
+  // async invite(
+  //   workspaceCode: string,
+  //   senderId: number,
+  //   adminInvites: Array<AdminInvite>,
+  // ) {
+  //   // we want to debounce emails? if we already send an invite.
+  //   // let give about 5 minutes
+  //
+  //   // const workspaceInvites = await this.prismaService.workspaceInvite.findMany({
+  //   //   where: {
+  //   //     workspaceCode: workspaceCode,
+  //   //     recipientEmail: {
+  //   //       in: adminInvites.map((invitee) => invitee.email),
+  //   //     },
+  //   //   },
+  //   // });
+  //   //
+  //   // const groupedWorkspaceInvites = groupBy(
+  //   //   workspaceInvites,
+  //   //   (workspaceInvite) => workspaceInvite.recipientEmail,
+  //   // );
+  //
+  //   // take the most recent per person
+  //   for (const adminInvite of adminInvites) {
+  //     const workspaceInvite =
+  //       await this.prismaService.workspaceInvite.findFirst({
+  //         where: {
+  //           workspaceCode: workspaceCode,
+  //           recipientEmail: adminInvite.email,
+  //         },
+  //         orderBy: {
+  //           createdAt: 'desc',
+  //         },
+  //       });
+  //
+  //     if (!workspaceInvite) {
+  //       // send email
+  //     }
+  //     //if invite has expired -> create new invite then send
+  //     // if invite is pending -> skip
+  //     // if invite is accepted ->  if teammate is still active (skip) else send
+  //   }
+  // }
 
   //TODO: how do we confirm email was sent?
   // 1. generate invite link ?
