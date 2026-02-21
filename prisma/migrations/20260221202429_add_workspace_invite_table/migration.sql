@@ -9,7 +9,7 @@ CREATE TABLE "workspace_invite" (
     "inviteCode" VARCHAR(6) NOT NULL,
     "status" "InviteStatus" NOT NULL DEFAULT 'PENDING',
     "senderId" INTEGER NOT NULL,
-    "recipientRole" TEXT[] DEFAULT ARRAY[]::TEXT[],
+    "recipientRole" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "validTill" TIMESTAMP(3) NOT NULL,
     "acceptedAt" TIMESTAMP(3),

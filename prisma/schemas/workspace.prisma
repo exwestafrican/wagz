@@ -51,7 +51,7 @@ model WorkspaceInvite {
   inviteCode     String       @db.VarChar(6)
   status         InviteStatus @default(PENDING)
   senderId       Int
-  recipientRole  String[]     @default([])
+  recipientRole  String
   sender         Teammate     @relation(fields: [senderId], references: [id], onDelete: Cascade)
   createdAt      DateTime     @default(now())
   validTill      DateTime
