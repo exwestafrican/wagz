@@ -31,6 +31,7 @@ model Workspace {
   updatedAt        DateTime          @updatedAt
   timezone         String            @default("Africa/Lagos") @db.VarChar(255)
   workspaceInvites WorkspaceInvite[]
+  teammates        Teammate[]
 
   @@map("workspace")
 }
