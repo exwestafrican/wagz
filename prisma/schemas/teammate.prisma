@@ -9,8 +9,6 @@ model Teammate {
   email            String            @db.VarChar(255)
   firstName        String            @db.VarChar(100)
   lastName         String            @db.VarChar(100)
-  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  workspaceId      Int
   workspaceCode    String            @db.VarChar(6)
   status           TeammateStatus    @default(ACTIVE)
   avatarUrl        String?           @db.VarChar(600)
@@ -18,8 +16,9 @@ model Teammate {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   workspaceInvites WorkspaceInvite[]
+  workspace        Workspace?        @relation(fields: [workspaceId], references: [id])
+  workspaceId      Int?
 
-  @@unique([email, workspaceId])
   @@unique([workspaceCode, email])
   @@map("teammate")
 }
