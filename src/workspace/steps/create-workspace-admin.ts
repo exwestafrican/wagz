@@ -28,9 +28,9 @@ export class CreateWorkspaceAdminStep implements PostSetupStep {
   async compensate(workspaceDetails: WorkspaceDetails) {
     await this.prismaService.teammate.delete({
       where: {
-        email_workspaceId: {
+        workspaceCode_email: {
+          workspaceCode: workspaceDetails.code,
           email: workspaceDetails.pointOfContact.email,
-          workspaceId: workspaceDetails.workspaceId,
         },
       },
     });
