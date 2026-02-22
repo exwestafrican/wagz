@@ -11,7 +11,7 @@ model Teammate {
   lastName         String            @db.VarChar(100)
   workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   workspaceId      Int
-  workspaceCode    String
+  workspaceCode    String?
   status           TeammateStatus    @default(ACTIVE)
   avatarUrl        String?           @db.VarChar(600)
   groups           String[]          @default([])
