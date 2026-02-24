@@ -21,6 +21,7 @@ import NotFoundInDb from '@/common/exceptions/not-found';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
+import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -368,7 +369,22 @@ describe('WorkspaceService', () => {
       ])(
         'creates failed invite and does send email for %s Teammate',
         async (status: TeammateStatus) => {
-          recipientEmail = 'tumise@usewaggz.com';
+          const senderTeammate = await factory.persist('teammate', () =>
+            teammateFactory.build({
+              email: 'sender@usewaggz.com',
+              workspaceCode: workspace.code,
+              status: status,
+            }),
+          );
+
+          await factory.persist('workspaceInvite', () =>
+            workspaceInviteFactory.build({
+              recipientEmail: recipientEmail,
+              senderId: senderTeammate.id,
+              workspaceCode: workspace.code,
+              status: InviteStatus.ACCEPTED,
+            }),
+          );
 
           await factory.persist('teammate', () =>
             teammateFactory.build({

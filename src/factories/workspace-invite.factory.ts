@@ -27,7 +27,9 @@ export async function persistWorkspaceInvite(
   prismaService: PrismaService,
   invite: WorkspaceInvite,
 ) {
-  await prismaService.workspaceInvite.create({ data: invite });
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id: _, ...data } = invite;
+  await prismaService.workspaceInvite.create({ data });
 }
 
 export default workspaceInviteFactory;
