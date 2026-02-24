@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import {
   CompanyProfile,
   InviteStatus,
@@ -18,11 +18,20 @@ import NotFoundInDb from '@/common/exceptions/not-found';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import { Role } from '@/permission/domain/role';
 import { Time } from '@/common/utils';
+import { render } from '@react-email/render';
+import { WorkspaceInviteTemplate } from '@/emails/templates/workspace-invite-template';
+import React from 'react';
+import { JWT_VERIFIER } from '@/jwt-verifier/consts';
+import type JwtVerifier from '@/jwt-verifier/jwt-verifier.interface';
+import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 
 @Injectable()
 export class WorkspaceManager {
   logger = new Logger(WorkspaceManager.name);
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
+  ) {}
 
   private async runPreWorkspaceCreationSteps(
     preVerification: PreVerification,
@@ -200,9 +209,29 @@ export class WorkspaceManager {
         data: { ...baseSetup, status: InviteStatus.FAILED },
       });
     } else {
-      return this.prismaService.workspaceInvite.create({
+      //try => if failed update to failed
+      const workspaceInvite = await this.prismaService.workspaceInvite.create({
         data: { ...baseSetup, status: InviteStatus.SENT },
       });
+      const sender = await this.prismaService.teammate.findUniqueOrThrow({
+        where: { id: senderId },
+      });
+      const inviteLink = 'https://example.com/invite'; //TODO: generate invite link
+      const emailHtml = await render(
+        React.createElement(WorkspaceInviteTemplate, {
+          senderName: sender.firstName,
+          inviteLink,
+        }),
+      );
+
+      await this.emailClient.send({
+        from: { email: sender.email, name: sender.firstName },
+        to: { email: recipientEmail, name: '' },
+        subject: 'Workspace Invite',
+        html: emailHtml,
+      });
+
+      return workspaceInvite;
     }
   }
 }
