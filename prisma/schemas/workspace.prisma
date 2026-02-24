@@ -29,7 +29,6 @@ model Workspace {
   hasActivePlan    Boolean           @default(true) //A workspace could be active but not have a plan
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
-  teammates        Teammate[]
   timezone         String            @default("Africa/Lagos") @db.VarChar(255)
   workspaceInvites WorkspaceInvite[]
 
