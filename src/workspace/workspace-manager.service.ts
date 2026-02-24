@@ -180,12 +180,12 @@ export class WorkspaceManager {
 
   async inviteTeammateIfEligible(
     workspaceCode: string,
-    recepientEmail: string,
+    recipientEmail: string,
     senderId: number,
     role: Role,
   ): Promise<WorkspaceInvite> {
     const baseSetup = {
-      recipientEmail: recepientEmail,
+      recipientEmail: recipientEmail,
       workspaceCode: workspaceCode,
       inviteCode: this.generateCode(),
       senderId: senderId,
@@ -194,10 +194,10 @@ export class WorkspaceManager {
     };
 
     if (
-      await this.teammateAlreadyExistsInWorkspace(workspaceCode, recepientEmail)
+      await this.teammateAlreadyExistsInWorkspace(workspaceCode, recipientEmail)
     ) {
       return this.prismaService.workspaceInvite.create({
-        data: { ...baseSetup, status: InviteStatus.SENT },
+        data: { ...baseSetup, status: InviteStatus.FAILED },
       });
     } else {
       return this.prismaService.workspaceInvite.create({

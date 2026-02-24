@@ -15,7 +15,10 @@ const teammateFactory = TeammateFactory.define(({ sequence }) => {
     email: faker.internet.email(),
     firstName: faker.person.firstName(),
     lastName: faker.person.lastName(),
-    workspaceId: 1,
+    workspaceCode: faker.string.alphanumeric({
+      length: 6,
+      exclude: ['i', 'l', '1', 'L', 'o', '0', 'O'],
+    }),
     status: TeammateStatus.ACTIVE,
     avatarUrl: faker.internet.url(),
     groups: [ROLES.WorkspaceAdmin.code],

@@ -123,7 +123,7 @@ describe('WorkspaceService', () => {
     ).toBe(0);
   }
 
-  async function assertRecepientHasPreviouslyFailedInvite(
+  async function assertRecipientHasPreviouslyFailedInvite(
     workspace: Workspace,
     email: string,
   ) {
@@ -252,7 +252,7 @@ describe('WorkspaceService', () => {
       adminTeammate = await factory.persist('teammate', () =>
         teammateFactory.build({
           groups: [ROLES.WorkspaceAdmin.code],
-          workspaceId: workspace.id,
+          workspaceCode: workspace.code,
         }),
       );
 
@@ -336,7 +336,7 @@ describe('WorkspaceService', () => {
 
     describe('Teammate has previous failed Invite', () => {
       it('creates new invite for teammate', async () => {
-        await assertRecepientHasPreviouslyFailedInvite(
+        await assertRecipientHasPreviouslyFailedInvite(
           workspace,
           recipientEmail,
         );
@@ -368,18 +368,20 @@ describe('WorkspaceService', () => {
       ])(
         'creates failed invite and does send email for %s Teammate',
         async (status: TeammateStatus) => {
+          recipientEmail = 'tumise@usewaggz.com';
+
+          await factory.persist('teammate', () =>
+            teammateFactory.build({
+              email: recipientEmail,
+              workspaceCode: workspace.code,
+              status: status,
+            }),
+          );
+
           await assertRecipientWasPreviouslySuccessfullyInvited(
             workspace,
             recipientEmail,
           );
-
-          await factory.persist('teammate', () => {
-            teammateFactory.build({
-              email: recipientEmail,
-              workspaceId: workspace.id,
-              status: status,
-            });
-          });
 
           await service.inviteTeammateIfEligible(
             workspace.code,
