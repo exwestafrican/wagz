@@ -3,6 +3,7 @@ import { Teammate, TeammateStatus } from '@/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 import { ROLES } from '@/permission/types';
 import { PrismaService } from '@/prisma/prisma.service';
+import { sixCharHumanFriendlyCode } from '@/factories/code-generator';
 
 class TeammateFactory extends Factory<Teammate> {
   adminTeammate() {
@@ -15,10 +16,7 @@ const teammateFactory = TeammateFactory.define(({ sequence }) => {
     email: faker.internet.email(),
     firstName: faker.person.firstName(),
     lastName: faker.person.lastName(),
-    workspaceCode: faker.string.alphanumeric({
-      length: 6,
-      exclude: ['i', 'l', '1', 'L', 'o', '0', 'O'],
-    }),
+    workspaceCode: sixCharHumanFriendlyCode(),
     status: TeammateStatus.ACTIVE,
     avatarUrl: faker.internet.url(),
     groups: [ROLES.WorkspaceAdmin.code],
