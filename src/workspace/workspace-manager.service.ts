@@ -42,6 +42,8 @@ export class WorkspaceManager {
           name: companyProfile.companyName,
           ownedById: companyProfile.id,
           code: this.generateWorkspaceCode(),
+          //add time zone here
+            //you can get it from the preverification details or set a default one
         },
       });
 
