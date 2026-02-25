@@ -36,7 +36,7 @@ export const WorkspaceInviteTemplate = ({
               Hey champ 🏆
             </Text>
             <Text className="text-[14px] text-black leading-[24px]">
-              {senderName} has invited you to join your teams
+              {senderName} has invited you to join your teams {" "}
               <strong>Envoye</strong>.
             </Text>
             <Section className="mt-[32px] mb-[32px] text-center">
