@@ -21,8 +21,6 @@ import { Time } from '@/common/utils';
 import { render } from '@react-email/render';
 import { WorkspaceInviteTemplate } from '@/emails/templates/workspace-invite-template';
 import React from 'react';
-import { JWT_VERIFIER } from '@/jwt-verifier/consts';
-import type JwtVerifier from '@/jwt-verifier/jwt-verifier.interface';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 
 @Injectable()
@@ -33,6 +31,80 @@ export class WorkspaceManager {
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
   ) {}
 
+  async setup(
+    ownerEmail: string,
+    preVerificationId: string,
+  ): Promise<WorkspaceDetails> {
+    const postWorkspaceSetupSteps: PostSetupStep[] = [
+      new CreateWorkspaceAdminStep(this.prismaService),
+    ];
+    const completedSteps: PostSetupStep[] = [];
+    const preverificationDetails = await this.getDetailsOrThrow(
+      ownerEmail,
+      preVerificationId,
+    );
+
+    const workspaceDetails = await this.runPreWorkspaceCreationSteps(
+      preverificationDetails,
+    );
+
+    try {
+      for (const step of postWorkspaceSetupSteps) {
+        await step.execute(workspaceDetails);
+        completedSteps.push(step);
+      }
+      await this.prismaService.preVerification.update({
+        where: { id: preVerificationId },
+        data: {
+          status: PreVerificationStatus.VERIFIED,
+        },
+      });
+      return workspaceDetails;
+    } catch (error) {
+      this.logger.error(
+        `Workspace setup failed, rolling back completed steps; steps=[${completedSteps.map((step) => step.constructor.name).join(', ')}] preverificationId=${preverificationDetails.id} `,
+        error,
+      );
+      const reversedCompletedSteps = [...completedSteps].reverse();
+      for (const step of reversedCompletedSteps) {
+        await step.compensate(workspaceDetails);
+      }
+      await this.rollBackPreWorkspaceCreationSteps(workspaceDetails);
+      throw error;
+    }
+  }
+
+  async inviteTeammateIfEligible(
+    workspaceCode: string,
+    recipientEmail: string,
+    senderId: number,
+    role: Role,
+  ): Promise<WorkspaceInvite> {
+    const teammateIsInWorkspace = await this.teammateAlreadyExistsInWorkspace(
+      workspaceCode,
+      recipientEmail,
+    );
+    if (teammateIsInWorkspace) {
+      const invite = await this.prismaService.workspaceInvite.create({
+        data: {
+          ...this.baseSetup(workspaceCode, recipientEmail, senderId, role),
+          status: InviteStatus.FAILED,
+        },
+      });
+      this.logger.log(
+        `Failed to send workspace invite because user is in workspace invite=${invite.id}  workspaceCode=${workspaceCode}`,
+      );
+      return invite;
+    } else {
+      //try => if failed update to failed
+      return await this.tryToSendWorkspaceInvite(
+        workspaceCode,
+        recipientEmail,
+        senderId,
+        role,
+      );
+    }
+  }
   private async runPreWorkspaceCreationSteps(
     preVerification: PreVerification,
   ): Promise<WorkspaceDetails> {
@@ -123,49 +195,6 @@ export class WorkspaceManager {
     }
   }
 
-  async setup(
-    ownerEmail: string,
-    preVerificationId: string,
-  ): Promise<WorkspaceDetails> {
-    const postWorkspaceSetupSteps: PostSetupStep[] = [
-      new CreateWorkspaceAdminStep(this.prismaService),
-    ];
-    const completedSteps: PostSetupStep[] = [];
-    const preverificationDetails = await this.getDetailsOrThrow(
-      ownerEmail,
-      preVerificationId,
-    );
-
-    const workspaceDetails = await this.runPreWorkspaceCreationSteps(
-      preverificationDetails,
-    );
-
-    try {
-      for (const step of postWorkspaceSetupSteps) {
-        await step.execute(workspaceDetails);
-        completedSteps.push(step);
-      }
-      await this.prismaService.preVerification.update({
-        where: { id: preVerificationId },
-        data: {
-          status: PreVerificationStatus.VERIFIED,
-        },
-      });
-      return workspaceDetails;
-    } catch (error) {
-      this.logger.error(
-        `Workspace setup failed, rolling back completed steps; steps=[${completedSteps.map((step) => step.constructor.name).join(', ')}] preverificationId=${preverificationDetails.id} `,
-        error,
-      );
-      const reversedCompletedSteps = [...completedSteps].reverse();
-      for (const step of reversedCompletedSteps) {
-        await step.compensate(workspaceDetails);
-      }
-      await this.rollBackPreWorkspaceCreationSteps(workspaceDetails);
-      throw error;
-    }
-  }
-
   private validTill(): Date {
     const currentTime = Date.now();
     const expiresOnDay = currentTime + Time.durationInMilliseconds.days(2);
@@ -187,13 +216,13 @@ export class WorkspaceManager {
     );
   }
 
-  async inviteTeammateIfEligible(
+  private baseSetup(
     workspaceCode: string,
     recipientEmail: string,
     senderId: number,
     role: Role,
-  ): Promise<WorkspaceInvite> {
-    const baseSetup = {
+  ) {
+    return {
       recipientEmail: recipientEmail,
       workspaceCode: workspaceCode,
       inviteCode: this.generateCode(),
@@ -201,18 +230,22 @@ export class WorkspaceManager {
       recipientRole: role.code,
       validTill: this.validTill(),
     };
+  }
 
-    if (
-      await this.teammateAlreadyExistsInWorkspace(workspaceCode, recipientEmail)
-    ) {
-      return this.prismaService.workspaceInvite.create({
-        data: { ...baseSetup, status: InviteStatus.FAILED },
-      });
-    } else {
-      //try => if failed update to failed
-      const workspaceInvite = await this.prismaService.workspaceInvite.create({
-        data: { ...baseSetup, status: InviteStatus.SENT },
-      });
+  private async tryToSendWorkspaceInvite(
+    workspaceCode: string,
+    recipientEmail: string,
+    senderId: number,
+    role: Role,
+  ): Promise<WorkspaceInvite> {
+    const workspaceInvite = await this.prismaService.workspaceInvite.create({
+      data: {
+        ...this.baseSetup(workspaceCode, recipientEmail, senderId, role),
+        status: InviteStatus.SENT,
+      },
+    });
+
+    try {
       const sender = await this.prismaService.teammate.findUniqueOrThrow({
         where: { id: senderId },
       });
@@ -230,8 +263,20 @@ export class WorkspaceManager {
         subject: 'Workspace Invite',
         html: emailHtml,
       });
-
       return workspaceInvite;
+    } catch (error) {
+      const failedWorkspaceInvite =
+        await this.prismaService.workspaceInvite.update({
+          where: { id: workspaceInvite.id },
+          data: {
+            status: InviteStatus.FAILED,
+          },
+        });
+      this.logger.error(
+        `Failed to send workspace invite for invite=${failedWorkspaceInvite.id} workspaceCode=${workspaceCode}`,
+      );
+      this.logger.error(error);
+      return failedWorkspaceInvite;
     }
   }
 }

@@ -22,6 +22,7 @@ import { InvalidState } from '@/common/exceptions/invalid-state';
 import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
+import { MessagingModule } from '@/messaging/messaging.module';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -32,7 +33,7 @@ describe('WorkspaceService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), PrismaModule],
+      imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
       providers: [WorkspaceManager],
     }).compile();
     app = await createTestApp(module);

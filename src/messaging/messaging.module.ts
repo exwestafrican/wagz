@@ -43,6 +43,7 @@ const MailerProvider = {
 
 @Global()
 @Module({
+  imports: [ConfigModule],
   providers: [MailerProvider],
   exports: [EMAIL_CLIENT],
 })
