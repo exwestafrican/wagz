@@ -24,6 +24,9 @@ import teammateFactory from '@/factories/teammate.factory';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { MessagingModule } from '@/messaging/messaging.module';
 
+jest.mock('@react-email/render', () => ({
+  render: jest.fn().mockResolvedValue('<html>Mock Email</html>'),
+}));
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
   let app: INestApplication;
