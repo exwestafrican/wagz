@@ -98,7 +98,7 @@ export class WorkspaceManager {
       );
       return invite;
     } else {
-      //try => if failed update to failed
+      //TODO: debounce send-email
       return await this.tryToSendWorkspaceInvite(
         workspaceCode,
         recipientEmail,
