@@ -28,7 +28,7 @@ export class AuthService {
       email: email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: this.workspaceLinkService.dashboardUrl('1'),
+        emailRedirectTo: this.workspaceLinkService.workspaceUrl('1'),
       },
     });
 
@@ -89,7 +89,7 @@ export class AuthService {
       email: signupDetails.email,
       password,
       options: {
-        emailRedirectTo: this.workspaceLinkService.setupUrl(
+        emailRedirectTo: this.workspaceLinkService.setupWorkspaceUrl(
           preverificationDetails.id,
         ),
       },
