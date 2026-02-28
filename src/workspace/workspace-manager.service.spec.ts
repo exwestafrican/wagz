@@ -29,6 +29,7 @@ describe('WorkspaceService', () => {
   let service: WorkspaceManager;
   let app: INestApplication;
   let prismaService: PrismaService;
+  let workspaceLinkService: WorkspaceLinkService;
   let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
 
@@ -40,6 +41,7 @@ describe('WorkspaceService', () => {
     app = await createTestApp(module);
     service = app.get<WorkspaceManager>(WorkspaceManager);
     prismaService = app.get<PrismaService>(PrismaService);
+    workspaceLinkService = app.get<WorkspaceLinkService>(WorkspaceLinkService);
     factory = Factory.createStrategy(prismaService);
     preVerificationDetails = await factory.persist('preverification', () =>
       preVerificationFactory.build(),
@@ -268,6 +270,7 @@ describe('WorkspaceService', () => {
     describe('Teammate is new and has no Invites', () => {
       it('creates invite', async () => {
         await assertRecipientHasNoInvite(workspace, recipientEmail);
+        const inviteUrlSpy = jest.spyOn(workspaceLinkService, 'inviteUrl');
 
         await service.inviteTeammateIfEligible(
           workspace.code,
@@ -275,6 +278,7 @@ describe('WorkspaceService', () => {
           adminTeammate.id,
           ROLES.SupportStaff,
         );
+        expect(inviteUrlSpy).toHaveBeenCalledTimes(1);
 
         expect(
           await prismaService.workspaceInvite.count({
