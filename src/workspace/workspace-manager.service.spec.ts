@@ -23,6 +23,7 @@ import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { MessagingModule } from '@/messaging/messaging.module';
+import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -34,7 +35,7 @@ describe('WorkspaceService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
-      providers: [WorkspaceManager],
+      providers: [WorkspaceManager, WorkspaceLinkService],
     }).compile();
     app = await createTestApp(module);
     service = app.get<WorkspaceManager>(WorkspaceManager);

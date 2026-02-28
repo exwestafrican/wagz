@@ -18,6 +18,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
+import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -48,6 +49,7 @@ describe('AuthController', () => {
           useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
         PrismaService,
+        WorkspaceLinkService,
       ],
     }).compile();
 

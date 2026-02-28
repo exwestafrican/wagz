@@ -7,11 +7,11 @@ import {
 import { SupabaseClient } from '@supabase/supabase-js';
 import { AccountExistsException } from './exceptions/account.exists';
 import PasswordGenerator from './services/password.generator';
-import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import SignupDetails from './domain/signup.details';
 import { PreVerification, Prisma } from '@/generated/prisma/client';
 import PRISMA_CODES from '@/prisma/consts';
+import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 
 @Injectable()
 export class AuthService {
@@ -19,8 +19,8 @@ export class AuthService {
   constructor(
     private readonly supabaseClient: SupabaseClient,
     private readonly passwordGenerator: PasswordGenerator,
-    private readonly configService: ConfigService,
     private readonly prismaService: PrismaService,
+    private readonly workspaceLinkService: WorkspaceLinkService,
   ) {}
 
   async requestMagicLink(email: string): Promise<void> {
@@ -28,7 +28,7 @@ export class AuthService {
       email: email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: this.dashboardUrl('1'),
+        emailRedirectTo: this.workspaceLinkService.dashboardUrl('1'),
       },
     });
 
@@ -82,16 +82,6 @@ export class AuthService {
     }
   }
 
-  private dashboardUrl(id: string): string {
-    const siteUrl = this.configService.get<string>('SITE_URL');
-    return `${siteUrl}/${id}/workspace`;
-  }
-
-  private setupDashboardUrl(preverificationId: string): string {
-    const siteUrl = this.configService.get<string>('SITE_URL');
-    return `${siteUrl}/setup/${preverificationId}/workspace`;
-  }
-
   async signup(signupDetails: SignupDetails, password: string): Promise<void> {
     const preverificationDetails =
       await this.storePreverificationDetails(signupDetails);
@@ -99,7 +89,9 @@ export class AuthService {
       email: signupDetails.email,
       password,
       options: {
-        emailRedirectTo: this.setupDashboardUrl(preverificationDetails.id),
+        emailRedirectTo: this.workspaceLinkService.setupUrl(
+          preverificationDetails.id,
+        ),
       },
     });
 
