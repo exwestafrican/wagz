@@ -29,3 +29,17 @@ export function isEmpty(obj: object | null | undefined): boolean {
   if (!obj) return true;
   return Object.keys(obj).length === 0;
 }
+
+export function groupBy<T>(
+  array: T[],
+  getKey: (item: T) => string,
+): Map<string, T[]> {
+  return array.reduce((acc: Map<string, T[]>, item) => {
+    const key = getKey(item);
+    if (!acc.has(key)) {
+      acc.set(key, []);
+    }
+    acc.get(key)!.push(item);
+    return acc;
+  }, new Map<string, T[]>());
+}

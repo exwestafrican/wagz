@@ -1,7 +1,14 @@
-import { PreVerification, Workspace } from '@/generated/prisma/client';
+import {
+  PreVerification,
+  Teammate,
+  Workspace,
+  WorkspaceInvite,
+} from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { persistPreverificationStrategy } from '@/factories/roadmap/preverification.factory';
 import { persistWorkspaceStrategy } from '@/factories/workspace.factory';
+import { persistTeammate } from '@/factories/teammate.factory';
+import { persistWorkspaceInvite } from '@/factories/workspace-invite.factory';
 
 export interface PersistStrategy {
   persist: <T>(strategy: string, buildObject: () => T) => Promise<T>;
@@ -21,6 +28,14 @@ function createPersistStrategy(prismaService: PrismaService): PersistStrategy {
         }
         case 'workspace': {
           await persistWorkspaceStrategy(prismaService, obj as Workspace);
+          return obj;
+        }
+        case 'teammate': {
+          await persistTeammate(prismaService, obj as Teammate);
+          return obj;
+        }
+        case 'workspaceInvite': {
+          await persistWorkspaceInvite(prismaService, obj as WorkspaceInvite);
           return obj;
         }
         default: {

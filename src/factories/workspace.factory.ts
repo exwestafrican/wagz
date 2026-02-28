@@ -2,6 +2,7 @@ import { Workspace, WorkspaceStatus } from '@/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 import { Factory } from 'fishery';
 import companyProfileFactory from '@/factories/company-profile.factory';
+import { sixCharHumanFriendlyCode } from '@/factories/code-generator';
 import { PrismaService } from '@/prisma/prisma.service';
 import {
   ENVOYE_WORKSPACE_CODE,
@@ -34,10 +35,7 @@ const workspaceFactory = WorkspaceFactory.define(({ sequence }) => {
     name: faker.company.name(),
     status: WorkspaceStatus.ACTIVE,
     ownedById: 1,
-    code: faker.string.alphanumeric({
-      length: 6,
-      exclude: ['i', 'l', '1', 'L', 'o', '0', 'O'],
-    }),
+    code: sixCharHumanFriendlyCode(),
     hasActivePlan: true,
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),

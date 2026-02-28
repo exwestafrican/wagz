@@ -25,6 +25,6 @@
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "noFallthroughCasesInSwitch": false,
-    "jsx": "react"
+    "jsx": "react-jsx"
   }
 }

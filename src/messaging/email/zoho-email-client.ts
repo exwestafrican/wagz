@@ -26,7 +26,7 @@ export class ZohoEmailClient implements EmailClient {
         from: this.toZeptoFromContact(email.from),
         to: this.toZeptoToContact([email.to]),
         subject: email.subject,
-        htmlbody: `<div><b> ${email.html}</b></div>`,
+        htmlbody: email.html,
       });
     } catch (e) {
       console.log('error', e);

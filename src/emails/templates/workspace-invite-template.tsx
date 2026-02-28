@@ -27,16 +27,15 @@ export const WorkspaceInviteTemplate = ({
         config={{
           presets: [pixelBasedPreset],
         }}
-        children={[]}
       >
         <Body className="mx-auto my-auto bg-white px-2 font-sans">
-          <Preview children={[]}>{`join ${senderName} on Envoye 🚀`}</Preview>
+          <Preview>{`join ${senderName} on Envoye 🚀`}</Preview>
           <Container className="mx-auto my-[40px] max-w-[465px] rounded border border-[#eaeaea] border-solid p-[20px]">
             <Text className="text-[14px] text-black leading-[24px]">
               Hey champ 🏆
             </Text>
             <Text className="text-[14px] text-black leading-[24px]">
-              {senderName} has invited you to join your teams {" "}
+              {senderName} has invited you to join your teams{' '}
               <strong>Envoye</strong>.
             </Text>
             <Section className="mt-[32px] mb-[32px] text-center">
