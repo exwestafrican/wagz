@@ -8,6 +8,7 @@ import {
 import PasswordGenerator from './services/password.generator';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
+import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -24,6 +25,7 @@ describe('AuthService', () => {
           useValue: mockSupabaseClient,
         },
         PrismaService,
+        WorkspaceLinkService,
       ],
     }).compile();
 
