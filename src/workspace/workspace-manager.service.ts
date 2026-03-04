@@ -5,6 +5,7 @@ import {
   PreVerification,
   PreVerificationStatus,
   Prisma,
+  Teammate,
   WorkspaceInvite,
 } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -22,6 +23,8 @@ import { render } from '@react-email/render';
 import { WorkspaceInviteTemplate } from '@/emails/templates/workspace-invite-template';
 import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
+import { Permission } from '@/permission/domain/permission';
+import { ROLES } from '@/permission/types';
 
 @Injectable()
 export class WorkspaceManager {
@@ -278,5 +281,64 @@ export class WorkspaceManager {
       this.logger.error(error);
       return failedWorkspaceInvite;
     }
+  }
+
+  private async findCallerOrThrow(
+    workspaceCode: string,
+    email: string,
+  ): Promise<Teammate> {
+    const teammate = await this.prismaService.teammate.findUnique({
+      where: {
+        workspaceCode_email: {
+          workspaceCode,
+          email: email,
+        },
+      },
+    });
+    if (!teammate) {
+      throw new NotFoundInDb('Caller is not a member of this workspace');
+    }
+    return teammate;
+  }
+
+  async getTeammates(
+    workspaceCode: string,
+    email: string,
+  ): Promise<Teammate[]> {
+    await this.findCallerOrThrow(workspaceCode, email);
+    return this.prismaService.teammate.findMany({
+      where: {
+        workspaceCode,
+      },
+    });
+  }
+
+  async getTeammate(
+    workspaceCode: string,
+    email: string,
+    teammateId: number,
+  ): Promise<Teammate> {
+    await this.findCallerOrThrow(workspaceCode, email);
+    const teammate = await this.prismaService.teammate.findUnique({
+      where: {
+        // workspaceCode: workspaceCode,
+        id: teammateId,
+      },
+    });
+    if (!teammate || teammate.workspaceCode !== workspaceCode) {
+      throw new NotFoundInDb('Teammate not found in this workspace');
+    }
+    return teammate;
+  }
+
+  async getPermissions(
+    workspaceCode: string,
+    email: string,
+  ): Promise<Permission[]> {
+    const caller = await this.findCallerOrThrow(workspaceCode, email);
+    return caller.groups.flatMap((groupCode) => {
+      const role = Object.values(ROLES).find((role) => role.code === groupCode);
+      return role ? role.permissions : [];
+    });
   }
 }
