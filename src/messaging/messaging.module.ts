@@ -11,7 +11,7 @@ import { MailpitEmailClient } from '@/messaging/email/mailpit-email-client';
 import { ENVIROMENT } from '@/common/const';
 import { TestEmailClient } from '@/messaging/email/test-email-client';
 
-const MailerProvider = {
+export const MailerProvider = {
   provide: EMAIL_CLIENT,
   imports: [ConfigModule],
   inject: [ConfigService],
@@ -43,6 +43,7 @@ const MailerProvider = {
 
 @Global()
 @Module({
+  imports: [ConfigModule],
   providers: [MailerProvider],
   exports: [EMAIL_CLIENT],
 })

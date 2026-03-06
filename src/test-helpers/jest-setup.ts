@@ -4,6 +4,10 @@
  */
 import DbTestContainerManager from '@/test-helpers/db.test.container';
 
+jest.mock('@react-email/render', () => ({
+  render: jest.fn().mockResolvedValue('<html>Mock Email</html>'),
+}));
+
 let dbTestContainerManager: DbTestContainerManager;
 
 const workerId = process.env.JEST_WORKER_ID;
