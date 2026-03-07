@@ -5,12 +5,11 @@ import Factory, { PersistStrategy } from '@/factories/factory';
 import { PrismaService } from '@/prisma/prisma.service';
 import { INestApplication } from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
-import workspaceFactory from '@/factories/workspace.factory';
-import teammateFactory from '@/factories/teammate.factory';
 import { Role } from './domain/role';
 import { PERMISSIONS, ROLES } from './types';
 import { RoleService } from './role/role.service';
 import { Permission } from './domain/permission';
+import { setupWorkspaceWithTeammateRole } from '@/test-helpers/workspace-helpers';
 
 describe('PermissionService', () => {
   let service: PermissionService;
@@ -39,24 +38,9 @@ describe('PermissionService', () => {
   afterAll(async () => {
     await app.close();
   });
-  async function setupWorkspaceWithTeammate(
-    factory: PersistStrategy,
-    teammateRole: string[],
-  ) {
-    const workspace = await factory.persist('workspace', () =>
-      workspaceFactory.envoyeWorkspace(),
-    );
-    const teammate = await factory.persist('teammate', () =>
-      teammateFactory.build({
-        groups: teammateRole,
-        workspaceCode: workspace.code,
-      }),
-    );
-    return teammate;
-  }
 
   it('should return no permissions when teammate does not belong to any role', async () => {
-    const teammate = await setupWorkspaceWithTeammate(factory, []);
+    const teammate = await setupWorkspaceWithTeammateRole(factory, []);
     const result = await service.teammatePermissions(
       teammate.email,
       teammate.workspaceCode,
@@ -91,7 +75,9 @@ describe('PermissionService', () => {
     ])(
       'return all permissions for teammates with $role role',
       async ({ role, permissions }) => {
-        const teammate = await setupWorkspaceWithTeammate(factory, [role.code]);
+        const teammate = await setupWorkspaceWithTeammateRole(factory, [
+          role.code,
+        ]);
         const result = await service.teammatePermissions(
           teammate.email,
           teammate.workspaceCode,
@@ -125,7 +111,7 @@ describe('PermissionService', () => {
           ]),
         };
       });
-      const teammate = await setupWorkspaceWithTeammate(factory, [
+      const teammate = await setupWorkspaceWithTeammateRole(factory, [
         'SuperAdmin',
         'NotSoSuperAdmin',
       ]);
@@ -157,7 +143,7 @@ describe('PermissionService', () => {
           WorkspaceAdmin: Role.of('WorkspaceAdmin', [manageUserPermission]),
         };
       });
-      const teammate = await setupWorkspaceWithTeammate(factory, [
+      const teammate = await setupWorkspaceWithTeammateRole(factory, [
         'SuperAdmin',
         'WorkspaceAdmin',
       ]);
@@ -168,8 +154,4 @@ describe('PermissionService', () => {
       expect(result).toEqual(['remove_workspace', 'manage_users']);
     });
   });
-
-  // [WorkspaceAdmin] => [READ_SUPPORT_CONVERSATIONS, REPLY_SUPPORT_CONVERSATIONS, MANAGE_TEAMMATES, MANAGE_CHANNELS, MESSAGE_TEAMMATES]
-
-  // [WorkspaceAdmin, SupportStaff] => [READ_SUPPORT_CONVERSATIONS, REPLY_SUPPORT_CONVERSATIONS, MANAGE_TEAMMATES, MANAGE_CHANNELS, MESSAGE_TEAMMATES]
 });

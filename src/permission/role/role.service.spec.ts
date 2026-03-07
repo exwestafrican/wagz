@@ -34,4 +34,3 @@ describe('RoleService', () => {
     expect(service.permissions('InvalidRole')).toMatchObject([]);
   });
 });
-// service.fetchRole(WorkspaceAdmin)
