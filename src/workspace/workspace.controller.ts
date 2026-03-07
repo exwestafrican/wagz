@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
   HttpCode,
+  Param,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
@@ -25,6 +26,7 @@ import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import { ROLES } from '@/permission/types';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -102,27 +104,41 @@ export class WorkspaceController {
     }
   }
 
-  @Post('/invite-teammates')
+  @Post('/:workspace-code/invite-teammates')
   @ApiOperation({ summary: 'Invite teammates by email' })
   @ApiResponse({
     status: HttpStatus.OK,
-    description: 'Request accepted (no-op for now)',
+    description: 'Workspace teammate invites processed',
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'User not authorized',
   })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Auth user teammate record not found',
+  })
   @ApiBadRequestResponse()
   @UseGuards(SupabaseAuthGuard)
   @HttpCode(HttpStatus.OK)
-  inviteTeammates(
+  async inviteTeammates(
+    @Param('workspace-code') workspaceCode: string,
     @User() requestUser: RequestUser,
     @Body() dto: InviteTeammatesDto,
   ) {
-    // No-op: invite flow to be implemented
-    return {
-      user: requestUser.email,
-      emails: dto.emails,
-    };
+    try {
+      //TODO do some enforcement before calling
+      await this.workspaceManager.inviteEligibleTeammates(
+        requestUser.email,
+        workspaceCode,
+        dto.emails,
+        ROLES[dto.role],
+      );
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
   }
 }
