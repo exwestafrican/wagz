@@ -12,6 +12,7 @@ import {
   PreVerificationStatus,
 } from '@/generated/prisma/client';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
+import workspaceFactory from '@/factories/workspace.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import request from 'supertest';
 
@@ -39,6 +40,8 @@ describe('WorkspaceController', () => {
 
   afterEach(async () => {
     await prismaService.preVerification.deleteMany();
+    await prismaService.workspace.deleteMany();
+    await prismaService.companyProfile.deleteMany();
     await app.close();
   });
 
@@ -88,6 +91,36 @@ describe('WorkspaceController', () => {
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
         .send({ id: anotherUsersPreverification.id })
+        .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('getByCode', () => {
+    it('returns workspace details for valid code', async () => {
+      const workspace = await factory.persist('workspace', () =>
+        workspaceFactory.build({ code: 'abc123', name: 'Test Workspace' }),
+      );
+
+      const response = await request(getHttpServer(app))
+        .get(AuthEndpoints.WORKSPACE_DETAILS)
+        .query({ code: workspace.code })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toEqual({
+        code: workspace.code,
+        status: workspace.status,
+        name: workspace.name,
+      });
+    });
+
+    it('returns 404 when workspace does not exist', async () => {
+      await request(getHttpServer(app))
+        .get(AuthEndpoints.WORKSPACE_DETAILS)
+        .query({ code: 'nonex1' })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.NOT_FOUND);
     });
   });
