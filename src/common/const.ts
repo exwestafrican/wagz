@@ -9,3 +9,7 @@ export const AuthEndpoints = {
   REQUEST_MAGIC_LINK: '/auth/magic-link/request',
   SETUP_WORKSPACE: '/workspace/setup',
 };
+
+export const PermissionEndpoints = {
+  TEAMMATE_PERMISSIONS: '/permission',
+};
