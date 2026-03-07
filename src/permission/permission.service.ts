@@ -3,10 +3,14 @@ import { Injectable } from '@nestjs/common';
 import { ROLES } from './types';
 import { isEmpty } from '@/common/utils';
 import { Permission } from './domain/permission';
+import { RoleService } from './role/role.service';
 
 @Injectable()
 export class PermissionService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly roleService: RoleService,
+  ) {}
 
   async teammatePermissions(
     email: string,
@@ -21,11 +25,14 @@ export class PermissionService {
       },
     });
 
-    const roles = teammate.groups;
-    if (isEmpty(roles)) {
+    const roleCodes = teammate.groups;
+    if (isEmpty(roleCodes)) {
       return Promise.resolve([]);
     }
-    const teammateRole = roles[0]; //WorkspaceAdmin
-    return ROLES[teammateRole].permissions;
+    const permissions = roleCodes.flatMap((roleCode) => {
+      return this.roleService.permissions(roleCode);
+    });
+
+    return Array.from(new Set(permissions));
   }
 }

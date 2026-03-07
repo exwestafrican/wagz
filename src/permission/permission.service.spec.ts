@@ -9,20 +9,24 @@ import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
 import { Role } from './domain/role';
 import { PERMISSIONS, ROLES } from './types';
+import { RoleService } from './role/role.service';
+import { Permission } from './domain/permission';
 
 describe('PermissionService', () => {
   let service: PermissionService;
   let app: INestApplication;
   let prismaService: PrismaService;
   let factory: PersistStrategy;
+  let roleService: RoleService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [PrismaModule],
-      providers: [PermissionService],
+      providers: [PermissionService, RoleService],
     }).compile();
     app = await createTestApp(module);
-    service = module.get<PermissionService>(PermissionService);
+    service = app.get<PermissionService>(PermissionService);
+    roleService = app.get<RoleService>(RoleService);
     prismaService = app.get<PrismaService>(PrismaService);
     factory = Factory.createStrategy(prismaService);
   });
@@ -37,14 +41,14 @@ describe('PermissionService', () => {
   });
   async function setupWorkspaceWithTeammate(
     factory: PersistStrategy,
-    teammateRole: Role[],
+    teammateRole: string[],
   ) {
     const workspace = await factory.persist('workspace', () =>
       workspaceFactory.envoyeWorkspace(),
     );
     const teammate = await factory.persist('teammate', () =>
       teammateFactory.build({
-        groups: teammateRole.map((role) => role.code),
+        groups: teammateRole,
         workspaceCode: workspace.code,
       }),
     );
@@ -87,7 +91,7 @@ describe('PermissionService', () => {
     ])(
       'return all permissions for teammates with $role role',
       async ({ role, permissions }) => {
-        const teammate = await setupWorkspaceWithTeammate(factory, [role]);
+        const teammate = await setupWorkspaceWithTeammate(factory, [role.code]);
         const result = await service.teammatePermissions(
           teammate.email,
           teammate.workspaceCode,
@@ -95,6 +99,76 @@ describe('PermissionService', () => {
         expect(result).toMatchObject(permissions);
       },
     );
+  });
+
+  describe('Teammate with multiple roles', () => {
+    it('should return combined permissions for multiple roles', async () => {
+      const manageUserPermission = Permission.of(
+        'Can Manage All Users',
+        'User can manage all users in the workspace',
+        'manage_users',
+      );
+      const manageNothingPermission = Permission.of(
+        'Can Manage No One',
+        "User can't manage anyone unfortunately",
+        'manage_nothing',
+      );
+      fetchRolesSpy.mockImplementation(() => {
+        return {
+          SuperAdmin: Role.of('SuperAdmin', [manageUserPermission]),
+          NotSoSuperAdmin: Role.of('NotSoSuperAdmin', [
+            manageNothingPermission,
+          ]),
+        };
+      });
+      const teammate = await setupWorkspaceWithTeammate(factory, [
+        'SuperAdmin',
+        'NotSoSuperAdmin',
+      ]);
+      const result = await service.teammatePermissions(
+        teammate.email,
+        teammate.workspaceCode,
+      );
+      expect(result).toMatchObject([
+        manageUserPermission,
+        manageNothingPermission,
+      ]);
+    });
+
+    it('should remove duplicate permissions for multiple roles', async () => {
+      const manageUserPermission = Permission.of(
+        'Can Manage All Users',
+        'User can manage all users in the workspace',
+        'manage_users',
+      );
+      const removeWorkspacePermission = Permission.of(
+        'Can remove workspace',
+        'User can delete workspace',
+        'remove_workspace',
+      );
+      const fetchRolesSpy = jest.spyOn(roleService, 'fetchRoles');
+      fetchRolesSpy.mockImplementation(() => {
+        return {
+          SuperAdmin: Role.of('SuperAdmin', [
+            removeWorkspacePermission,
+            manageUserPermission,
+          ]),
+          WorkspaceAdmin: Role.of('WorkspaceAdmin', [manageUserPermission]),
+        };
+      });
+      const teammate = await setupWorkspaceWithTeammate(factory, [
+        'SuperAdmin',
+        'WorkspaceAdmin',
+      ]);
+      const result = await service.teammatePermissions(
+        teammate.email,
+        teammate.workspaceCode,
+      );
+      expect(result).toMatchObject([
+        manageUserPermission,
+        removeWorkspacePermission,
+      ]);
+    });
   });
 
   // [WorkspaceAdmin] => [READ_SUPPORT_CONVERSATIONS, REPLY_SUPPORT_CONVERSATIONS, MANAGE_TEAMMATES, MANAGE_CHANNELS, MESSAGE_TEAMMATES]
