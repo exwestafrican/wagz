@@ -7,11 +7,14 @@ import {
   Logger,
   Post,
   UseGuards,
+  HttpCode,
+  Param,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import SetupWorkspaceDto from '@/workspace/dto/setup-workspace.dto';
+import InviteTeammatesDto from '@/workspace/dto/invite-teammates.dto';
 import WorkspaceDetailsResponseDto, {
   toWorkspaceDetailsResponse,
 } from '@/workspace/dto/workspace-details-response.dto';
@@ -20,6 +23,7 @@ import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import { ROLES } from '@/permission/types';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -61,6 +65,44 @@ export class WorkspaceController {
       if (error instanceof InvalidState) {
         throw new ConflictException();
       } else if (error instanceof NotFoundInDb) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
+  }
+
+  @Post('/:workspace-code/invite-teammates')
+  @ApiOperation({ summary: 'Invite teammates by email' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Workspace teammate invites processed',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User not authorized',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Auth user teammate record not found',
+  })
+  @ApiBadRequestResponse()
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async inviteTeammates(
+    @Param('workspace-code') workspaceCode: string,
+    @User() requestUser: RequestUser,
+    @Body() dto: InviteTeammatesDto,
+  ) {
+    try {
+      //TODO do some enforcement before calling
+      await this.workspaceManager.inviteEligibleTeammates(
+        requestUser.email,
+        workspaceCode,
+        dto.emails,
+        ROLES[dto.role],
+      );
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
         throw new NotFoundException();
       }
       throw error;

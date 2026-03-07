@@ -10,6 +10,7 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import {
   PreVerification,
   PreVerificationStatus,
+  Workspace,
 } from '@/generated/prisma/client';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
@@ -18,6 +19,10 @@ import request from 'supertest';
 import { AuthEndpoints } from '@/common/const';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { MailerProvider } from '@/messaging/messaging.module';
+import { faker } from '@faker-js/faker';
+import workspaceFactory from '@/factories/workspace.factory';
+import teammateFactory from '@/factories/teammate.factory';
+import { ROLES } from '@/permission/types';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -42,7 +47,25 @@ describe('WorkspaceController', () => {
     await app.close();
   });
 
-  describe('Auth user owns resource', () => {
+  function buildEmails(size: number) {
+    return new Array(size).fill(0).map(() => faker.internet.email());
+  }
+
+  async function setupAuthenticatedTeammate(): Promise<Workspace> {
+    const workspace = await factory.persist('workspace', () =>
+      workspaceFactory.envoyeWorkspace(),
+    );
+    await factory.persist('teammate', () =>
+      teammateFactory.build({
+        email: requestUser.email,
+        workspaceCode: workspace.code,
+        groups: [ROLES.WorkspaceAdmin.code],
+      }),
+    );
+    return workspace;
+  }
+
+  describe('Setup', () => {
     it('returns 201 for  successful preverification', async () => {
       preVerificationDetails = await factory.persist('preverification', () =>
         preVerificationFactory.build({
@@ -89,6 +112,49 @@ describe('WorkspaceController', () => {
         .set('Authorization', 'Bearer test-token')
         .send({ id: anotherUsersPreverification.id })
         .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe(' Invite Teammates', () => {
+    it('does not accept empty email list', async () => {
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.INVITE_TEAMMATES)
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails: [], role: 'SupportStaff' })
+        .expect(HttpStatus.BAD_REQUEST);
+    });
+
+    it('does not accept more than 10 emails', async () => {
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.INVITE_TEAMMATES)
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails: buildEmails(11), role: 'SupportStaff' })
+        .expect(HttpStatus.BAD_REQUEST);
+    });
+
+    it('accepts up to 10 emails', async () => {
+      const workspace = await setupAuthenticatedTeammate();
+      const emails = buildEmails(9);
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.INVITE_TEAMMATES)
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails, role: 'SupportStaff' })
+        .expect(HttpStatus.OK);
+
+      expect(
+        await prismaService.workspaceInvite.count({
+          where: {
+            workspaceCode: workspace.code,
+            recipientRole: ROLES.SupportStaff.code,
+            recipientEmail: {
+              in: emails,
+            },
+          },
+        }),
+      ).toBe(9);
     });
   });
 });
