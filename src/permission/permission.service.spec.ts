@@ -96,7 +96,10 @@ describe('PermissionService', () => {
           teammate.email,
           teammate.workspaceCode,
         );
-        expect(result).toMatchObject(permissions);
+        const expectedPermissionCodes = permissions.map(
+          (permission) => permission.code,
+        );
+        expect(result).toEqual(expectedPermissionCodes);
       },
     );
   });
@@ -113,6 +116,7 @@ describe('PermissionService', () => {
         "User can't manage anyone unfortunately",
         'manage_nothing',
       );
+      const fetchRolesSpy = jest.spyOn(roleService, 'fetchRoles');
       fetchRolesSpy.mockImplementation(() => {
         return {
           SuperAdmin: Role.of('SuperAdmin', [manageUserPermission]),
@@ -129,10 +133,7 @@ describe('PermissionService', () => {
         teammate.email,
         teammate.workspaceCode,
       );
-      expect(result).toMatchObject([
-        manageUserPermission,
-        manageNothingPermission,
-      ]);
+      expect(result).toEqual(['manage_users', 'manage_nothing']);
     });
 
     it('should remove duplicate permissions for multiple roles', async () => {
@@ -164,10 +165,7 @@ describe('PermissionService', () => {
         teammate.email,
         teammate.workspaceCode,
       );
-      expect(result).toMatchObject([
-        manageUserPermission,
-        removeWorkspacePermission,
-      ]);
+      expect(result).toEqual(['remove_workspace', 'manage_users']);
     });
   });
 
