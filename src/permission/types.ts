@@ -29,10 +29,11 @@ export const PERMISSIONS = {
   ),
 } as const;
 
-export const ROLES = {
+export const ROLES: Record<string, Role> = {
   WorkspaceAdmin: Role.of('WorkspaceAdmin', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
     PERMISSIONS.REPLY_SUPPORT_CONVERSATIONS,
+    PERMISSIONS.MESSAGE_TEAMMATES,
     PERMISSIONS.MANAGE_TEAMMATES,
     PERMISSIONS.MANAGE_CHANNELS,
   ]),
