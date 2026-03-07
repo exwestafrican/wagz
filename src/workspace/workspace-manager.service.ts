@@ -22,9 +22,11 @@ import { render } from '@react-email/render';
 import { WorkspaceInviteTemplate } from '@/emails/templates/workspace-invite-template';
 import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
+import pLimit from 'p-limit';
 
 @Injectable()
 export class WorkspaceManager {
+  private static readonly INVITE_CONCURRENCY = 3;
   logger = new Logger(WorkspaceManager.name);
   constructor(
     private readonly prismaService: PrismaService,
@@ -105,6 +107,36 @@ export class WorkspaceManager {
       );
     }
   }
+
+  async inviteEligibleTeammates(
+    senderEmail: string,
+    workspaceCode: string,
+    recipientEmails: string[],
+    role: Role,
+  ): Promise<void> {
+    const sender = await this.prismaService.teammate.findUniqueOrThrow({
+      where: {
+        workspaceCode_email: {
+          workspaceCode: workspaceCode,
+          email: senderEmail,
+        },
+      },
+    });
+    const runWithLimit = pLimit(WorkspaceManager.INVITE_CONCURRENCY);
+    await Promise.allSettled(
+      recipientEmails.map((recipientEmail) =>
+        runWithLimit(() =>
+          this.inviteTeammateIfEligible(
+            workspaceCode,
+            recipientEmail,
+            sender.id,
+            role,
+          ),
+        ),
+      ),
+    );
+  }
+
   private async runPreWorkspaceCreationSteps(
     preVerification: PreVerification,
   ): Promise<WorkspaceDetails> {
