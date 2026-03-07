@@ -416,4 +416,176 @@ describe('WorkspaceService', () => {
       );
     });
   });
+
+  describe('getTeammates', () => {
+    let workspace: Workspace;
+    let callerTeammate: Teammate;
+
+    beforeEach(async () => {
+      workspace = await factory.persist('workspace', () =>
+        workspaceFactory.envoyeWorkspace(),
+      );
+      callerTeammate = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'laura@usewaggz.com',
+          workspaceCode: workspace.code,
+        }),
+      );
+    });
+
+    it('should throw NotFoundInDb if caller is not in the workspace', async () => {
+      await expect(
+        service.getTeammates(workspace.code, 'notTeammate@usewaggz.com'),
+      ).rejects.toThrow(NotFoundInDb);
+    });
+
+    it('should return teammates in the workspace', async () => {
+      const result = await service.getTeammates(
+        workspace.code,
+        callerTeammate.email,
+      );
+      expect(result.length).toBeGreaterThanOrEqual(1);
+      expect(
+        result.some((teammate) => teammate.email === callerTeammate.email),
+      );
+    });
+
+    it('does not return teammates in a different workspace', async () => {
+      const otherWorkspace = await factory.persist('workspace', () =>
+        workspaceFactory.build({ code: 'wr78uh' }),
+      );
+      await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'otherTeammate@otherCompany.com',
+          workspaceCode: otherWorkspace.code,
+        }),
+      );
+      const result = await service.getTeammates(
+        workspace.code,
+        callerTeammate.email,
+      );
+      expect(
+        result.every((teammate) => teammate.workspaceCode === workspace.code),
+      ).toBe(true);
+    });
+  });
+
+  describe('getTeammate', () => {
+    let workspace: Workspace;
+    let callerTeammate: Teammate;
+    let targetTeammate: Teammate;
+
+    beforeEach(async () => {
+      workspace = await factory.persist('workspace', () =>
+        workspaceFactory.envoyeWorkspace(),
+      );
+      callerTeammate = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'laura@usewaggz.com',
+          workspaceCode: workspace.code,
+        }),
+      );
+      targetTeammate = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'amarachi@usewaggz.com',
+          workspaceCode: workspace.code,
+        }),
+      );
+    });
+
+    it('should throw NotFoundInDb if caller is not in the workspace', async () => {
+      await expect(
+        service.getTeammate(
+          workspace.code,
+          'notTeammate@usewaggz.com',
+          targetTeammate.id,
+        ),
+      ).rejects.toThrow(NotFoundInDb);
+    });
+
+    it('should throw NotFoundInDb if teammate id belongs to another workspace', async () => {
+      const otherWorkspace = await factory.persist('workspace', () =>
+        workspaceFactory.build({ code: 'wr78uh' }),
+      );
+      const otherTeammate = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'otherTeammate@otherCompany.com',
+          workspaceCode: otherWorkspace.code,
+        }),
+      );
+
+      await expect(
+        service.getTeammate(
+          workspace.code,
+          callerTeammate.email,
+          otherTeammate.id,
+        ),
+      ).rejects.toThrow(NotFoundInDb);
+    });
+
+    it('should return teammate when caller is a member of workspace and id is valid', async () => {
+      const result = await service.getTeammate(
+        workspace.code,
+        callerTeammate.email,
+        targetTeammate.id,
+      );
+      expect(result.id).toBe(targetTeammate.id);
+      expect(result.email).toBe(targetTeammate.email);
+    });
+  });
+
+  describe('getPermissions', () => {
+    let workspace: Workspace;
+
+    beforeEach(async () => {
+      workspace = await factory.persist('workspace', () =>
+        workspaceFactory.envoyeWorkspace(),
+      );
+    });
+
+    it('should throw NotFoundInDb if caller is not in the workspace', async () => {
+      await expect(
+        service.getPermissions(workspace.code, 'notTeammate@usewaggz.com'),
+      ).rejects.toThrow(NotFoundInDb);
+    });
+
+    it('should return the admin permissions for WorkspaceAdmin', async () => {
+      const admin = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'admin@usewaggz.com',
+          workspaceCode: workspace.code,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+
+      const result = await service.getPermissions(workspace.code, admin.email);
+      const codes = result.map((permission) => permission.code);
+      expect(codes).toContain('read_support_conversations');
+      expect(codes).toContain('reply_support_conversations');
+      expect(codes).toContain('manage_teammates');
+      expect(codes).toContain('message_teammates');
+      expect(codes).toContain('manage_channels');
+    });
+
+    it('should return the support permissions for SupportStaff', async () => {
+      const support = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'support@usewaggz.com',
+          workspaceCode: workspace.code,
+          groups: [ROLES.SupportStaff.code],
+        }),
+      );
+
+      const result = await service.getPermissions(
+        workspace.code,
+        support.email,
+      );
+      const codes = result.map((permission) => permission.code);
+      expect(codes).toContain('read_support_conversations');
+      expect(codes).toContain('reply_support_conversations');
+      expect(codes).toContain('message_teammates');
+      expect(codes).not.toContain('manage_teammates');
+      expect(codes).not.toContain('manage_channels');
+    });
+  });
 });
