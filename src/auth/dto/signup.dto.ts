@@ -61,12 +61,20 @@ export class SignupEmailDto {
   @Validate(IsValidPhoneNumberConstraint)
   phoneNumber?: PhoneNumberDto;
 
+  @ApiProperty({
+    description: 'The timezone of the user',
+    example: 'Africa/Lagos',
+  })
+  @IsNotEmpty()
+  timezone: string;
+
   static toSignupDetails(signupDto: SignupEmailDto): SignupDetails {
     return new SignupDetails(
       signupDto.email,
       signupDto.firstName,
       signupDto.lastName,
       signupDto.companyName,
+      signupDto.timezone,
     );
   }
 }

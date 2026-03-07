@@ -60,6 +60,7 @@ export class AuthService {
           firstName: signupDetails.firstName,
           lastName: signupDetails.lastName,
           companyName: signupDetails.companyName,
+          timezone: signupDetails.timezone,
         },
       });
       this.logger.log(`PreVerification successful Id=${preVerification.id}`);

@@ -127,6 +127,7 @@ export class WorkspaceManager {
           name: companyProfile.companyName,
           ownedById: companyProfile.id,
           code: this.generateCode(),
+          timezone: preVerification.timezone
         },
       });
 
