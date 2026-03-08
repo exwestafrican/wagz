@@ -91,7 +91,7 @@ export class WorkspaceController {
   @UseGuards(SupabaseAuthGuard)
   async getByCode(@Query('code') code: string): Promise<WorkspaceResponseDto> {
     try {
-      return await this.workspaceManager.getByCode(code);
+      return await this.workspaceManager.details(code);
     } catch (error) {
       if (error instanceof NotFoundInDb) {
         throw new NotFoundException();
