@@ -9,7 +9,7 @@ export class WorkspaceLinkService {
     return `${this.siteUrl}/workspace-invite?code=${workspaceCode}`;
   }
 
-  startupWorkspaceUrl(workspaceCode: string): string {
+ loadWorkspaceUrl(workspaceCode: string): string {
     return `${this.siteUrl}/setup/workspace?code=${workspaceCode}`;
   }
 

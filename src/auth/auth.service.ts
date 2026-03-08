@@ -32,7 +32,7 @@ export class AuthService {
       email: email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: this.workspaceLinkService.startupWorkspaceUrl(
+        emailRedirectTo: this.workspaceLinkService.loadWorkspaceUrl(
           primaryWorkspace.code,
         ),
       },
