@@ -23,6 +23,7 @@ import { render } from '@react-email/render';
 import { WorkspaceInviteTemplate } from '@/emails/templates/workspace-invite-template';
 import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
+import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 
 @Injectable()
 export class WorkspaceManager {
@@ -30,6 +31,7 @@ export class WorkspaceManager {
   constructor(
     private readonly prismaService: PrismaService,
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
+    private readonly workspaceLinkService: WorkspaceLinkService,
   ) {}
 
   async setup(
@@ -111,7 +113,7 @@ export class WorkspaceManager {
       );
       return invite;
     } else {
-      //try => if failed update to failed
+      //TODO: debounce send-email
       return await this.tryToSendWorkspaceInvite(
         workspaceCode,
         recipientEmail,
@@ -265,7 +267,11 @@ export class WorkspaceManager {
       const sender = await this.prismaService.teammate.findUniqueOrThrow({
         where: { id: senderId },
       });
-      const inviteLink = 'https://example.com/invite'; //TODO: generate invite link
+
+      const inviteLink = this.workspaceLinkService.inviteUrl(
+        workspaceInvite.workspaceCode,
+      );
+
       const emailHtml = await render(
         React.createElement(WorkspaceInviteTemplate, {
           senderName: sender.firstName,

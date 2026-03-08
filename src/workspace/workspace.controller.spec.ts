@@ -19,6 +19,7 @@ import request from 'supertest';
 import { AuthEndpoints } from '@/common/const';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { MailerProvider } from '@/messaging/messaging.module';
+import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -31,7 +32,7 @@ describe('WorkspaceController', () => {
     requestUser = RequestUser.of('sam@useEnvoye.co');
     const module = await TestControllerModuleWithAuthUser({
       controllers: [WorkspaceController],
-      providers: [WorkspaceManager, MailerProvider],
+      providers: [WorkspaceManager, MailerProvider, WorkspaceLinkService],
     }).with(requestUser);
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
