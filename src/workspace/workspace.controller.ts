@@ -3,18 +3,21 @@ import {
   NotFoundException,
   ConflictException,
   Controller,
+  Get,
   HttpStatus,
   Logger,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import SetupWorkspaceDto from '@/workspace/dto/setup-workspace.dto';
 import WorkspaceDetailsResponseDto, {
   toWorkspaceDetailsResponse,
 } from '@/workspace/dto/workspace-details-response.dto';
+import WorkspaceResponseDto from '@/workspace/dto/workspace-response.dto';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
@@ -61,6 +64,36 @@ export class WorkspaceController {
       if (error instanceof InvalidState) {
         throw new ConflictException();
       } else if (error instanceof NotFoundInDb) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
+  }
+
+  @Get()
+  @ApiOperation({ summary: 'Get workspace details by code' })
+  @ApiQuery({
+    name: 'code',
+    required: true,
+    type: String,
+    description: 'Workspace invite code',
+    example: 't8tmd7',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Workspace details',
+    type: WorkspaceResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Workspace not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async getByCode(@Query('code') code: string): Promise<WorkspaceResponseDto> {
+    try {
+      return await this.workspaceManager.getByCode(code);
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
         throw new NotFoundException();
       }
       throw error;
