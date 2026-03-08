@@ -11,6 +11,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import SignupDetails from './domain/signup.details';
 import { PreVerification, Prisma } from '@/generated/prisma/client';
 import PRISMA_CODES from '@/prisma/consts';
+import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 
 @Injectable()
@@ -21,14 +22,19 @@ export class AuthService {
     private readonly passwordGenerator: PasswordGenerator,
     private readonly prismaService: PrismaService,
     private readonly workspaceLinkService: WorkspaceLinkService,
+    private readonly workspaceManager: WorkspaceManager,
   ) {}
 
   async requestMagicLink(email: string): Promise<void> {
+    const primaryWorkspace =
+      await this.workspaceManager.primaryWorkspace(email);
     const { error } = await this.supabaseClient.auth.signInWithOtp({
       email: email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: this.workspaceLinkService.workspaceUrl('1'),
+        emailRedirectTo: this.workspaceLinkService.loadWorkspaceUrl(
+          primaryWorkspace.code,
+        ),
       },
     });
 

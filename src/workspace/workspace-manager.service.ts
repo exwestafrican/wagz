@@ -5,6 +5,7 @@ import {
   PreVerification,
   PreVerificationStatus,
   Prisma,
+  TeammateStatus,
   WorkspaceInvite,
 } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -77,7 +78,7 @@ export class WorkspaceManager {
     }
   }
 
-  async getByCode(code: string): Promise<Workspace> {
+  async details(code: string): Promise<Workspace> {
     const workspace = await this.prismaService.workspace.findUnique({
       where: { code },
     });
@@ -122,6 +123,24 @@ export class WorkspaceManager {
       );
     }
   }
+
+  async primaryWorkspace(email: string) {
+    // primary workspace for now is the oldest active workspace
+    return this.prismaService.workspace.findFirstOrThrow({
+      where: {
+        teammates: {
+          some: {
+            email,
+            status: TeammateStatus.ACTIVE,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc', //from oldest to newest
+      },
+    });
+  }
+
   private async runPreWorkspaceCreationSteps(
     preVerification: PreVerification,
   ): Promise<WorkspaceDetails> {
@@ -144,7 +163,7 @@ export class WorkspaceManager {
           name: companyProfile.companyName,
           ownedById: companyProfile.id,
           code: this.generateCode(),
-          timezone: preVerification.timezone
+          timezone: preVerification.timezone,
         },
       });
 

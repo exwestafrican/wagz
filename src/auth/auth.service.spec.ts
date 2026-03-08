@@ -9,6 +9,8 @@ import PasswordGenerator from './services/password.generator';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { WorkspaceManager } from '@/workspace/workspace-manager.service';
+import { MessagingModule } from '@/messaging/messaging.module';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -16,6 +18,7 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [MessagingModule],
       providers: [
         AuthService,
         PasswordGenerator,
@@ -26,6 +29,7 @@ describe('AuthService', () => {
         },
         PrismaService,
         WorkspaceLinkService,
+        WorkspaceManager,
       ],
     }).compile();
 
