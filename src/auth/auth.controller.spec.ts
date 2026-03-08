@@ -107,7 +107,7 @@ describe('AuthController', () => {
     });
 
     it('should return 200 when email is valid', async () => {
-      const detail = await setupWorkspaceWithTeammate(
+      await setupWorkspaceWithTeammate(
         factory,
         teammateFactory.build({
           email: 'test@example.com',
