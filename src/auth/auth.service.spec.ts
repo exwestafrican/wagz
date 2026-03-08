@@ -9,6 +9,7 @@ import PasswordGenerator from './services/password.generator';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -26,6 +27,7 @@ describe('AuthService', () => {
         },
         PrismaService,
         WorkspaceLinkService,
+        WorkspaceManager,
       ],
     }).compile();
 

@@ -19,6 +19,7 @@ import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -51,6 +52,7 @@ describe('AuthController', () => {
         },
         PrismaService,
         WorkspaceLinkService,
+        WorkspaceManager,
       ],
     }).compile();
 

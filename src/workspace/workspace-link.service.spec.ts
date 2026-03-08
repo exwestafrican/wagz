@@ -20,7 +20,7 @@ describe('WorkspaceLinkService', () => {
 
   it('builds workspace url', () => {
     expect(service.loadWorkspaceUrl('w123')).toBe(
-      'https://app.usewaggz.com/workspace?code=w123',
+      'https://app.usewaggz.com/setup/workspace?code=w123',
     );
   });
 
