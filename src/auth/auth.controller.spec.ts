@@ -20,6 +20,9 @@ import preVerificationFactory from '@/factories/roadmap/preverification.factory'
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
+import { MessagingModule } from '@/messaging/messaging.module';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -41,7 +44,7 @@ describe('AuthController', () => {
   beforeEach(async () => {
     mockSupabaseClient = createMockSupabaseClient();
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot()], // Add ConfigModule for setupApp to work
+      imports: [ConfigModule.forRoot(), MessagingModule], // Add ConfigModule for setupApp to work
       controllers: [AuthController],
       providers: [
         AuthService,
@@ -103,7 +106,14 @@ describe('AuthController', () => {
       expect(body.property).toMatchObject(['email']);
     });
 
-    it('should return 200 when email is valid', () => {
+    it('should return 200 when email is valid', async () => {
+      const detail = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: 'test@example.com',
+          groups: ['WorkspaceAdmin'],
+        }),
+      );
       return request(getHttpServer(app))
         .post(AuthEndpoints.REQUEST_MAGIC_LINK)
         .send({ email: 'test@example.com' })
