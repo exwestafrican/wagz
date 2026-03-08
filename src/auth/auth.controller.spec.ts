@@ -32,6 +32,7 @@ describe('AuthController', () => {
       firstName: 'Test',
       lastName: 'Example',
       companyName: 'Example Inc.',
+      timezone: 'Africa/Lagos'
     };
     return { ...mockDetails, ...signupDetails };
   }

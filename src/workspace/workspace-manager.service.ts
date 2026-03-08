@@ -9,6 +9,7 @@ import {
 } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { generate } from 'generate-password';
+import { Workspace } from '@/workspace/dto/workspace-response.dto';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
@@ -76,6 +77,20 @@ export class WorkspaceManager {
     }
   }
 
+  async getByCode(code: string): Promise<Workspace> {
+    const workspace = await this.prismaService.workspace.findUnique({
+      where: { code },
+    });
+    if (!workspace) {
+      throw new NotFoundInDb('Workspace not found');
+    }
+    return {
+      code: workspace.code,
+      status: workspace.status,
+      name: workspace.name,
+    };
+  }
+
   async inviteTeammateIfEligible(
     workspaceCode: string,
     recipientEmail: string,
@@ -129,6 +144,7 @@ export class WorkspaceManager {
           name: companyProfile.companyName,
           ownedById: companyProfile.id,
           code: this.generateCode(),
+          timezone: preVerification.timezone
         },
       });
 
