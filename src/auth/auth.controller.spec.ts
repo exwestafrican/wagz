@@ -207,7 +207,7 @@ describe('AuthController', () => {
       it('should return 400 when timezone is invalid', async () => {
         const signupDetails = mockUserSignupDetails({
           email: 'test@example.com',
-          timezone: 'hahahah/Lagos',
+          timezone: 'Invalid/Timezone',
         });
         mockSupabaseSuccess(signupDetails);
         const response = await request(getHttpServer(app))
