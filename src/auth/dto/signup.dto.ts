@@ -11,6 +11,7 @@ import { IsNotDisposableEmail } from '@/common/validators/is-not-disposable-emai
 import { PhoneNumberDto } from '@/auth/dto/phone-number.dto';
 import { Type } from 'class-transformer';
 import { IsValidPhoneNumberConstraint } from '@/auth/validators/phone-number';
+import { IsValidIANATimezoneConstraint } from '../validators/timezone-iana';
 
 export class SignupEmailDto {
   @ApiProperty({
@@ -66,6 +67,7 @@ export class SignupEmailDto {
     example: 'Africa/Lagos',
   })
   @IsNotEmpty()
+  @Validate(IsValidIANATimezoneConstraint)
   timezone: string;
 
   static toSignupDetails(signupDto: SignupEmailDto): SignupDetails {
