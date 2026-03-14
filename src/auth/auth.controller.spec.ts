@@ -204,6 +204,22 @@ describe('AuthController', () => {
         expect(body.property).toMatchObject(['phoneNumber']);
       });
 
+      it('should return 400 when timezone is invalid', async () => {
+        const signupDetails = mockUserSignupDetails({
+          email: 'test@example.com',
+          timezone: 'Invalid/Timezone',
+        });
+        mockSupabaseSuccess(signupDetails);
+        const response = await request(getHttpServer(app))
+          .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
+          .send({ ...signupDetails })
+          .set('Accept', 'application/json')
+          .expect(400);
+
+        const body = response.body as ValidationErrorResponseDto;
+        expect(body.property).toMatchObject(['timezone']);
+      });
+
       test.each([
         { countryCallingCode: '234', nationalNumber: '8169087765' },
         { countryCallingCode: '+234', nationalNumber: '816908776' },
@@ -262,6 +278,19 @@ describe('AuthController', () => {
               nationalNumber: '8190086655',
             },
           })
+          .set('Accept', 'application/json')
+          .expect(201);
+      });
+
+      it('should return 201 when timezone is valid', async () => {
+        const signupDetails = mockUserSignupDetails({
+          email: 'test@example.com',
+          timezone: 'Africa/Lagos',
+        });
+        mockSupabaseSuccess(signupDetails);
+        await request(getHttpServer(app))
+          .post(AuthEndpoints.SIGNUP_EMAIL_ONLY)
+          .send({ ...signupDetails })
           .set('Accept', 'application/json')
           .expect(201);
       });
