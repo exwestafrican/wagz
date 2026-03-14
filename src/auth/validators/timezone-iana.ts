@@ -1,6 +1,4 @@
 import {
-  registerDecorator,
-  ValidationOptions,
   ValidationArguments,
   ValidatorConstraintInterface,
   ValidatorConstraint,
@@ -14,8 +12,7 @@ export class IsValidIANATimezoneConstraint implements ValidatorConstraintInterfa
     return moment.tz.names().includes(value);
   }
 
-  defaultMessage(value: ValidationArguments): string {
-    return `${value} must be a valid IANA timezone`;
+  defaultMessage(args: ValidationArguments): string {
+    return `${args.value} must be a valid IANA timezone`;
   }
 }
-
