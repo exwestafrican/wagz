@@ -9,7 +9,7 @@ import * as moment from 'moment-timezone';
 export class IsValidIANATimezoneConstraint implements ValidatorConstraintInterface {
   validate(value: any): boolean {
     if (typeof value !== 'string') return false;
-    return moment.tz.names().includes(value);
+    return Intl.supportedValuesOf('timeZone').includes(value);
   }
 
   defaultMessage(args: ValidationArguments): string {
