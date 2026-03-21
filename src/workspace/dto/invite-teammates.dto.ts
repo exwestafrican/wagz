@@ -1,14 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
-import {
-  IsArray,
-  IsEmail,
-  ArrayNotEmpty,
-  ArrayMaxSize,
-  IsIn,
-} from 'class-validator';
+import { IsArray, IsEmail, ArrayNotEmpty, ArrayMaxSize } from 'class-validator';
 import { ROLES } from '@/permission/types';
 const MAX_EMAILS = 10;
-const INVITEABLE_ROLES = Object.keys(ROLES) as Array<keyof typeof ROLES>;
+const INVITEABLE_ROLES = Object.keys(ROLES);
 
 export default class InviteTeammatesDto {
   @ApiProperty({
@@ -31,6 +25,11 @@ export default class InviteTeammatesDto {
     enum: INVITEABLE_ROLES,
     example: 'SupportStaff',
   })
-  @IsIn(INVITEABLE_ROLES)
-  role: keyof typeof ROLES;
+  role: string;
+
+  @ApiProperty({
+    description: 'Workspace code of company',
+    example: 'ex45po',
+  })
+  workspaceCode: string;
 }

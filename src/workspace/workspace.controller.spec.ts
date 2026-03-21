@@ -13,11 +13,10 @@ import {
   Workspace,
 } from '@/generated/prisma/client';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
-import workspaceFactory from '@/factories/workspace.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import request from 'supertest';
 
-import { AuthEndpoints } from '@/common/const';
+import { AuthEndpoints, URIPaths } from '@/common/const';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { MailerProvider } from '@/messaging/messaging.module';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
@@ -152,7 +151,7 @@ describe('WorkspaceController', () => {
   describe(' Invite Teammates', () => {
     it('does not accept empty email list', async () => {
       await request(getHttpServer(app))
-        .post(AuthEndpoints.INVITE_TEAMMATES)
+        .post(URIPaths.INVITE_TEAMMATES)
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
         .send({ emails: [], role: 'SupportStaff' })
@@ -161,7 +160,7 @@ describe('WorkspaceController', () => {
 
     it('does not accept more than 10 emails', async () => {
       await request(getHttpServer(app))
-        .post(AuthEndpoints.INVITE_TEAMMATES)
+        .post(URIPaths.INVITE_TEAMMATES)
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
         .send({ emails: buildEmails(11), role: 'SupportStaff' })
@@ -172,7 +171,7 @@ describe('WorkspaceController', () => {
       const workspace = await setupAuthenticatedTeammate();
       const emails = buildEmails(9);
       await request(getHttpServer(app))
-        .post(AuthEndpoints.INVITE_TEAMMATES)
+        .post(URIPaths.INVITE_TEAMMATES)
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
         .send({ emails, role: 'SupportStaff' })

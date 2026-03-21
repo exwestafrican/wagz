@@ -10,7 +10,6 @@ import {
   Query,
   UseGuards,
   HttpCode,
-  Param,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
@@ -26,7 +25,6 @@ import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import NotFoundInDb from '@/common/exceptions/not-found';
-import { ROLES } from '@/permission/types';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -104,7 +102,7 @@ export class WorkspaceController {
     }
   }
 
-  @Post('/:workspace-code/invite-teammates')
+  @Post('/invite-teammates')
   @ApiOperation({ summary: 'Invite teammates by email' })
   @ApiResponse({
     status: HttpStatus.OK,
@@ -122,17 +120,16 @@ export class WorkspaceController {
   @UseGuards(SupabaseAuthGuard)
   @HttpCode(HttpStatus.OK)
   async inviteTeammates(
-    @Param('workspace-code') workspaceCode: string,
     @User() requestUser: RequestUser,
     @Body() dto: InviteTeammatesDto,
   ) {
     try {
-      //TODO do some enforcement before calling
+      //TODO: do some enforcement before calling
       await this.workspaceManager.inviteEligibleTeammates(
         requestUser.email,
-        workspaceCode,
+        dto.workspaceCode,
         dto.emails,
-        ROLES[dto.role],
+        dto.role,
       );
     } catch (error) {
       if (error instanceof NotFoundInDb) {

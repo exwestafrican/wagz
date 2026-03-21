@@ -26,15 +26,18 @@ import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import pLimit from 'p-limit';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { RoleService } from '@/permission/role/role.service';
 
 @Injectable()
 export class WorkspaceManager {
   private static readonly INVITE_CONCURRENCY = 3;
   logger = new Logger(WorkspaceManager.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
     private readonly workspaceLinkService: WorkspaceLinkService,
+    private readonly roleService: RoleService,
   ) {}
 
   async setup(
@@ -143,13 +146,13 @@ export class WorkspaceManager {
     });
   }
 
-
   async inviteEligibleTeammates(
     senderEmail: string,
     workspaceCode: string,
     recipientEmails: string[],
-    role: Role,
+    assignedRole: string,
   ): Promise<void> {
+    const role = this.roleService.fetchRole(assignedRole)!;
     const sender = await this.prismaService.teammate.findUniqueOrThrow({
       where: {
         workspaceCode_email: {
