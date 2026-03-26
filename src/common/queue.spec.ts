@@ -82,6 +82,12 @@ describe('Queue', () => {
       queue.peek();
       expect(queue.size()).toBe(2);
     });
+
+    it('peek returns undefined for index >= size', () => {
+      const queue = StaticQueue<number>(3);
+      queue.add(10);
+      expect(queue.peek(1)).toBe(undefined);
+    });
   });
 
   describe('dequeue', () => {
@@ -106,6 +112,31 @@ describe('Queue', () => {
       expect(() => {
         queue.dequeue();
       }).toThrow(QueueEmptyError);
+    });
+
+    it('dequeues correctly after many wrap-around cycles', () => {
+      const queue = StaticQueue<number>(3);
+      for (let i = 0; i < 20; i++) {
+        queue.add(i);
+        expect(queue.dequeue()).toBe(i);
+        expect(queue.empty()).toBe(true);
+      }
+    });
+
+    it('preserves FIFO order across repeated enqueue/dequeue churn', () => {
+      const queue = StaticQueue<number>(3);
+      queue.add(1);
+      queue.add(2);
+      queue.add(3);
+      expect(queue.dequeue()).toBe(1);
+      queue.add(4);
+      expect(queue.dequeue()).toBe(2);
+      expect(queue.dequeue()).toBe(3);
+      queue.add(5);
+      queue.add(6);
+      expect(queue.dequeue()).toBe(4);
+      expect(queue.dequeue()).toBe(5);
+      expect(queue.dequeue()).toBe(6);
     });
   });
 });
