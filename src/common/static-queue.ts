@@ -4,7 +4,7 @@ export function StaticQueue<T>(size: number) {
   const state = {
     headIdx: 0,
     itemCount: 0,
-    currentIndex: 0,
+    tailIndex: 0,
   };
 
   function removeItem(index: number) {
@@ -19,6 +19,10 @@ export function StaticQueue<T>(size: number) {
     return state.itemCount === 0;
   }
 
+  function toSlot(index: number) {
+    return index % content.length;
+  }
+
   return {
     capacity: () => content.length,
     empty: () => isEmpty(),
@@ -27,23 +31,26 @@ export function StaticQueue<T>(size: number) {
       if (state.itemCount === content.length) {
         throw new QueueFullError();
       }
-      content[state.currentIndex % content.length] = item;
+      const slotIdx = toSlot(state.tailIndex);
+      content[slotIdx] = item;
       state.itemCount++;
-      state.currentIndex++;
+      state.tailIndex++;
     },
     dequeue: () => {
       if (isEmpty()) {
         throw new QueueEmptyError();
       }
-      const item = content[state.headIdx];
-      removeItem(state.headIdx);
+      const slotIdx = toSlot(state.headIdx);
+      const item = content[slotIdx];
+      removeItem(slotIdx);
       moveCurrentHead();
       state.itemCount--;
       return item;
     },
     peek: (idx: number = 0) => {
       const offset = state.headIdx;
-      return content[(offset + idx) % content.length];
+      const slotIdx = toSlot(offset + idx);
+      return content[slotIdx];
     },
   };
 }
