@@ -8,6 +8,7 @@ import {
   TestControllerModuleWithAuthUser,
 } from '@/test-helpers/test-app';
 import { TeammatesService } from '@/teammates/teammates.service';
+import { TeammateResponseDto } from '@/teammates/dto/teammate-response.dto';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import { TeammateStatus } from '@/generated/prisma/enums';
@@ -77,8 +78,9 @@ describe('TeammatesController', () => {
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.OK);
 
-      expect(response.body).toHaveLength(3);
-      expect(response.body.map((teammate) => teammate.email)).toEqual(
+      const body = response.body as TeammateResponseDto[];
+      expect(body).toHaveLength(3);
+      expect(body.map((teammate) => teammate.email)).toEqual(
         expect.arrayContaining([
           firstTeammate.email,
           secondTeammate.email,
@@ -121,8 +123,9 @@ describe('TeammatesController', () => {
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.OK);
 
-      expect(response.body.email).toBe(teammate.email);
-      expect(response.body.id).toBe(teammate.id);
+      const body = response.body as TeammateResponseDto;
+      expect(body.email).toBe(teammate.email);
+      expect(body.id).toBe(teammate.id);
     });
 
     it('should return 401 when there is no auth token', async () => {
