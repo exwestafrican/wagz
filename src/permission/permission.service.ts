@@ -40,7 +40,7 @@ export class PermissionService {
   async runIfAdmin<T>(
     workspaceCode: string,
     requestUser: RequestUser,
-    fn: (teammate: Teammate) => T,
+    authorizedAction: (teammate: Teammate) => T,
   ): Promise<T> {
     const teammate = await this.prismaService.teammate.findUniqueOrThrow({
       where: {
@@ -53,7 +53,7 @@ export class PermissionService {
 
     const roleCodes = teammate.groups;
     if (this.roleService.hasAdminRole(roleCodes)) {
-      return fn(teammate);
+      return authorizedAction(teammate);
     } else {
       throw new ForbiddenException();
     }
