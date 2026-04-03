@@ -26,6 +26,7 @@ import teammateFactory from '@/factories/teammate.factory';
 import { ROLES } from '@/permission/types';
 import { RoleService } from '@/permission/role/role.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
+import { PermissionService } from '@/permission/permission.service';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -43,6 +44,7 @@ describe('WorkspaceController', () => {
         MailerProvider,
         WorkspaceLinkService,
         RoleService,
+        PermissionService,
       ],
     }).with(requestUser);
     app = await createTestApp(module);
@@ -159,6 +161,7 @@ describe('WorkspaceController', () => {
     it('does not accept empty email list', async () => {
       await request(getHttpServer(app))
         .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: 'any-workspace' })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
         .send({ emails: [], role: 'SupportStaff' })
@@ -166,12 +169,18 @@ describe('WorkspaceController', () => {
     });
 
     it('does not accept more than 10 emails', async () => {
-      await request(getHttpServer(app))
+      const workspace = await setupAuthenticatedTeammate();
+      const response = await request(getHttpServer(app))
         .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: workspace.code })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
         .send({ emails: buildEmails(11), role: 'SupportStaff' })
         .expect(HttpStatus.BAD_REQUEST);
+
+      const body = response.body as ValidationErrorResponseDto;
+
+      expect(body.property).toContain('emails');
     });
 
     it('accepts up to 10 emails', async () => {
@@ -179,9 +188,10 @@ describe('WorkspaceController', () => {
       const emails = buildEmails(9);
       await request(getHttpServer(app))
         .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: workspace.code })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .send({ emails, role: 'SupportStaff', workspaceCode: workspace.code })
+        .send({ emails, role: 'SupportStaff' })
         .expect(HttpStatus.OK);
 
       expect(
@@ -201,12 +211,12 @@ describe('WorkspaceController', () => {
       const workspace = await setupAuthenticatedTeammate();
       const response = await request(getHttpServer(app))
         .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: workspace.code })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
         .send({
           emails: buildEmails(1),
           role: 'NotARealRole',
-          workspaceCode: workspace.code,
         })
         .expect(HttpStatus.BAD_REQUEST);
 
