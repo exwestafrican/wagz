@@ -21,4 +21,8 @@ export class RoleService {
     }
     return role.permissions;
   }
+
+  hasAdminRole(roleCodes: string[]) {
+    return roleCodes.includes(ROLES.WorkspaceAdmin.code);
+  }
 }

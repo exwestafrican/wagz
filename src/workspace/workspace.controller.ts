@@ -16,6 +16,7 @@ import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import SetupWorkspaceDto from '@/workspace/dto/setup-workspace.dto';
 import InviteTeammatesDto from '@/workspace/dto/invite-teammates.dto';
+import InviteTeammatesQueryDto from '@/workspace/dto/invite-teammates-query.dto';
 import WorkspaceDetailsResponseDto, {
   toWorkspaceDetailsResponse,
 } from '@/workspace/dto/workspace-details-response.dto';
@@ -25,12 +26,16 @@ import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import { PermissionService } from '@/permission/permission.service';
 
 @Controller('workspace')
 export class WorkspaceController {
   logger = new Logger(WorkspaceController.name);
 
-  constructor(private readonly workspaceManager: WorkspaceManager) {}
+  constructor(
+    private readonly workspaceManager: WorkspaceManager,
+    private readonly permissionService: PermissionService,
+  ) {}
 
   @Post('/setup')
   @ApiOperation({ summary: 'Setup workspace and workspace dependencies' })
@@ -117,19 +122,30 @@ export class WorkspaceController {
     description: 'Auth user teammate record not found',
   })
   @ApiBadRequestResponse()
+  @ApiQuery({
+    name: 'workspaceCode',
+    description: 'Workspace code of company',
+    example: 'ex45po',
+    required: true,
+  })
   @UseGuards(SupabaseAuthGuard)
   @HttpCode(HttpStatus.OK)
   async inviteTeammates(
     @User() requestUser: RequestUser,
+    @Query() query: InviteTeammatesQueryDto,
     @Body() dto: InviteTeammatesDto,
   ) {
     try {
-      //TODO: do some enforcement before calling
-      await this.workspaceManager.inviteEligibleTeammates(
-        requestUser.email,
-        dto.workspaceCode,
-        dto.emails,
-        dto.role,
+      await this.permissionService.runIfAdmin(
+        query.workspaceCode,
+        requestUser,
+        async (admin) => {
+          await this.workspaceManager.inviteEligibleTeammates(
+            admin,
+            dto.emails,
+            dto.role,
+          );
+        },
       );
     } catch (error) {
       if (error instanceof NotFoundInDb) {

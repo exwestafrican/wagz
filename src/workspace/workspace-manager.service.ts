@@ -5,6 +5,7 @@ import {
   PreVerification,
   PreVerificationStatus,
   Prisma,
+  Teammate,
   TeammateStatus,
   WorkspaceInvite,
 } from '@/generated/prisma/client';
@@ -147,20 +148,11 @@ export class WorkspaceManager {
   }
 
   async inviteEligibleTeammates(
-    senderEmail: string,
-    workspaceCode: string,
+    sender: Teammate,
     recipientEmails: string[],
     assignedRole: string,
   ): Promise<void> {
     const role = this.roleService.fetchRole(assignedRole)!;
-    const sender = await this.prismaService.teammate.findUniqueOrThrow({
-      where: {
-        workspaceCode_email: {
-          workspaceCode: workspaceCode,
-          email: senderEmail,
-        },
-      },
-    });
     const limit = ConcurrentLimit(
       WorkspaceManager.INVITE_CONCURRENCY,
       recipientEmails.length,
@@ -169,7 +161,7 @@ export class WorkspaceManager {
       recipientEmails.map((recipientEmail) =>
         limit.run(() =>
           this.inviteTeammateIfEligible(
-            workspaceCode,
+            sender.workspaceCode,
             recipientEmail,
             sender.id,
             role,

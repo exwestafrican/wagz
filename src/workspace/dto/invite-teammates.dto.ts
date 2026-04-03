@@ -4,7 +4,6 @@ import {
   IsEmail,
   ArrayNotEmpty,
   ArrayMaxSize,
-  IsString,
   IsIn,
 } from 'class-validator';
 import { ROLES } from '@/permission/types';
@@ -34,11 +33,4 @@ export default class InviteTeammatesDto {
   })
   @IsIn(INVITEABLE_ROLES)
   role: string;
-
-  @ApiProperty({
-    description: 'Workspace code of company',
-    example: 'ex45po',
-  })
-  @IsString()
-  workspaceCode: string;
 }

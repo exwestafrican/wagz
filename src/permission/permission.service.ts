@@ -1,7 +1,9 @@
 import { PrismaService } from '@/prisma/prisma.service';
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { isEmpty } from '@/common/utils';
 import { RoleService } from './role/role.service';
+import RequestUser from '@/auth/domain/request-user';
+import { Teammate } from '@/generated/prisma/client';
 
 @Injectable()
 export class PermissionService {
@@ -33,5 +35,27 @@ export class PermissionService {
     const permissionCodes = permissions.map((permission) => permission.code);
 
     return Array.from(new Set(permissionCodes));
+  }
+
+  async runIfAdmin<T>(
+    workspaceCode: string,
+    requestUser: RequestUser,
+    fn: (teammate: Teammate) => T,
+  ): Promise<T> {
+    const teammate = await this.prismaService.teammate.findUniqueOrThrow({
+      where: {
+        workspaceCode_email: {
+          workspaceCode: workspaceCode,
+          email: requestUser.email,
+        },
+      },
+    });
+
+    const roleCodes = teammate.groups;
+    if (this.roleService.hasAdminRole(roleCodes)) {
+      return fn(teammate);
+    } else {
+      throw new ForbiddenException();
+    }
   }
 }
