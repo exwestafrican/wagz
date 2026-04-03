@@ -27,6 +27,7 @@ export function StaticQueue<T>(size: number) {
     capacity: () => content.length,
     empty: () => isEmpty(),
     size: () => state.itemCount,
+    notFull: () => state.itemCount < content.length,
     add: (item: T) => {
       if (state.itemCount === content.length) {
         throw new QueueFullError();
@@ -36,7 +37,7 @@ export function StaticQueue<T>(size: number) {
       state.itemCount++;
       state.tailIndex++;
     },
-    dequeue: () => {
+    dequeue: (): T => {
       if (isEmpty()) {
         throw new QueueEmptyError();
       }
@@ -45,7 +46,7 @@ export function StaticQueue<T>(size: number) {
       removeItem(slotIdx);
       moveCurrentHead();
       state.itemCount--;
-      return item;
+      return item!;
     },
     peek: (idx: number = 0) => {
       const offset = state.headIdx;
