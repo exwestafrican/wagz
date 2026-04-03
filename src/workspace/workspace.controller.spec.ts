@@ -24,6 +24,7 @@ import { faker } from '@faker-js/faker';
 import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
 import { ROLES } from '@/permission/types';
+import { RoleService } from '@/permission/role/role.service';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -36,7 +37,12 @@ describe('WorkspaceController', () => {
     requestUser = RequestUser.of('sam@useEnvoye.co');
     const module = await TestControllerModuleWithAuthUser({
       controllers: [WorkspaceController],
-      providers: [WorkspaceManager, MailerProvider, WorkspaceLinkService],
+      providers: [
+        WorkspaceManager,
+        MailerProvider,
+        WorkspaceLinkService,
+        RoleService,
+      ],
     }).with(requestUser);
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
@@ -174,7 +180,7 @@ describe('WorkspaceController', () => {
         .post(URIPaths.INVITE_TEAMMATES)
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .send({ emails, role: 'SupportStaff' })
+        .send({ emails, role: 'SupportStaff', workspaceCode: workspace.code })
         .expect(HttpStatus.OK);
 
       expect(

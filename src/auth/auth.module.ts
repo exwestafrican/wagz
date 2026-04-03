@@ -7,7 +7,6 @@ import PasswordGenerator from './services/password.generator';
 import { PassportModule } from '@nestjs/passport';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { RoleService } from '@/permission/role/role.service';
 
 const SupabaseAuthClient = {
   provide: SupabaseClient,
@@ -30,7 +29,6 @@ const SupabaseAuthClient = {
     PasswordGenerator,
     WorkspaceLinkService,
     WorkspaceManager,
-    RoleService,
   ],
   exports: [AuthService],
 })
