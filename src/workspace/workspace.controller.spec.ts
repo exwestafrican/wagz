@@ -164,7 +164,7 @@ describe('WorkspaceController', () => {
         .query({ workspaceCode: 'any-workspace' })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .send({ emails: [], role: 'SupportStaff' })
+        .send({ emails: [], role: ROLES.SupportStaff.code })
         .expect(HttpStatus.BAD_REQUEST);
     });
 
@@ -175,7 +175,7 @@ describe('WorkspaceController', () => {
         .query({ workspaceCode: workspace.code })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .send({ emails: buildEmails(11), role: 'SupportStaff' })
+        .send({ emails: buildEmails(11), role: ROLES.SupportStaff.code })
         .expect(HttpStatus.BAD_REQUEST);
 
       const body = response.body as ValidationErrorResponseDto;
@@ -191,7 +191,7 @@ describe('WorkspaceController', () => {
         .query({ workspaceCode: workspace.code })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .send({ emails, role: 'SupportStaff' })
+        .send({ emails, role: ROLES.SupportStaff.code })
         .expect(HttpStatus.OK);
 
       expect(
@@ -223,6 +223,33 @@ describe('WorkspaceController', () => {
       const body = response.body as ValidationErrorResponseDto;
 
       expect(body.property).toContain('role');
+    });
+
+    it('returns 403 when teammate is not workspace admin', async () => {
+      const workspace = await factory.persist('workspace', () =>
+        workspaceFactory.envoyeWorkspace(),
+      );
+      await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: workspace.code,
+          groups: [ROLES.SupportStaff.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: workspace.code })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails: buildEmails(1), role: ROLES.WorkspaceAdmin.code })
+        .expect(HttpStatus.FORBIDDEN);
+
+      expect(
+        await prismaService.workspaceInvite.count({
+          where: { workspaceCode: workspace.code },
+        }),
+      ).toBe(0);
     });
   });
 });
