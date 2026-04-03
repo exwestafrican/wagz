@@ -25,6 +25,7 @@ import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
 import { ROLES } from '@/permission/types';
 import { RoleService } from '@/permission/role/role.service';
+import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -194,6 +195,24 @@ describe('WorkspaceController', () => {
           },
         }),
       ).toBe(9);
+    });
+
+    it('returns bad request for invalid role', async () => {
+      const workspace = await setupAuthenticatedTeammate();
+      const response = await request(getHttpServer(app))
+        .post(URIPaths.INVITE_TEAMMATES)
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          emails: buildEmails(1),
+          role: 'NotARealRole',
+          workspaceCode: workspace.code,
+        })
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const body = response.body as ValidationErrorResponseDto;
+
+      expect(body.property).toContain('role');
     });
   });
 });
