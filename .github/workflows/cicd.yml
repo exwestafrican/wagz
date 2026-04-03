@@ -61,3 +61,29 @@ jobs:
 
       - name: Run Build
         run: pnpm run build
+
+  docker-smoke:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start stack
+        run: docker compose -f docker-compose.ci.yml up -d --build
+
+      - name: Wait for /health
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:3001/health; then
+              echo "Smoke OK"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "Timed out waiting for /health"
+          exit 1
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.ci.yml down -v
+

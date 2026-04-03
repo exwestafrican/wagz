@@ -1,0 +1,29 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 3s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - '3001:3001'
+    environment:
+      PORT: '3001'
+      NODE_ENV: test
+      DOCKER_DB_URL: postgresql://postgres:postgres@postgres:5432/postgres
+      SUPABASE_URL: http://127.0.0.1:54321
+      SUPABASE_JWT_ISSUER_URL: http://127.0.0.1:54321/auth/v1
+      SUPABASE_KEY: ci-smoke-dummy-key
+    depends_on:
+      postgres:
+        condition: service_healthy
