@@ -24,9 +24,9 @@ import { render } from '@react-email/render';
 import { WorkspaceInviteTemplate } from '@/emails/templates/workspace-invite-template';
 import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
-import pLimit from 'p-limit';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { RoleService } from '@/permission/role/role.service';
+import { ConcurrentLimit } from '@/common/concurrent-runner';
 
 @Injectable()
 export class WorkspaceManager {
@@ -161,10 +161,13 @@ export class WorkspaceManager {
         },
       },
     });
-    const runWithLimit = pLimit(WorkspaceManager.INVITE_CONCURRENCY);
+    const limit = ConcurrentLimit(
+      WorkspaceManager.INVITE_CONCURRENCY,
+      recipientEmails.length,
+    );
     await Promise.allSettled(
       recipientEmails.map((recipientEmail) =>
-        runWithLimit(() =>
+        limit.run(() =>
           this.inviteTeammateIfEligible(
             workspaceCode,
             recipientEmail,
