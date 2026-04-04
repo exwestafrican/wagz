@@ -32,6 +32,8 @@ model Workspace {
   timezone         String            @default("Africa/Lagos") @db.VarChar(255)
   workspaceInvites WorkspaceInvite[]
   teammates        Teammate[]
+  conversations    Conversation[]
+  messages         Message[]
 
   @@map("workspace")
 }
