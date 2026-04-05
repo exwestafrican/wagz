@@ -229,6 +229,7 @@ describe('WorkspaceController', () => {
       const workspace = await factory.persist('workspace', () =>
         workspaceFactory.envoyeWorkspace(),
       );
+
       await factory.persist('teammate', () =>
         teammateFactory.build({
           email: requestUser.email,

@@ -28,6 +28,7 @@ import { InvalidState } from '@/common/exceptions/invalid-state';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import { PermissionService } from '@/permission/permission.service';
 import { PERMISSIONS } from '@/permission/types';
+import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -123,6 +124,7 @@ export class WorkspaceController {
     description: 'Auth user teammate record not found',
   })
   @ApiBadRequestResponse()
+  @ApiForbiddenResponse()
   @ApiQuery({
     name: 'workspaceCode',
     description: 'Workspace code of company',
@@ -136,24 +138,17 @@ export class WorkspaceController {
     @Query() query: InviteTeammatesQueryDto,
     @Body() dto: InviteTeammatesDto,
   ) {
-    try {
-      await this.permissionService.runIfPermitted(
-        requestUser,
-        query.workspaceCode,
-        PERMISSIONS.MANAGE_TEAMMATES,
-        async (admin) => {
-          await this.workspaceManager.inviteEligibleTeammates(
-            admin,
-            dto.emails,
-            dto.role,
-          );
-        },
-      );
-    } catch (error) {
-      if (error instanceof NotFoundInDb) {
-        throw new NotFoundException();
-      }
-      throw error;
-    }
+    await this.permissionService.runIfPermitted(
+      requestUser,
+      query.workspaceCode,
+      PERMISSIONS.MANAGE_TEAMMATES,
+      async (admin) => {
+        await this.workspaceManager.inviteEligibleTeammates(
+          admin,
+          dto.emails,
+          dto.role,
+        );
+      },
+    );
   }
 }
