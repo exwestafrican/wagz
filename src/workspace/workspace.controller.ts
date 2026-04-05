@@ -9,11 +9,14 @@ import {
   Post,
   Query,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import SetupWorkspaceDto from '@/workspace/dto/setup-workspace.dto';
+import InviteTeammatesDto from '@/workspace/dto/invite-teammates.dto';
+import InviteTeammatesQueryDto from '@/workspace/dto/invite-teammates-query.dto';
 import WorkspaceDetailsResponseDto, {
   toWorkspaceDetailsResponse,
 } from '@/workspace/dto/workspace-details-response.dto';
@@ -23,12 +26,18 @@ import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import { PermissionService } from '@/permission/permission.service';
+import { PERMISSIONS } from '@/permission/types';
+import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
 
 @Controller('workspace')
 export class WorkspaceController {
   logger = new Logger(WorkspaceController.name);
 
-  constructor(private readonly workspaceManager: WorkspaceManager) {}
+  constructor(
+    private readonly workspaceManager: WorkspaceManager,
+    private readonly permissionService: PermissionService,
+  ) {}
 
   @Post('/setup')
   @ApiOperation({ summary: 'Setup workspace and workspace dependencies' })
@@ -98,5 +107,48 @@ export class WorkspaceController {
       }
       throw error;
     }
+  }
+
+  @Post('/invite-teammates')
+  @ApiOperation({ summary: 'Invite teammates by email' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Workspace teammate invites processed',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User not authorized',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Auth user teammate record not found',
+  })
+  @ApiBadRequestResponse()
+  @ApiForbiddenResponse()
+  @ApiQuery({
+    name: 'workspaceCode',
+    description: 'Workspace code of company',
+    example: 'ex45po',
+    required: true,
+  })
+  @UseGuards(SupabaseAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async inviteTeammates(
+    @User() requestUser: RequestUser,
+    @Query() query: InviteTeammatesQueryDto,
+    @Body() dto: InviteTeammatesDto,
+  ) {
+    await this.permissionService.runIfPermitted(
+      requestUser,
+      query.workspaceCode,
+      PERMISSIONS.MANAGE_TEAMMATES,
+      async (admin) => {
+        await this.workspaceManager.inviteEligibleTeammates(
+          admin,
+          dto.emails,
+          dto.role,
+        );
+      },
+    );
   }
 }

@@ -5,6 +5,7 @@ import {
   PreVerification,
   PreVerificationStatus,
   Prisma,
+  Teammate,
   TeammateStatus,
   WorkspaceInvite,
 } from '@/generated/prisma/client';
@@ -25,14 +26,19 @@ import { WorkspaceInviteTemplate } from '@/emails/templates/workspace-invite-tem
 import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { RoleService } from '@/permission/role/role.service';
+import { ConcurrentLimit } from '@/common/concurrent-runner';
 
 @Injectable()
 export class WorkspaceManager {
+  private static readonly INVITE_CONCURRENCY = 3;
   logger = new Logger(WorkspaceManager.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
     private readonly workspaceLinkService: WorkspaceLinkService,
+    private readonly roleService: RoleService,
   ) {}
 
   async setup(
@@ -139,6 +145,30 @@ export class WorkspaceManager {
         createdAt: 'asc', //from oldest to newest
       },
     });
+  }
+
+  async inviteEligibleTeammates(
+    sender: Teammate,
+    recipientEmails: string[],
+    assignedRole: string,
+  ): Promise<void> {
+    const role = this.roleService.fetchRole(assignedRole)!;
+    const limit = ConcurrentLimit(
+      WorkspaceManager.INVITE_CONCURRENCY,
+      recipientEmails.length,
+    );
+    await Promise.allSettled(
+      recipientEmails.map((recipientEmail) =>
+        limit.run(() =>
+          this.inviteTeammateIfEligible(
+            sender.workspaceCode,
+            recipientEmail,
+            sender.id,
+            role,
+          ),
+        ),
+      ),
+    );
   }
 
   private async runPreWorkspaceCreationSteps(

@@ -24,6 +24,7 @@ import teammateFactory from '@/factories/teammate.factory';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { MessagingModule } from '@/messaging/messaging.module';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { RoleService } from '@/permission/role/role.service';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -36,7 +37,7 @@ describe('WorkspaceService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
-      providers: [WorkspaceManager, WorkspaceLinkService],
+      providers: [WorkspaceManager, WorkspaceLinkService, RoleService],
     }).compile();
     app = await createTestApp(module);
     service = app.get<WorkspaceManager>(WorkspaceManager);
@@ -419,6 +420,51 @@ describe('WorkspaceService', () => {
           );
         },
       );
+    });
+  });
+
+  describe('inviteEligibleTeammates', () => {
+    let adminTeammate: Teammate;
+    let workspace: Workspace;
+
+    beforeEach(async () => {
+      workspace = await factory.persist('workspace', () =>
+        workspaceFactory.envoyeWorkspace(),
+      );
+
+      adminTeammate = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          groups: [ROLES.WorkspaceAdmin.code],
+          workspaceCode: workspace.code,
+        }),
+      );
+
+      const fixedMs = new Date('2026-02-21T10:00:00.000Z').getTime();
+      jest.spyOn(Date, 'now').mockReturnValue(fixedMs);
+    });
+
+    it('creates one SENT invite per recipient email', async () => {
+      const emails = ['batch-a@example.com', 'batch-b@example.com'];
+      await assertRecipientHasNoInvite(workspace, emails[0]);
+      await assertRecipientHasNoInvite(workspace, emails[1]);
+      const inviteUrlSpy = jest.spyOn(workspaceLinkService, 'inviteUrl');
+      await service.inviteEligibleTeammates(
+        adminTeammate,
+        emails,
+        'SupportStaff',
+      );
+      expect(inviteUrlSpy).toHaveBeenCalledTimes(2);
+      expect(
+        await prismaService.workspaceInvite.count({
+          where: {
+            workspace: { id: workspace.id },
+            senderId: adminTeammate.id,
+            status: InviteStatus.SENT,
+            recipientRole: ROLES.SupportStaff.code,
+            recipientEmail: { in: emails },
+          },
+        }),
+      ).toBe(2);
     });
   });
 });

@@ -10,16 +10,23 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import {
   PreVerification,
   PreVerificationStatus,
+  Workspace,
 } from '@/generated/prisma/client';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
-import workspaceFactory from '@/factories/workspace.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import request from 'supertest';
 
-import { AuthEndpoints } from '@/common/const';
+import { AuthEndpoints, URIPaths } from '@/common/const';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { MailerProvider } from '@/messaging/messaging.module';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { faker } from '@faker-js/faker';
+import workspaceFactory from '@/factories/workspace.factory';
+import teammateFactory from '@/factories/teammate.factory';
+import { ROLES } from '@/permission/types';
+import { RoleService } from '@/permission/role/role.service';
+import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
+import { PermissionService } from '@/permission/permission.service';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -32,7 +39,13 @@ describe('WorkspaceController', () => {
     requestUser = RequestUser.of('sam@useEnvoye.co');
     const module = await TestControllerModuleWithAuthUser({
       controllers: [WorkspaceController],
-      providers: [WorkspaceManager, MailerProvider, WorkspaceLinkService],
+      providers: [
+        WorkspaceManager,
+        MailerProvider,
+        WorkspaceLinkService,
+        RoleService,
+        PermissionService,
+      ],
     }).with(requestUser);
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
@@ -46,7 +59,25 @@ describe('WorkspaceController', () => {
     await app.close();
   });
 
-  describe('Auth user owns resource', () => {
+  function buildEmails(size: number) {
+    return new Array(size).fill(0).map(() => faker.internet.email());
+  }
+
+  async function setupAuthenticatedTeammate(): Promise<Workspace> {
+    const workspace = await factory.persist('workspace', () =>
+      workspaceFactory.envoyeWorkspace(),
+    );
+    await factory.persist('teammate', () =>
+      teammateFactory.build({
+        email: requestUser.email,
+        workspaceCode: workspace.code,
+        groups: [ROLES.WorkspaceAdmin.code],
+      }),
+    );
+    return workspace;
+  }
+
+  describe('Setup', () => {
     it('returns 201 for  successful preverification', async () => {
       preVerificationDetails = await factory.persist('preverification', () =>
         preVerificationFactory.build({
@@ -123,6 +154,103 @@ describe('WorkspaceController', () => {
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe(' Invite Teammates', () => {
+    it('does not accept empty email list', async () => {
+      await request(getHttpServer(app))
+        .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: 'any-workspace' })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails: [], role: ROLES.SupportStaff.code })
+        .expect(HttpStatus.BAD_REQUEST);
+    });
+
+    it('does not accept more than 10 emails', async () => {
+      const workspace = await setupAuthenticatedTeammate();
+      const response = await request(getHttpServer(app))
+        .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: workspace.code })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails: buildEmails(11), role: ROLES.SupportStaff.code })
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const body = response.body as ValidationErrorResponseDto;
+
+      expect(body.property).toContain('emails');
+    });
+
+    it('accepts up to 10 emails', async () => {
+      const workspace = await setupAuthenticatedTeammate();
+      const emails = buildEmails(9);
+      await request(getHttpServer(app))
+        .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: workspace.code })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails, role: ROLES.SupportStaff.code })
+        .expect(HttpStatus.OK);
+
+      expect(
+        await prismaService.workspaceInvite.count({
+          where: {
+            workspaceCode: workspace.code,
+            recipientRole: ROLES.SupportStaff.code,
+            recipientEmail: {
+              in: emails,
+            },
+          },
+        }),
+      ).toBe(9);
+    });
+
+    it('returns bad request for invalid role', async () => {
+      const workspace = await setupAuthenticatedTeammate();
+      const response = await request(getHttpServer(app))
+        .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: workspace.code })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          emails: buildEmails(1),
+          role: 'NotARealRole',
+        })
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const body = response.body as ValidationErrorResponseDto;
+
+      expect(body.property).toContain('role');
+    });
+
+    it('returns 403 when teammate does not have manage teammate permission', async () => {
+      const workspace = await factory.persist('workspace', () =>
+        workspaceFactory.envoyeWorkspace(),
+      );
+
+      await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: workspace.code,
+          groups: [ROLES.SupportStaff.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .post(URIPaths.INVITE_TEAMMATES)
+        .query({ workspaceCode: workspace.code })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ emails: buildEmails(1), role: ROLES.WorkspaceAdmin.code })
+        .expect(HttpStatus.FORBIDDEN);
+
+      expect(
+        await prismaService.workspaceInvite.count({
+          where: { workspaceCode: workspace.code },
+        }),
+      ).toBe(0);
     });
   });
 });
