@@ -6,7 +6,7 @@ export function ConcurrentLimit<T>(limit: number, numOfProcesses: number) {
 
   function runTask(exec: () => Promise<void>): void {
     running++;
-    exec().finally(() => {
+    void exec().finally(() => {
       running--;
       if (queue.peek() != undefined) {
         const nextTask = queue.dequeue();
