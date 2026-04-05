@@ -14,7 +14,7 @@ describe('WorkspaceLinkService', () => {
 
   it('builds invite url', () => {
     expect(service.inviteUrl('abc123')).toBe(
-      'https://app.usewaggz.com/workspace-invite?code=abc123',
+      'https://app.usewaggz.com/workspace-invite?inviteCode=abc123',
     );
   });
 

@@ -318,7 +318,7 @@ export class WorkspaceManager {
       });
 
       const inviteLink = this.workspaceLinkService.inviteUrl(
-        workspaceInvite.workspaceCode,
+        workspaceInvite.inviteCode,
       );
 
       const emailHtml = await render(
