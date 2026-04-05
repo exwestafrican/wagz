@@ -225,7 +225,7 @@ describe('WorkspaceController', () => {
       expect(body.property).toContain('role');
     });
 
-    it('returns 403 when teammate is not workspace admin', async () => {
+    it('returns 403 when teammate does not have manage teammate permission', async () => {
       const workspace = await factory.persist('workspace', () =>
         workspaceFactory.envoyeWorkspace(),
       );
