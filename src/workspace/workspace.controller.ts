@@ -27,6 +27,7 @@ import RequestUser from '@/auth/domain/request-user';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import { PermissionService } from '@/permission/permission.service';
+import { PERMISSIONS } from '@/permission/types';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -136,9 +137,10 @@ export class WorkspaceController {
     @Body() dto: InviteTeammatesDto,
   ) {
     try {
-      await this.permissionService.runIfAdmin(
-        query.workspaceCode,
+      await this.permissionService.runIfPermitted(
         requestUser,
+        query.workspaceCode,
+        PERMISSIONS.MANAGE_TEAMMATES,
         async (admin) => {
           await this.workspaceManager.inviteEligibleTeammates(
             admin,

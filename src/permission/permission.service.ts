@@ -4,6 +4,7 @@ import { isEmpty } from '@/common/utils';
 import { RoleService } from './role/role.service';
 import RequestUser from '@/auth/domain/request-user';
 import { Teammate } from '@/generated/prisma/client';
+import { Permission } from '@/permission/domain/permission';
 
 @Injectable()
 export class PermissionService {
@@ -37,9 +38,10 @@ export class PermissionService {
     return Array.from(new Set(permissionCodes));
   }
 
-  async runIfAdmin<T>(
-    workspaceCode: string,
+  async runIfPermitted<T>(
     requestUser: RequestUser,
+    workspaceCode: string,
+    requiredPermission: Permission,
     authorizedAction: (teammate: Teammate) => T,
   ): Promise<T> {
     const teammate = await this.prismaService.teammate.findUniqueOrThrow({
@@ -52,7 +54,7 @@ export class PermissionService {
     });
 
     const roleCodes = teammate.groups;
-    if (this.roleService.hasAdminRole(roleCodes)) {
+    if (this.roleService.hasPermission(roleCodes, requiredPermission)) {
       return authorizedAction(teammate);
     } else {
       throw new ForbiddenException();

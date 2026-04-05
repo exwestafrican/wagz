@@ -22,7 +22,8 @@ export class RoleService {
     return role.permissions;
   }
 
-  hasAdminRole(roleCodes: string[]) {
-    return roleCodes.includes(ROLES.WorkspaceAdmin.code);
+  hasPermission(roleCodes: string[], permission: Permission) {
+    const permissions = roleCodes.flatMap((code) => this.permissions(code));
+    return permissions.includes(permission);
   }
 }
