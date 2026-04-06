@@ -19,6 +19,7 @@ import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { PrismaService } from '@/prisma/prisma.service';
 import { resetDb } from '@/test-helpers/rest-db';
+import { ROLES } from '@/permission/types';
 
 describe('WorkspaceInviteService', () => {
   let app: INestApplication;
@@ -143,6 +144,71 @@ describe('WorkspaceInviteService', () => {
       );
       await expect(
         workspaceInviteService.decodeAndVerifyOrThrow(token),
+      ).rejects.toThrow(InvalidInviteCode);
+    });
+  });
+
+  describe('acceptInvite', () => {
+    it('creates teammate and marks invite as accepted', async () => {
+      const { teammate: adminTeammate } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: 'admin@useenvoye.com',
+          groups: ['WorkspaceAdmin'],
+          workspaceCode: '9Jk076',
+        }),
+      );
+
+      await factory.persist('workspaceInvite', () =>
+        workspaceInviteFactory.build({
+          recipientEmail: 'laura@useenvoye.co',
+          senderId: adminTeammate.id,
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          status: InviteStatus.SENT,
+          recipientRole: ROLES.SupportStaff.code,
+          acceptedAt: null,
+        }),
+      );
+
+      await workspaceInviteService.acceptInvite({
+        workspaceCode: '9Jk076',
+        inviteCode: 'ap7ol0',
+        teammateDetails: {
+          email: 'laura@useenvoye.co',
+          firstName: 'Laura',
+          lastName: 'Smith',
+        },
+      });
+
+      const createdTeammate = await prismaService.teammate.findFirst({
+        where: { workspaceCode: '9Jk076', email: 'laura@useenvoye.co' },
+      });
+      expect(createdTeammate).toBeTruthy();
+      expect(createdTeammate!.groups).toEqual([ROLES.SupportStaff.code]);
+
+      const invite = await prismaService.workspaceInvite.findFirstOrThrow({
+        where: {
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          recipientEmail: 'laura@useenvoye.co',
+        },
+      });
+      expect(invite.status).toBe(InviteStatus.ACCEPTED);
+      expect(invite.acceptedAt).toBeTruthy();
+    });
+
+    it('throws InvalidInviteCode when invite does not exist', async () => {
+      await expect(
+        workspaceInviteService.acceptInvite({
+          workspaceCode: '9Jk076',
+          inviteCode: 'nope00',
+          teammateDetails: {
+            email: 'laura@useenvoye.co',
+            firstName: 'Laura',
+            lastName: 'Smith',
+          },
+        }),
       ).rejects.toThrow(InvalidInviteCode);
     });
   });

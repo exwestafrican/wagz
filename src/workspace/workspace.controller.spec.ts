@@ -323,4 +323,72 @@ describe('WorkspaceController', () => {
         .expect(HttpStatus.FORBIDDEN);
     });
   });
+
+  describe('Accept Invite', () => {
+    it('returns 201 and creates teammate for valid invite', async () => {
+      const { teammate: adminTeammate } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: 'admin@useenvoye.com',
+          groups: ['WorkspaceAdmin'],
+          workspaceCode: '9Jk076',
+        }),
+      );
+
+      await factory.persist('workspaceInvite', () =>
+        workspaceInviteFactory.build({
+          recipientEmail: 'laura@useenvoye.co',
+          senderId: adminTeammate.id,
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          status: InviteStatus.SENT,
+          recipientRole: ROLES.SupportStaff.code,
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .post(URIPaths.ACCEPT_INVITE)
+        .set('Accept', 'application/json')
+        .send({
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          teammateEmail: 'laura@useenvoye.co',
+          firstName: 'Laura',
+          lastName: 'Smith',
+          userName: 'laura.smith',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const createdTeammate = await prismaService.teammate.findFirst({
+        where: { workspaceCode: '9Jk076', email: 'laura@useenvoye.co' },
+      });
+      expect(createdTeammate).toBeTruthy();
+
+      const invite = await prismaService.workspaceInvite.findFirst({
+        where: {
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          recipientEmail: 'laura@useenvoye.co',
+        },
+      });
+      expect(invite).toBeTruthy();
+      expect(invite!.status).toBe(InviteStatus.ACCEPTED);
+      expect(invite!.acceptedAt).toBeTruthy();
+    });
+
+    it('returns forbidden for invalid invite code', async () => {
+      await request(getHttpServer(app))
+        .post(URIPaths.ACCEPT_INVITE)
+        .set('Accept', 'application/json')
+        .send({
+          workspaceCode: '9Jk076',
+          inviteCode: 'nope00',
+          teammateEmail: 'laura@useenvoye.co',
+          firstName: 'Laura',
+          lastName: 'Smith',
+          userName: 'laura.smith',
+        })
+        .expect(HttpStatus.FORBIDDEN);
+    });
+  });
 });

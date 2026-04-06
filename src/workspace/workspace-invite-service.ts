@@ -4,6 +4,12 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { isEmpty } from '@/common/utils';
 import { InviteStatus } from '@/generated/prisma/enums';
 
+export interface TeammateDetails {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
 export interface DecodedResult {
   recipientEmail: string;
   workspaceCode: string;
@@ -55,6 +61,45 @@ export class WorkspaceInviteService {
     }
 
     return decoded;
+  }
+
+  async acceptInvite(input: {
+    workspaceCode: string;
+    inviteCode: string;
+    teammateDetails: TeammateDetails;
+  }): Promise<void> {
+    const invite = await this.prismaService.workspaceInvite.findFirst({
+      where: {
+        workspaceCode: input.workspaceCode,
+        inviteCode: input.inviteCode,
+        recipientEmail: input.teammateDetails.email,
+        status: InviteStatus.SENT,
+      },
+    });
+
+    if (!invite) {
+      throw new InvalidInviteCode('Invalid invite code');
+    }
+
+    await this.prismaService.$transaction(async (tx) => {
+      await tx.teammate.create({
+        data: {
+          workspaceCode: input.workspaceCode,
+          email: input.teammateDetails.email,
+          firstName: input.teammateDetails.firstName,
+          lastName: input.teammateDetails.lastName,
+          groups: [invite.recipientRole],
+        },
+      });
+
+      await tx.workspaceInvite.update({
+        where: { id: invite.id },
+        data: {
+          status: InviteStatus.ACCEPTED,
+          acceptedAt: new Date(),
+        },
+      });
+    });
   }
 
   private decodedValue(inviteCode: string): string {
