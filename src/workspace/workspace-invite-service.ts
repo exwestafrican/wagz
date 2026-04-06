@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
 import { PrismaService } from '@/prisma/prisma.service';
 import { isEmpty } from '@/common/utils';
+import { InviteStatus } from '@/generated/prisma/enums';
 
 export interface DecodedResult {
   recipientEmail: string;
@@ -45,6 +46,7 @@ export class WorkspaceInviteService {
         inviteCode: decoded.codeInInvite,
         workspaceCode: decoded.workspaceCode,
         recipientEmail: decoded.recipientEmail,
+        status: InviteStatus.PENDING,
       },
     });
 

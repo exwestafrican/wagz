@@ -316,16 +316,11 @@ describe('WorkspaceController', () => {
 
     it('returns forbidden if valid code but invite is not pending', async () => {
       await sendWorkspaceInvite('laura@useenvoye.co', InviteStatus.ACCEPTED);
-      const response = await request(getHttpServer(app))
+      await request(getHttpServer(app))
         .get(URIPaths.VERIFY_INVITE)
         .query({ inviteCode: 'bGF1cmFAdXNlZW52b3llLmNvLDlKazA3NixhcDdvbDA' })
         .set('Accept', 'application/json')
         .expect(HttpStatus.FORBIDDEN);
-
-      expect(response.body).toEqual({
-        recipientEmail: 'laura@useenvoye.co',
-        workspaceCode: '9Jk076',
-      });
     });
   });
 });
