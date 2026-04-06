@@ -285,7 +285,7 @@ describe('WorkspaceController', () => {
 
   describe('Decode Invite', () => {
     it('returns ok and decoded result when valid', async () => {
-      await sendWorkspaceInvite('laura@useenvoye.co', InviteStatus.PENDING);
+      await sendWorkspaceInvite('laura@useenvoye.co', InviteStatus.SENT);
       const response = await request(getHttpServer(app))
         .get(URIPaths.VERIFY_INVITE)
         .query({ inviteCode: 'bGF1cmFAdXNlZW52b3llLmNvLDlKazA3NixhcDdvbDA' })

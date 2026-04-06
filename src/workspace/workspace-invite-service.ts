@@ -46,7 +46,7 @@ export class WorkspaceInviteService {
         inviteCode: decoded.codeInInvite,
         workspaceCode: decoded.workspaceCode,
         recipientEmail: decoded.recipientEmail,
-        status: InviteStatus.PENDING,
+        status: InviteStatus.SENT,
       },
     });
 
@@ -76,4 +76,3 @@ export class WorkspaceInviteService {
     }
   }
 }
-
