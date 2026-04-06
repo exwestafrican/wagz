@@ -326,25 +326,7 @@ describe('WorkspaceController', () => {
 
   describe('Accept Invite', () => {
     it('returns 201 and creates teammate for valid invite', async () => {
-      const { teammate: adminTeammate } = await setupWorkspaceWithTeammate(
-        factory,
-        teammateFactory.build({
-          email: 'admin@useenvoye.com',
-          groups: ['WorkspaceAdmin'],
-          workspaceCode: '9Jk076',
-        }),
-      );
-
-      await factory.persist('workspaceInvite', () =>
-        workspaceInviteFactory.build({
-          recipientEmail: 'laura@useenvoye.co',
-          senderId: adminTeammate.id,
-          workspaceCode: '9Jk076',
-          inviteCode: 'ap7ol0',
-          status: InviteStatus.SENT,
-          recipientRole: ROLES.SupportStaff.code,
-        }),
-      );
+      await sendWorkspaceInvite('laura@useenvoye.co', InviteStatus.SENT);
 
       await request(getHttpServer(app))
         .post(URIPaths.ACCEPT_INVITE)
@@ -359,21 +341,20 @@ describe('WorkspaceController', () => {
         })
         .expect(HttpStatus.CREATED);
 
-      const createdTeammate = await prismaService.teammate.findFirst({
+      const createdTeammate = await prismaService.teammate.findFirstOrThrow({
         where: { workspaceCode: '9Jk076', email: 'laura@useenvoye.co' },
       });
-      expect(createdTeammate).toBeTruthy();
+      expect(createdTeammate.groups).toEqual([ROLES.SupportStaff.code]);
 
-      const invite = await prismaService.workspaceInvite.findFirst({
+      const invite = await prismaService.workspaceInvite.findFirstOrThrow({
         where: {
           workspaceCode: '9Jk076',
           inviteCode: 'ap7ol0',
           recipientEmail: 'laura@useenvoye.co',
         },
       });
-      expect(invite).toBeTruthy();
-      expect(invite!.status).toBe(InviteStatus.ACCEPTED);
-      expect(invite!.acceptedAt).toBeTruthy();
+      expect(invite.status).toBe(InviteStatus.ACCEPTED);
+      expect(invite.acceptedAt).toBeTruthy();
     });
 
     it('returns forbidden for invalid invite code', async () => {
