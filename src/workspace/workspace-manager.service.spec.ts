@@ -288,7 +288,7 @@ describe('WorkspaceService', () => {
         const inviteUrlSpy = jest.spyOn(workspaceLinkService, 'inviteUrl');
 
         await service.inviteTeammateIfEligible(
-          workspace.code,
+          workspace,
           recipientEmail,
           adminTeammate.id,
           ROLES.SupportStaff,
@@ -317,7 +317,7 @@ describe('WorkspaceService', () => {
         await assertRecipientHasNoInvite(workspace, recipientEmail);
 
         await service.inviteTeammateIfEligible(
-          workspace.code,
+          workspace,
           recipientEmail,
           adminTeammate.id,
           ROLES.SupportStaff,
@@ -342,7 +342,7 @@ describe('WorkspaceService', () => {
         await assertRecipientHasNoInvite(workspace, recipientEmail);
 
         await service.inviteTeammateIfEligible(
-          workspace.code,
+          workspace,
           recipientEmail,
           adminTeammate.id,
           ROLES.SupportStaff,
@@ -369,7 +369,7 @@ describe('WorkspaceService', () => {
           recipientEmail,
         );
         await service.inviteTeammateIfEligible(
-          workspace.code,
+          workspace,
           recipientEmail,
           adminTeammate.id,
           ROLES.SupportStaff,
@@ -427,7 +427,7 @@ describe('WorkspaceService', () => {
           );
 
           await service.inviteTeammateIfEligible(
-            workspace.code,
+            workspace,
             recipientEmail,
             adminTeammate.id,
             ROLES.SupportStaff,

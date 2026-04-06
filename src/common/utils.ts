@@ -43,3 +43,9 @@ export function groupBy<T>(
     return acc;
   }, new Map<string, T[]>());
 }
+
+export function sentenceCase(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return trimmed;
+  return trimmed[0].toUpperCase() + trimmed.slice(1);
+}
