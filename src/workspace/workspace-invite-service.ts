@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
-import { InviteStatus } from '@/generated/prisma/enums';
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
 
 export interface DecodedResult {
@@ -13,10 +11,7 @@ export interface DecodedResult {
 export class WorkspaceInviteService {
   logger = new Logger(WorkspaceInviteService.name);
 
-  constructor(private readonly prismaService: PrismaService) {}
-
-  //verify
-  // accept
+  constructor() {}
 
   //When Base64 encodes:
   // If length % 3 = 1 → it adds ==
