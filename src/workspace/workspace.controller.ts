@@ -30,12 +30,12 @@ import NotFoundInDb from '@/common/exceptions/not-found';
 import { PermissionService } from '@/permission/permission.service';
 import { PERMISSIONS } from '@/permission/types';
 import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
-import DecodeInviteCodeQueryDto from '@/workspace/dto/decode-invite-code-query.dto';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import DecodedInviteDto, {
   toDecodedInviteDto,
 } from '@/workspace/dto/decoded-invite.dto';
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
+import VerifyInviteCodeQueryDto from '@/workspace/dto/verify-invite-code-query.dto';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -160,17 +160,20 @@ export class WorkspaceController {
     );
   }
 
-  @Get('/decode-invite')
+  @Get('/verify-invite')
   @ApiOperation({ summary: 'Decode invite code' })
   @ApiResponse({ status: HttpStatus.OK, description: 'Decoded invite' })
   @ApiBadRequestResponse()
   @ApiForbiddenResponse()
   @HttpCode(HttpStatus.OK)
-  decodeInviteCode(@Query() query: DecodeInviteCodeQueryDto): DecodedInviteDto {
+  async decodeInviteCode(
+    @Query() query: VerifyInviteCodeQueryDto,
+  ): Promise<DecodedInviteDto> {
     try {
-      const decodedInvite = this.workspaceInviteService.decodeInviteOrThrow(
-        query.inviteCode,
-      );
+      const decodedInvite =
+        await this.workspaceInviteService.decodeAndVerifyOrThrow(
+          query.inviteCode,
+        );
       return toDecodedInviteDto(decodedInvite);
     } catch (e) {
       if (e instanceof InvalidInviteCode) {

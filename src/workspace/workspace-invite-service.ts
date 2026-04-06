@@ -1,21 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
+import { PrismaService } from '@/prisma/prisma.service';
+import { isEmpty } from '@/common/utils';
 
 export interface DecodedResult {
-  email: string;
+  recipientEmail: string;
   workspaceCode: string;
-  salt: string;
+  codeInInvite: string;
 }
 
 @Injectable()
 export class WorkspaceInviteService {
   logger = new Logger(WorkspaceInviteService.name);
 
-  constructor() {}
+  constructor(private readonly prismaService: PrismaService) {}
 
-  encodeInvite(email: string, workspaceCode: string, salt: string): string {
+  encodeInvite(
+    recipientEmail: string,
+    workspaceCode: string,
+    inviteCode: string,
+  ): string {
     // remember to encodeURIComponent when using this in url
-    const valueToEncode = [email, workspaceCode, salt].join(',');
+    const valueToEncode = [recipientEmail, workspaceCode, inviteCode].join(',');
     return Buffer.from(valueToEncode, 'utf8')
       .toString('base64')
       .replace(/=+$/, ''); // remove all ==
@@ -23,12 +29,30 @@ export class WorkspaceInviteService {
 
   decodeInviteOrThrow(inviteCode: string): DecodedResult {
     const decoded = this.decodedValue(inviteCode);
-    const [email, workspaceCode, salt] = decoded.split(',');
+    const [recipientEmail, workspaceCode, codeInInvite] = decoded.split(',');
     return {
-      email,
+      recipientEmail,
       workspaceCode,
-      salt,
+      codeInInvite,
     };
+  }
+
+  async decodeAndVerifyOrThrow(inviteCode: string): Promise<DecodedResult> {
+    const decoded = this.decodeInviteOrThrow(inviteCode);
+
+    const workspaceInvite = await this.prismaService.workspaceInvite.findFirst({
+      where: {
+        inviteCode: decoded.codeInInvite,
+        workspaceCode: decoded.workspaceCode,
+        recipientEmail: decoded.recipientEmail,
+      },
+    });
+
+    if (isEmpty(workspaceInvite)) {
+      throw new InvalidInviteCode('Cannot verify decoded invite for teammate');
+    }
+
+    return decoded;
   }
 
   private decodedValue(inviteCode: string): string {

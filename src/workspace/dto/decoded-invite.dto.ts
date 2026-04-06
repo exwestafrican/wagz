@@ -8,7 +8,7 @@ export default class DecodedInviteDto {
     example: 'teammate1@example.com',
   })
   @IsEmail()
-  email: string;
+  recipientEmail: string;
 
   @IsNotEmpty()
   @IsString()
@@ -21,7 +21,7 @@ export default class DecodedInviteDto {
 
 export function toDecodedInviteDto(decodedResult: DecodedResult) {
   return {
-    email: decodedResult.email,
+    recipientEmail: decodedResult.recipientEmail,
     workspaceCode: decodedResult.workspaceCode,
   };
 }

@@ -55,9 +55,9 @@ describe('WorkspaceInviteService', () => {
       {
         inviteCode: 'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw', // legacy (unpadded) base64
         decodedResult: {
-          email: 'sam@gmail.com',
+          recipientEmail: 'sam@gmail.com',
           workspaceCode: '9Jk076',
-          salt: 'anal90',
+          codeInInvite: 'anal90',
         },
       },
     ])(
