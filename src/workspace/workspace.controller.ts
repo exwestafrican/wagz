@@ -10,6 +10,7 @@ import {
   Query,
   UseGuards,
   HttpCode,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
@@ -29,6 +30,12 @@ import NotFoundInDb from '@/common/exceptions/not-found';
 import { PermissionService } from '@/permission/permission.service';
 import { PERMISSIONS } from '@/permission/types';
 import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import DecodedInviteDto, {
+  toDecodedInviteDto,
+} from '@/workspace/dto/decoded-invite.dto';
+import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
+import VerifyInviteCodeQueryDto from '@/workspace/dto/verify-invite-code-query.dto';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -37,6 +44,7 @@ export class WorkspaceController {
   constructor(
     private readonly workspaceManager: WorkspaceManager,
     private readonly permissionService: PermissionService,
+    private readonly workspaceInviteService: WorkspaceInviteService,
   ) {}
 
   @Post('/setup')
@@ -150,5 +158,28 @@ export class WorkspaceController {
         );
       },
     );
+  }
+
+  @Get('/verify-invite')
+  @ApiOperation({ summary: "Decode's and verify invite code" })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Decoded invite' })
+  @ApiBadRequestResponse()
+  @ApiForbiddenResponse()
+  @HttpCode(HttpStatus.OK)
+  async decodeInviteCode(
+    @Query() query: VerifyInviteCodeQueryDto,
+  ): Promise<DecodedInviteDto> {
+    try {
+      const decodedInvite =
+        await this.workspaceInviteService.decodeAndVerifyOrThrow(
+          query.inviteCode,
+        );
+      return toDecodedInviteDto(decodedInvite);
+    } catch (e) {
+      if (e instanceof InvalidInviteCode) {
+        throw new ForbiddenException();
+      }
+      throw e;
+    }
   }
 }

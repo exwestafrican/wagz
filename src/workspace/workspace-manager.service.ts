@@ -28,6 +28,7 @@ import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { RoleService } from '@/permission/role/role.service';
 import { ConcurrentLimit } from '@/common/concurrent-runner';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 
 @Injectable()
 export class WorkspaceManager {
@@ -39,6 +40,7 @@ export class WorkspaceManager {
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
     private readonly workspaceLinkService: WorkspaceLinkService,
     private readonly roleService: RoleService,
+    private readonly workspaceInviteService: WorkspaceInviteService,
   ) {}
 
   async setup(
@@ -317,9 +319,13 @@ export class WorkspaceManager {
         where: { id: senderId },
       });
 
-      const inviteLink = this.workspaceLinkService.inviteUrl(
-        workspaceInvite.workspaceCode,
+      const encodedInviteCode = this.workspaceInviteService.encodeInvite(
+        recipientEmail,
+        workspaceCode,
+        workspaceInvite.inviteCode,
       );
+
+      const inviteLink = this.workspaceLinkService.inviteUrl(encodedInviteCode);
 
       const emailHtml = await render(
         React.createElement(WorkspaceInviteTemplate, {

@@ -8,6 +8,7 @@ import RequestUser from '@/auth/domain/request-user';
 import { PrismaService } from '@/prisma/prisma.service';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import {
+  InviteStatus,
   PreVerification,
   PreVerificationStatus,
   Workspace,
@@ -27,6 +28,9 @@ import { ROLES } from '@/permission/types';
 import { RoleService } from '@/permission/role/role.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import { PermissionService } from '@/permission/permission.service';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import workspaceInviteFactory from '@/factories/workspace-invite.factory';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -45,6 +49,7 @@ describe('WorkspaceController', () => {
         WorkspaceLinkService,
         RoleService,
         PermissionService,
+        WorkspaceInviteService,
       ],
     }).with(requestUser);
     app = await createTestApp(module);
@@ -251,6 +256,71 @@ describe('WorkspaceController', () => {
           where: { workspaceCode: workspace.code },
         }),
       ).toBe(0);
+    });
+  });
+
+  async function sendWorkspaceInvite(
+    recipientEmail: string,
+    status: InviteStatus,
+  ) {
+    const { teammate } = await setupWorkspaceWithTeammate(
+      factory,
+      teammateFactory.build({
+        email: 'admin@useenvoye.com',
+        groups: ['WorkspaceAdmin'],
+        workspaceCode: '9Jk076',
+      }),
+    );
+
+    return await factory.persist('workspaceInvite', () =>
+      workspaceInviteFactory.build({
+        recipientEmail: recipientEmail,
+        senderId: teammate.id,
+        workspaceCode: '9Jk076',
+        inviteCode: 'ap7ol0',
+        status: status,
+      }),
+    );
+  }
+
+  describe('Decode Invite', () => {
+    it('returns ok and decoded result when valid', async () => {
+      await sendWorkspaceInvite('laura@useenvoye.co', InviteStatus.SENT);
+      const response = await request(getHttpServer(app))
+        .get(URIPaths.VERIFY_INVITE)
+        .query({ inviteCode: 'bGF1cmFAdXNlZW52b3llLmNvLDlKazA3NixhcDdvbDA' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toEqual({
+        recipientEmail: 'laura@useenvoye.co',
+        workspaceCode: '9Jk076',
+      });
+    });
+
+    it('returns forbidden for invalid invite code', async () => {
+      await request(getHttpServer(app))
+        .get(URIPaths.VERIFY_INVITE)
+        .query({ inviteCode: 'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw=' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns forbidden if valid code but belongs to no one', async () => {
+      await request(getHttpServer(app))
+        .get(URIPaths.VERIFY_INVITE)
+        .query({ inviteCode: 'bGF1cmFAdXNlZW52b3llLmNvLDlKazA3NixhcDdvbDA' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns forbidden if valid code but invite is not pending', async () => {
+      await sendWorkspaceInvite('laura@useenvoye.co', InviteStatus.ACCEPTED);
+      await request(getHttpServer(app))
+        .get(URIPaths.VERIFY_INVITE)
+        .query({ inviteCode: 'bGF1cmFAdXNlZW52b3llLmNvLDlKazA3NixhcDdvbDA' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.FORBIDDEN);
     });
   });
 });

@@ -5,8 +5,8 @@ import { ConfigService } from '@nestjs/config';
 export class WorkspaceLinkService {
   constructor(private readonly configService: ConfigService) {}
 
-  inviteUrl(workspaceCode: string): string {
-    return `${this.siteUrl}/workspace-invite?code=${workspaceCode}`;
+  inviteUrl(inviteCode: string): string {
+    return `${this.siteUrl}/workspace-invite?inviteCode=${encodeURIComponent(inviteCode)}`;
   }
 
   loadWorkspaceUrl(workspaceCode: string): string {

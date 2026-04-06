@@ -12,6 +12,7 @@ import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { MessagingModule } from '@/messaging/messaging.module';
 import { RoleService } from '@/permission/role/role.service';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -31,6 +32,7 @@ describe('AuthService', () => {
         PrismaService,
         WorkspaceLinkService,
         WorkspaceManager,
+        WorkspaceInviteService,
         RoleService,
       ],
     }).compile();

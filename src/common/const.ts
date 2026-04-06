@@ -1,6 +1,6 @@
 export const ENVIROMENT = {
   PRODUCTION: 'production',
-  DEVELOPMENT: 'development',
+  DEVELOPMENT: 'dev',
   TEST: 'test',
 };
 
@@ -22,4 +22,5 @@ export const URIPaths = {
   WORKSPACE_DETAILS: '/workspace',
   TEAMMATE_PERMISSIONS: '/permission',
   INVITE_TEAMMATES: '/workspace/invite-teammates',
+  VERIFY_INVITE: '/workspace/verify-invite',
 };
