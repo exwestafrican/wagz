@@ -19,7 +19,12 @@ describe('WorkspaceInviteService', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
-      providers: [WorkspaceManager, WorkspaceLinkService, RoleService],
+      providers: [
+        WorkspaceManager,
+        WorkspaceLinkService,
+        RoleService,
+        WorkspaceInviteService,
+      ],
     }).compile();
 
     app = await createTestApp(module);
