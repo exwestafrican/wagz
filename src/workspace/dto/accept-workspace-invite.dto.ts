@@ -43,12 +43,10 @@ export default class AcceptWorkspaceInviteDto {
   lastName: string;
 
   @ApiProperty({
-    description:
-      'Username (accepted but not persisted yet; will be added in a follow-up PR)',
+    description: 'Username of teammate',
     example: 'laura.smith',
   })
   @IsString()
   @IsNotEmpty()
   userName: string;
 }
-
