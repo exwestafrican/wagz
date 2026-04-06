@@ -12,10 +12,19 @@ import {
 } from '@/workspace/workspace-invite-service';
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
 import { INestApplication } from '@nestjs/common';
+import { InviteStatus } from '@/generated/prisma/enums';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
+import workspaceInviteFactory from '@/factories/workspace-invite.factory';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import { PrismaService } from '@/prisma/prisma.service';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('WorkspaceInviteService', () => {
   let app: INestApplication;
   let workspaceInviteService: WorkspaceInviteService;
+  let factory: PersistStrategy;
+  let prismaService: PrismaService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -29,9 +38,17 @@ describe('WorkspaceInviteService', () => {
     }).compile();
 
     app = await createTestApp(module);
+    prismaService = app.get<PrismaService>(PrismaService);
     workspaceInviteService = app.get<WorkspaceInviteService>(
       WorkspaceInviteService,
     );
+    factory = Factory.createStrategy(prismaService);
+  });
+
+
+  afterEach(async () => {
+    await resetDb(prismaService);
+    await app.close();
   });
 
   describe('encoding', () => {
@@ -43,9 +60,9 @@ describe('WorkspaceInviteService', () => {
       );
       expect(inviteCode).not.toContain('=');
       expect(workspaceInviteService.decodeInviteOrThrow(inviteCode)).toEqual({
-        email: 'anabela.sidne@gmail.com',
+        recipientEmail: 'anabela.sidne@gmail.com',
         workspaceCode: '9Jk076',
-        salt: 'anal90',
+        codeInInvite: 'anal90',
       });
     });
   });
@@ -81,6 +98,53 @@ describe('WorkspaceInviteService', () => {
           'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw=',
         );
       }).toThrow(InvalidInviteCode);
+    });
+  });
+
+  describe('decodeAndVerifyOrThrow', () => {
+    it('throws InvalidInviteCode when no DB match', async () => {
+      const token = workspaceInviteService.encodeInvite(
+        'a@b.com',
+        'W123',
+        'dbInviteCode',
+      );
+      await expect(
+        workspaceInviteService.decodeAndVerifyOrThrow(token),
+      ).rejects.toThrow(InvalidInviteCode);
+    });
+
+    test.each([
+      InviteStatus.ACCEPTED,
+      InviteStatus.PENDING,
+      InviteStatus.FAILED,
+    ])('it should fail for invalid status %s', async (status: InviteStatus) => {
+      const { teammate } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: 'admin@useenvoye.com',
+          groups: ['WorkspaceAdmin'],
+          workspaceCode: '9Jk076',
+        }),
+      );
+
+      await factory.persist('workspaceInvite', () =>
+        workspaceInviteFactory.build({
+          recipientEmail: 'laura@useenvoye.co',
+          senderId: teammate.id,
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          status: status,
+        }),
+      );
+
+      const token = workspaceInviteService.encodeInvite(
+        'laura@useenvoye.co',
+        '9Jk076',
+        'ap7ol0',
+      );
+      await expect(
+        workspaceInviteService.decodeAndVerifyOrThrow(token),
+      ).rejects.toThrow(InvalidInviteCode);
     });
   });
 });
