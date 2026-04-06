@@ -57,26 +57,4 @@ export class WorkspaceInviteService {
         throw new InvalidInviteCode('Invalid code not valid');
     }
   }
-
-  public verifyOrThrow(inviteCode: string) {
-    this.decodeInviteOrThrow(inviteCode);
-  }
-
-  async accept(inviteCode: string) {
-    const teammateInvite =
-      await this.prismaService.workspaceInvite.findFirstOrThrow({
-        where: {
-          inviteCode: inviteCode,
-        },
-      });
-
-    await this.prismaService.workspaceInvite.update({
-      where: { id: teammateInvite.id },
-      data: { status: InviteStatus.ACCEPTED },
-    });
-    //InvitationDetails
-    return teammateInvite;
-    // if is not found in db error throw 404
-    // if not found throw erropr
-  }
 }

@@ -6,11 +6,12 @@ import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { RoleService } from '@/permission/role/role.service';
 import { createTestApp } from '@/test-helpers/test-app';
-import { INestApplication } from '@nestjs/common';
 import {
   DecodedResult,
   WorkspaceInviteService,
 } from '@/workspace/workspace-invite-service';
+import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
+import { INestApplication } from '@nestjs/common';
 
 describe('WorkspaceInviteService', () => {
   let app: INestApplication;
@@ -28,7 +29,9 @@ describe('WorkspaceInviteService', () => {
     }).compile();
 
     app = await createTestApp(module);
-    workspaceInviteService = app.get(WorkspaceInviteService);
+    workspaceInviteService = app.get<WorkspaceInviteService>(
+      WorkspaceInviteService,
+    );
   });
 
   describe('encoding', () => {
@@ -103,5 +106,13 @@ describe('WorkspaceInviteService', () => {
         );
       },
     );
+
+    test('it throws exception when invite code is invalid', () => {
+      expect(() => {
+        workspaceInviteService.decodeInviteOrThrow(
+          'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw=',
+        );
+      }).toThrow(InvalidInviteCode);
+    });
   });
 });

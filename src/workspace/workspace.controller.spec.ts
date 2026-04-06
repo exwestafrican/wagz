@@ -27,6 +27,7 @@ import { ROLES } from '@/permission/types';
 import { RoleService } from '@/permission/role/role.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import { PermissionService } from '@/permission/permission.service';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -45,6 +46,7 @@ describe('WorkspaceController', () => {
         WorkspaceLinkService,
         RoleService,
         PermissionService,
+        WorkspaceInviteService,
       ],
     }).with(requestUser);
     app = await createTestApp(module);
@@ -251,6 +253,29 @@ describe('WorkspaceController', () => {
           where: { workspaceCode: workspace.code },
         }),
       ).toBe(0);
+    });
+  });
+
+  describe('Verify Invite', () => {
+    it('returns ok and decoded result when valid', async () => {
+      const response = await request(getHttpServer(app))
+        .get(URIPaths.VERIFY_INVITE)
+        .query({ inviteCode: 'bGF1cmFAdXNlZW52b3llLmNvLDlKazA3NixhcDdvbDA' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toEqual({
+        email: 'laura@useenvoye.co',
+        workspaceCode: '9Jk076',
+      });
+    });
+
+    it('returns forbidden for invalid invite code', async () => {
+      await request(getHttpServer(app))
+        .get(URIPaths.VERIFY_INVITE)
+        .query({ inviteCode: 'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw=' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.FORBIDDEN);
     });
   });
 });
