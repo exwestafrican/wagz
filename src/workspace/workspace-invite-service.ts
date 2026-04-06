@@ -13,19 +13,17 @@ export class WorkspaceInviteService {
 
   constructor() {}
 
-  //When Base64 encodes:
-  // If length % 3 = 1 → it adds ==
-  // If length % 3 = 2 → it adds =
-  // If length % 3 = 0 → no padding
   encodeInvite(email: string, workspaceCode: string, salt: string): string {
+    // remember to encodeURIComponent when using this in url
     const valueToEncode = [email, workspaceCode, salt].join(',');
-    const encodedValue = btoa(valueToEncode);
-    return encodedValue.replace(/=+$/, '');
+    return Buffer.from(valueToEncode, 'utf8')
+      .toString('base64')
+      .replace(/=+$/, ''); // remove all ==
   }
 
   decodeInviteOrThrow(inviteCode: string): DecodedResult {
-    const [email, workspaceCode, salt] =
-      this.decodedValue(inviteCode).split(',');
+    const decoded = this.decodedValue(inviteCode);
+    const [email, workspaceCode, salt] = decoded.split(',');
     return {
       email,
       workspaceCode,
@@ -40,16 +38,16 @@ export class WorkspaceInviteService {
     // (lengthOfTrimmedEncoding + X)%4 = 0 where x ∈ {0,1,2}
     switch (inviteCode.length % 4) {
       case 0:
-        return atob(inviteCode);
-
+        return Buffer.from(inviteCode, 'base64').toString('utf8');
       case 2:
-        return atob(inviteCode + '==');
+        return Buffer.from(inviteCode + '==', 'base64').toString('utf8');
 
       case 3:
-        return atob(inviteCode + '=');
+        return Buffer.from(inviteCode + '=', 'base64').toString('utf8');
 
       default:
         throw new InvalidInviteCode('Invalid code not valid');
     }
   }
 }
+

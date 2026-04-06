@@ -6,7 +6,7 @@ export class WorkspaceLinkService {
   constructor(private readonly configService: ConfigService) {}
 
   inviteUrl(inviteCode: string): string {
-    return `${this.siteUrl}/workspace-invite?inviteCode=${inviteCode}`;
+    return `${this.siteUrl}/workspace-invite?inviteCode=${encodeURIComponent(inviteCode)}`;
   }
 
   loadWorkspaceUrl(workspaceCode: string): string {

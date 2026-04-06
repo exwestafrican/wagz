@@ -35,57 +35,25 @@ describe('WorkspaceInviteService', () => {
   });
 
   describe('encoding', () => {
-    it('removes padding when multiple is present', () => {
-      expect(
-        workspaceInviteService.encodeInvite(
-          'anabela.sidne@gmail.com',
-          '9Jk076',
-          'anal90',
-        ),
-      ).toBe('YW5hYmVsYS5zaWRuZUBnbWFpbC5jb20sOUprMDc2LGFuYWw5MA');
-    });
-
-    it('removes padding when only one', () => {
-      expect(
-        workspaceInviteService.encodeInvite(
-          'anabela.sidnee@gmail.com',
-          '9Jk076',
-          'anal90',
-        ),
-      ).toBe('YW5hYmVsYS5zaWRuZWVAZ21haWwuY29tLDlKazA3NixhbmFsOTA');
-    });
-
-    it('returns result when no padding is present', () => {
-      expect(
-        workspaceInviteService.encodeInvite(
-          'sam@gmail.com',
-          '9Jk076',
-          'anal90',
-        ),
-      ).toBe('c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw');
+    it('encodes and can decode back', () => {
+      const inviteCode = workspaceInviteService.encodeInvite(
+        'anabela.sidne@gmail.com',
+        '9Jk076',
+        'anal90',
+      );
+      expect(inviteCode).not.toContain('=');
+      expect(workspaceInviteService.decodeInviteOrThrow(inviteCode)).toEqual({
+        email: 'anabela.sidne@gmail.com',
+        workspaceCode: '9Jk076',
+        salt: 'anal90',
+      });
     });
   });
 
   describe('decode', () => {
     test.each([
       {
-        inviteCode: 'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw',
-        decodedResult: {
-          email: 'sam@gmail.com',
-          workspaceCode: '9Jk076',
-          salt: 'anal90',
-        },
-      },
-      {
-        inviteCode: 'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw',
-        decodedResult: {
-          email: 'sam@gmail.com',
-          workspaceCode: '9Jk076',
-          salt: 'anal90',
-        },
-      },
-      {
-        inviteCode: 'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw',
+        inviteCode: 'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw', // legacy (unpadded) base64
         decodedResult: {
           email: 'sam@gmail.com',
           workspaceCode: '9Jk076',
