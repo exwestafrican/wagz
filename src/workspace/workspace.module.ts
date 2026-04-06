@@ -6,7 +6,7 @@ import { PermissionModule } from '@/permission/permission.module';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 
 @Module({
-  imports: [PermissionModule, PermissionModule],
+  imports: [PermissionModule],
   providers: [WorkspaceManager, WorkspaceLinkService, WorkspaceInviteService],
   controllers: [WorkspaceController],
   exports: [WorkspaceManager, WorkspaceLinkService, WorkspaceInviteService],
