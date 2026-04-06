@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { InviteStatus } from '@/generated/prisma/enums';
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
@@ -11,6 +11,8 @@ export interface DecodedResult {
 
 @Injectable()
 export class WorkspaceInviteService {
+  logger = new Logger(WorkspaceInviteService.name);
+
   constructor(private readonly prismaService: PrismaService) {}
 
   //verify
@@ -26,7 +28,7 @@ export class WorkspaceInviteService {
     return encodedValue.replace(/=+$/, '');
   }
 
-  decodeInvite(inviteCode: string): DecodedResult {
+  decodeInviteOrThrow(inviteCode: string): DecodedResult {
     const [email, workspaceCode, salt] =
       this.decodedValue(inviteCode).split(',');
     return {
@@ -54,6 +56,10 @@ export class WorkspaceInviteService {
       default:
         throw new InvalidInviteCode('Invalid code not valid');
     }
+  }
+
+  public verifyOrThrow(inviteCode: string) {
+    this.decodeInviteOrThrow(inviteCode);
   }
 
   async accept(inviteCode: string) {

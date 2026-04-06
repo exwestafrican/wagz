@@ -18,13 +18,8 @@ describe('WorkspaceInviteService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot(),
-        PrismaModule,
-        MessagingModule,
-        RoleService,
-      ],
-      providers: [WorkspaceManager, WorkspaceLinkService],
+      imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
+      providers: [WorkspaceManager, WorkspaceLinkService, RoleService],
     }).compile();
 
     app = await createTestApp(module);
@@ -98,7 +93,7 @@ describe('WorkspaceInviteService', () => {
         inviteCode: string;
         decodedResult: DecodedResult;
       }) => {
-        expect(workspaceInviteService.decodeInvite(inviteCode)).toEqual(
+        expect(workspaceInviteService.decodeInviteOrThrow(inviteCode)).toEqual(
           decodedResult,
         );
       },
