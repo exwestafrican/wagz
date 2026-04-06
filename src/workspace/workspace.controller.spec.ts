@@ -256,10 +256,10 @@ describe('WorkspaceController', () => {
     });
   });
 
-  describe('Verify Invite', () => {
+  describe('Decode Invite', () => {
     it('returns ok and decoded result when valid', async () => {
       const response = await request(getHttpServer(app))
-        .get(URIPaths.VERIFY_INVITE)
+        .get(URIPaths.DECODE_INVITE)
         .query({ inviteCode: 'bGF1cmFAdXNlZW52b3llLmNvLDlKazA3NixhcDdvbDA' })
         .set('Accept', 'application/json')
         .expect(HttpStatus.OK);
@@ -272,7 +272,7 @@ describe('WorkspaceController', () => {
 
     it('returns forbidden for invalid invite code', async () => {
       await request(getHttpServer(app))
-        .get(URIPaths.VERIFY_INVITE)
+        .get(URIPaths.DECODE_INVITE)
         .query({ inviteCode: 'c2FtQGdtYWlsLmNvbSw5SmswNzYsYW5hbDkw=' })
         .set('Accept', 'application/json')
         .expect(HttpStatus.FORBIDDEN);

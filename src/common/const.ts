@@ -22,5 +22,5 @@ export const URIPaths = {
   WORKSPACE_DETAILS: '/workspace',
   TEAMMATE_PERMISSIONS: '/permission',
   INVITE_TEAMMATES: '/workspace/invite-teammates',
-  VERIFY_INVITE: '/workspace/verify-invite',
+  DECODE_INVITE: '/workspace/decode-invite',
 };

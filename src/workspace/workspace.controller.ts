@@ -30,7 +30,7 @@ import NotFoundInDb from '@/common/exceptions/not-found';
 import { PermissionService } from '@/permission/permission.service';
 import { PERMISSIONS } from '@/permission/types';
 import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
-import VerifyInviteCodeQueryDto from '@/workspace/dto/verify-invite-code-query.dto';
+import DecodeInviteCodeQueryDto from '@/workspace/dto/decode-invite-code-query.dto';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import DecodedInviteDto, {
   toDecodedInviteDto,
@@ -160,15 +160,13 @@ export class WorkspaceController {
     );
   }
 
-  @Get('/verify-invite')
-  @ApiOperation({ summary: 'Verify and decode invite code' })
-  @ApiResponse({ status: HttpStatus.OK, description: 'Valid invite' })
+  @Get('/decode-invite')
+  @ApiOperation({ summary: 'Decode invite code' })
+  @ApiResponse({ status: HttpStatus.OK, description: 'Decoded invite' })
   @ApiBadRequestResponse()
   @ApiForbiddenResponse()
   @HttpCode(HttpStatus.OK)
-  verifyAndDecodeInviteCode(
-    @Query() query: VerifyInviteCodeQueryDto,
-  ): DecodedInviteDto {
+  decodeInviteCode(@Query() query: DecodeInviteCodeQueryDto): DecodedInviteDto {
     try {
       const decodedInvite = this.workspaceInviteService.decodeInviteOrThrow(
         query.inviteCode,
