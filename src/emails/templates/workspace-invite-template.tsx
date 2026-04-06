@@ -14,11 +14,13 @@ import React from 'react';
 
 interface WorkspaceInviteTemplateProps {
   senderName: string;
+  workspaceName: string;
   inviteLink: string;
 }
 
 export const WorkspaceInviteTemplate = ({
   senderName,
+  workspaceName,
   inviteLink,
 }: WorkspaceInviteTemplateProps): React.ReactElement => {
   return (
@@ -35,8 +37,8 @@ export const WorkspaceInviteTemplate = ({
               Hey champ 🏆
             </Text>
             <Text className="text-[14px] text-black leading-[24px]">
-              {senderName} has invited you to join your teams{' '}
-              <strong>Envoye</strong>.
+              {senderName} has invited you to join{' '}
+              <strong>{workspaceName}</strong>.
             </Text>
             <Section className="mt-[32px] mb-[32px] text-center">
               <Button
@@ -61,6 +63,7 @@ export const WorkspaceInviteTemplate = ({
 
 WorkspaceInviteTemplate.PreviewProps = {
   senderName: 'Tumisé',
+  workspaceName: 'Fahari HQ',
   inviteLink: 'https://envoye.co',
 };
 
