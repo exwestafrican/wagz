@@ -161,7 +161,7 @@ export class WorkspaceController {
   }
 
   @Get('/verify-invite')
-  @ApiOperation({ summary: 'Decode invite code' })
+  @ApiOperation({ summary: "Decode's and verify invite code" })
   @ApiResponse({ status: HttpStatus.OK, description: 'Decoded invite' })
   @ApiBadRequestResponse()
   @ApiForbiddenResponse()

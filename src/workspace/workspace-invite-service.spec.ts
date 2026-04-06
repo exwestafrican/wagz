@@ -45,7 +45,6 @@ describe('WorkspaceInviteService', () => {
     factory = Factory.createStrategy(prismaService);
   });
 
-
   afterEach(async () => {
     await resetDb(prismaService);
     await app.close();
