@@ -194,15 +194,16 @@ export class WorkspaceController {
   @ApiForbiddenResponse()
   async acceptInvite(@Body() dto: AcceptWorkspaceInviteDto): Promise<void> {
     try {
-      await this.workspaceInviteService.acceptInvite({
-        workspaceCode: dto.workspaceCode,
-        inviteCode: dto.inviteCode,
-        teammateDetails: {
+      await this.workspaceInviteService.acceptInvite(
+        dto.workspaceCode,
+        dto.inviteCode,
+        {
           email: dto.teammateEmail,
           firstName: dto.firstName,
           lastName: dto.lastName,
+          username: dto.userName,
         },
-      });
+      );
     } catch (e) {
       if (e instanceof InvalidInviteCode) {
         throw new ForbiddenException();

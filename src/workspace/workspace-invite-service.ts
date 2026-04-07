@@ -8,6 +8,7 @@ export interface TeammateDetails {
   firstName: string;
   lastName: string;
   email: string;
+  username: string;
 }
 
 export interface DecodedResult {
@@ -63,16 +64,16 @@ export class WorkspaceInviteService {
     return decoded;
   }
 
-  async acceptInvite(input: {
-    workspaceCode: string;
-    inviteCode: string;
-    teammateDetails: TeammateDetails;
-  }): Promise<void> {
+  async acceptInvite(
+    workspaceCode: string,
+    inviteCode: string,
+    teammateDetails: TeammateDetails,
+  ): Promise<void> {
     const invite = await this.prismaService.workspaceInvite.findFirst({
       where: {
-        workspaceCode: input.workspaceCode,
-        inviteCode: input.inviteCode,
-        recipientEmail: input.teammateDetails.email,
+        workspaceCode: workspaceCode,
+        inviteCode: inviteCode,
+        recipientEmail: teammateDetails.email,
         status: InviteStatus.SENT,
       },
     });
@@ -84,10 +85,11 @@ export class WorkspaceInviteService {
     await this.prismaService.$transaction(async (tx) => {
       await tx.teammate.create({
         data: {
-          workspaceCode: input.workspaceCode,
-          email: input.teammateDetails.email,
-          firstName: input.teammateDetails.firstName,
-          lastName: input.teammateDetails.lastName,
+          workspaceCode: workspaceCode,
+          email: teammateDetails.email,
+          firstName: teammateDetails.firstName,
+          lastName: teammateDetails.lastName,
+          username: teammateDetails.username,
           groups: [invite.recipientRole],
         },
       });
