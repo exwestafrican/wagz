@@ -10,16 +10,25 @@ import {
 import { TeammatesService } from '@/teammates/teammates.service';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
-import { TeammateResponseDto } from '@/teammates/dto/teammate-response.dto';
+import {
+  TeammateResponseDto,
+  toTeammateResponse,
+} from '@/teammates/dto/teammate-response.dto';
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import { PermissionService } from '@/permission/permission.service';
+import { PERMISSIONS } from '@/permission/types';
+import { TeammateStatus } from '@/generated/prisma/enums';
 
 @Controller('teammates')
 export class TeammatesController {
   logger = new Logger(TeammatesController.name);
 
-  constructor(private readonly teammatesService: TeammatesService) {}
+  constructor(
+    private readonly teammatesService: TeammatesService,
+    private readonly permissionService: PermissionService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get teammates' })
@@ -37,14 +46,30 @@ export class TeammatesController {
     isArray: true,
   })
   @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'User does not have permission to view teammates',
+  })
+  @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
     description: 'User is unauthorized to make this request',
   })
   @UseGuards(SupabaseAuthGuard)
-  async getTeammates(
+  async getActiveTeammates(
+    @User() requestUser: RequestUser,
     @Query('workspaceCode') workspaceCode: string,
   ): Promise<TeammateResponseDto[]> {
-    return this.teammatesService.getTeammates(workspaceCode);
+    return this.permissionService.runIfPermitted(
+      requestUser,
+      workspaceCode,
+      PERMISSIONS.MANAGE_TEAMMATES,
+      async () => {
+        const teammates = await this.teammatesService.getTeammates(
+          workspaceCode,
+          TeammateStatus.ACTIVE,
+        );
+        return teammates.map(toTeammateResponse);
+      },
+    );
   }
 
   @Get('me')
@@ -75,10 +100,11 @@ export class TeammatesController {
     @Query('workspaceCode') workspaceCode: string,
   ): Promise<TeammateResponseDto> {
     try {
-      return await this.teammatesService.getMyTeammateProfile(
+      const teammate = await this.teammatesService.getMyTeammateProfile(
         workspaceCode,
         requestUser.email,
       );
+      return toTeammateResponse(teammate);
     } catch (error) {
       if (error instanceof NotFoundInDb) {
         throw new NotFoundException();

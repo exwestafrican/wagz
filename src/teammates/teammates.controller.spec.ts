@@ -8,6 +8,8 @@ import {
   TestControllerModuleWithAuthUser,
 } from '@/test-helpers/test-app';
 import { TeammatesService } from '@/teammates/teammates.service';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
 import { TeammateResponseDto } from '@/teammates/dto/teammate-response.dto';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
@@ -27,7 +29,7 @@ describe('TeammatesController', () => {
     requestUser = RequestUser.of('laura@useEnvoye.com');
     const module = await TestControllerModuleWithAuthUser({
       controllers: [TeammatesController],
-      providers: [TeammatesService],
+      providers: [TeammatesService, PermissionService, RoleService],
     }).with(requestUser);
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
@@ -41,7 +43,7 @@ describe('TeammatesController', () => {
     await app.close();
   });
 
-  describe('getTeammates', () => {
+  describe('getActiveTeammates', () => {
     let workspace: Workspace;
     let firstTeammate: Teammate;
     let secondTeammate: Teammate;
@@ -97,15 +99,13 @@ describe('TeammatesController', () => {
         .expect(HttpStatus.UNAUTHORIZED);
     });
 
-    it('should return 200 and empty array for unknown workspaceCode', async () => {
-      const response = await request(getHttpServer(app))
+    it('should return 403 when caller is not in the workspace', async () => {
+      await request(getHttpServer(app))
         .get(TeammatesEndpoints.TEAMMATES)
         .query({ workspaceCode: '345dv5' })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .expect(HttpStatus.OK);
-
-      expect(response.body).toMatchObject([]);
+        .expect(HttpStatus.FORBIDDEN);
     });
   });
 

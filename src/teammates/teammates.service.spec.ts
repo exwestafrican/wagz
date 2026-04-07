@@ -90,12 +90,18 @@ describe('TeammatesService', () => {
       const emptyWorkspace = await factory.persist('workspace', () =>
         workspaceFactory.envoyeWorkspace(),
       );
-      const result = await service.getTeammates(emptyWorkspace.code);
+      const result = await service.getTeammates(
+        emptyWorkspace.code,
+        TeammateStatus.ACTIVE,
+      );
       expect(result).toMatchObject([]);
     });
 
     it('should return all active teammates', async () => {
-      const result = await service.getTeammates(workspace.code);
+      const result = await service.getTeammates(
+        workspace.code,
+        TeammateStatus.ACTIVE,
+      );
       expect(result).toHaveLength(3);
       expect(result.map((teammate) => teammate.email)).toEqual(
         expect.arrayContaining([
@@ -107,14 +113,20 @@ describe('TeammatesService', () => {
     });
 
     it('should not return deleted teammates', async () => {
-      const result = await service.getTeammates(workspace.code);
+      const result = await service.getTeammates(
+        workspace.code,
+        TeammateStatus.ACTIVE,
+      );
       expect(result.map((teammate) => teammate.email)).not.toEqual(
         expect.arrayContaining([fourthTeammate.email]),
       );
     });
 
     it('should not return disabled teammates', async () => {
-      const result = await service.getTeammates(workspace.code);
+      const result = await service.getTeammates(
+        workspace.code,
+        TeammateStatus.ACTIVE,
+      );
       expect(result.map((teammate) => teammate.email)).not.toEqual(
         expect.arrayContaining([fifthTeammate.email]),
       );
@@ -130,7 +142,10 @@ describe('TeammatesService', () => {
       );
       await factory.persist('teammate', () => anotherTeammate);
 
-      const result = await service.getTeammates(workspace.code);
+      const result = await service.getTeammates(
+        workspace.code,
+        TeammateStatus.ACTIVE,
+      );
       expect(result.map((teammate) => teammate.email)).not.toEqual(
         expect.arrayContaining([anotherTeammate.email]),
       );
@@ -149,13 +164,15 @@ describe('TeammatesService', () => {
         teammate.email,
       );
 
-      expect(result.id).toBe(teammate.id);
-      expect(result.firstName).toBe(teammate.firstName);
-      expect(result.lastName).toBe(teammate.lastName);
-      expect(result.email).toBe(teammate.email);
-      expect(result.status).toBe(teammate.status);
-      expect(result.avatarUrl).toBe(teammate.avatarUrl);
-      expect(result.groups).toStrictEqual(teammate.groups);
+      expect(result).toMatchObject({
+        id: teammate.id,
+        firstName: teammate.firstName,
+        lastName: teammate.lastName,
+        email: teammate.email,
+        status: teammate.status,
+        avatarUrl: teammate.avatarUrl,
+        groups: teammate.groups,
+      });
     });
 
     it('should throw NotFoundInDb when teammate does not exist', async () => {

@@ -3,8 +3,9 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { isEmpty } from '@/common/utils';
 import { RoleService } from './role/role.service';
 import RequestUser from '@/auth/domain/request-user';
-import { Teammate } from '@/generated/prisma/client';
+import { Prisma, Teammate } from '@/generated/prisma/client';
 import { Permission } from '@/permission/domain/permission';
+import PRISMA_CODES from '@/prisma/consts';
 
 @Injectable()
 export class PermissionService {
@@ -44,14 +45,25 @@ export class PermissionService {
     requiredPermission: Permission,
     authorizedAction: (teammate: Teammate) => T,
   ): Promise<T> {
-    const teammate = await this.prismaService.teammate.findUniqueOrThrow({
-      where: {
-        workspaceCode_email: {
-          workspaceCode: workspaceCode,
-          email: requestUser.email,
+    let teammate: Teammate;
+    try {
+      teammate = await this.prismaService.teammate.findUniqueOrThrow({
+        where: {
+          workspaceCode_email: {
+            workspaceCode: workspaceCode,
+            email: requestUser.email,
+          },
         },
-      },
-    });
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === PRISMA_CODES.NOT_FOUND
+      ) {
+        throw new ForbiddenException();
+      }
+      throw error;
+    }
 
     const roleCodes = teammate.groups;
     if (this.roleService.hasPermission(roleCodes, requiredPermission)) {
