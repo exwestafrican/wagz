@@ -11,11 +11,14 @@ class TeammateFactory extends Factory<Teammate> {
   }
 }
 const teammateFactory = TeammateFactory.define(({ sequence }) => {
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
   return {
     id: sequence,
     email: faker.internet.email(),
-    firstName: faker.person.firstName(),
-    lastName: faker.person.lastName(),
+    firstName: firstName,
+    lastName: lastName,
+    username: `${firstName}.${lastName}`,
     workspaceCode: sixCharHumanFriendlyCode(),
     status: TeammateStatus.ACTIVE,
     avatarUrl: faker.internet.url(),
