@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export default class AcceptWorkspaceInviteDto {
   @ApiProperty({
@@ -22,6 +23,7 @@ export default class AcceptWorkspaceInviteDto {
     description: 'Email of teammate accepting the invite',
     example: 'laura@useenvoye.co',
   })
+  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsEmail()
   @IsNotEmpty()
   teammateEmail: string;
@@ -30,6 +32,7 @@ export default class AcceptWorkspaceInviteDto {
     description: 'First name of teammate',
     example: 'Laura',
   })
+  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsString()
   @IsNotEmpty()
   firstName: string;
@@ -38,6 +41,7 @@ export default class AcceptWorkspaceInviteDto {
     description: 'Last name of teammate',
     example: 'Smith',
   })
+  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsString()
   @IsNotEmpty()
   lastName: string;
@@ -46,6 +50,7 @@ export default class AcceptWorkspaceInviteDto {
     description: 'Username of teammate',
     example: 'laura.smith',
   })
+  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsString()
   @IsNotEmpty()
   username: string;
