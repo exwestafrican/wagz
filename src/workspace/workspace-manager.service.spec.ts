@@ -24,6 +24,8 @@ import teammateFactory from '@/factories/teammate.factory';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { MessagingModule } from '@/messaging/messaging.module';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { RoleService } from '@/permission/role/role.service';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -32,16 +34,25 @@ describe('WorkspaceService', () => {
   let workspaceLinkService: WorkspaceLinkService;
   let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
+  let workspaceInviteService: WorkspaceInviteService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
-      providers: [WorkspaceManager, WorkspaceLinkService],
+      providers: [
+        WorkspaceManager,
+        WorkspaceLinkService,
+        RoleService,
+        WorkspaceInviteService,
+      ],
     }).compile();
     app = await createTestApp(module);
     service = app.get<WorkspaceManager>(WorkspaceManager);
     prismaService = app.get<PrismaService>(PrismaService);
     workspaceLinkService = app.get<WorkspaceLinkService>(WorkspaceLinkService);
+    workspaceInviteService = app.get<WorkspaceInviteService>(
+      WorkspaceInviteService,
+    );
     factory = Factory.createStrategy(prismaService);
     preVerificationDetails = await factory.persist('preverification', () =>
       preVerificationFactory.build(),
@@ -270,33 +281,43 @@ describe('WorkspaceService', () => {
     describe('Teammate is new and has no Invites', () => {
       it('creates invite', async () => {
         await assertRecipientHasNoInvite(workspace, recipientEmail);
+        const encodeInviteSpy = jest.spyOn(
+          workspaceInviteService,
+          'encodeInvite',
+        );
         const inviteUrlSpy = jest.spyOn(workspaceLinkService, 'inviteUrl');
 
         await service.inviteTeammateIfEligible(
-          workspace.code,
+          workspace,
           recipientEmail,
           adminTeammate.id,
           ROLES.SupportStaff,
         );
-        expect(inviteUrlSpy).toHaveBeenCalledTimes(1);
 
-        expect(
-          await prismaService.workspaceInvite.count({
-            where: {
-              workspace: workspace,
-              senderId: adminTeammate.id,
-              status: InviteStatus.SENT,
-              recipientEmail: recipientEmail,
-            },
-          }),
-        ).toBe(1);
+        const workspaceInvite = await prismaService.workspaceInvite.findMany({
+          where: {
+            workspace: workspace,
+            senderId: adminTeammate.id,
+            status: InviteStatus.SENT,
+            recipientEmail: recipientEmail,
+          },
+        });
+
+        expect(workspaceInvite.length).toBe(1);
+
+        expect(inviteUrlSpy).toHaveBeenCalledTimes(1);
+        expect(encodeInviteSpy).toHaveBeenCalledWith(
+          recipientEmail,
+          workspace.code,
+          workspaceInvite[0].inviteCode,
+        );
       });
 
       it('creates invite valid for 2 days', async () => {
         await assertRecipientHasNoInvite(workspace, recipientEmail);
 
         await service.inviteTeammateIfEligible(
-          workspace.code,
+          workspace,
           recipientEmail,
           adminTeammate.id,
           ROLES.SupportStaff,
@@ -321,7 +342,7 @@ describe('WorkspaceService', () => {
         await assertRecipientHasNoInvite(workspace, recipientEmail);
 
         await service.inviteTeammateIfEligible(
-          workspace.code,
+          workspace,
           recipientEmail,
           adminTeammate.id,
           ROLES.SupportStaff,
@@ -348,7 +369,7 @@ describe('WorkspaceService', () => {
           recipientEmail,
         );
         await service.inviteTeammateIfEligible(
-          workspace.code,
+          workspace,
           recipientEmail,
           adminTeammate.id,
           ROLES.SupportStaff,
@@ -406,7 +427,7 @@ describe('WorkspaceService', () => {
           );
 
           await service.inviteTeammateIfEligible(
-            workspace.code,
+            workspace,
             recipientEmail,
             adminTeammate.id,
             ROLES.SupportStaff,
@@ -419,6 +440,51 @@ describe('WorkspaceService', () => {
           );
         },
       );
+    });
+  });
+
+  describe('inviteEligibleTeammates', () => {
+    let adminTeammate: Teammate;
+    let workspace: Workspace;
+
+    beforeEach(async () => {
+      workspace = await factory.persist('workspace', () =>
+        workspaceFactory.envoyeWorkspace(),
+      );
+
+      adminTeammate = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          groups: [ROLES.WorkspaceAdmin.code],
+          workspaceCode: workspace.code,
+        }),
+      );
+
+      const fixedMs = new Date('2026-02-21T10:00:00.000Z').getTime();
+      jest.spyOn(Date, 'now').mockReturnValue(fixedMs);
+    });
+
+    it('creates one SENT invite per recipient email', async () => {
+      const emails = ['batch-a@example.com', 'batch-b@example.com'];
+      await assertRecipientHasNoInvite(workspace, emails[0]);
+      await assertRecipientHasNoInvite(workspace, emails[1]);
+      const inviteUrlSpy = jest.spyOn(workspaceLinkService, 'inviteUrl');
+      await service.inviteEligibleTeammates(
+        adminTeammate,
+        emails,
+        'SupportStaff',
+      );
+      expect(inviteUrlSpy).toHaveBeenCalledTimes(2);
+      expect(
+        await prismaService.workspaceInvite.count({
+          where: {
+            workspace: { id: workspace.id },
+            senderId: adminTeammate.id,
+            status: InviteStatus.SENT,
+            recipientRole: ROLES.SupportStaff.code,
+            recipientEmail: { in: emails },
+          },
+        }),
+      ).toBe(2);
     });
   });
 });

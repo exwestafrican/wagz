@@ -5,6 +5,8 @@ import {
   PreVerification,
   PreVerificationStatus,
   Prisma,
+  Workspace as PrismaWorkspace,
+  Teammate,
   TeammateStatus,
   WorkspaceInvite,
 } from '@/generated/prisma/client';
@@ -19,20 +21,27 @@ import PRISMA_CODES from '@/prisma/consts';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import { Role } from '@/permission/domain/role';
-import { Time } from '@/common/utils';
+import { sentenceCase, Time } from '@/common/utils';
 import { render } from '@react-email/render';
 import { WorkspaceInviteTemplate } from '@/emails/templates/workspace-invite-template';
 import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { RoleService } from '@/permission/role/role.service';
+import { ConcurrentLimit } from '@/common/concurrent-runner';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 
 @Injectable()
 export class WorkspaceManager {
+  private static readonly INVITE_CONCURRENCY = 3;
   logger = new Logger(WorkspaceManager.name);
+
   constructor(
     private readonly prismaService: PrismaService,
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
     private readonly workspaceLinkService: WorkspaceLinkService,
+    private readonly roleService: RoleService,
+    private readonly workspaceInviteService: WorkspaceInviteService,
   ) {}
 
   async setup(
@@ -93,30 +102,30 @@ export class WorkspaceManager {
   }
 
   async inviteTeammateIfEligible(
-    workspaceCode: string,
+    workspace: PrismaWorkspace,
     recipientEmail: string,
     senderId: number,
     role: Role,
   ): Promise<WorkspaceInvite> {
     const teammateIsInWorkspace = await this.teammateAlreadyExistsInWorkspace(
-      workspaceCode,
+      workspace.code,
       recipientEmail,
     );
     if (teammateIsInWorkspace) {
       const invite = await this.prismaService.workspaceInvite.create({
         data: {
-          ...this.baseSetup(workspaceCode, recipientEmail, senderId, role),
+          ...this.baseSetup(workspace.code, recipientEmail, senderId, role),
           status: InviteStatus.FAILED,
         },
       });
       this.logger.log(
-        `Failed to send workspace invite because user is in workspace invite=${invite.id}  workspaceCode=${workspaceCode}`,
+        `Failed to send workspace invite because user is in workspace invite=${invite.id}  workspaceCode=${workspace.code}`,
       );
       return invite;
     } else {
       //TODO: debounce send-email
       return await this.tryToSendWorkspaceInvite(
-        workspaceCode,
+        workspace,
         recipientEmail,
         senderId,
         role,
@@ -139,6 +148,33 @@ export class WorkspaceManager {
         createdAt: 'asc', //from oldest to newest
       },
     });
+  }
+
+  async inviteEligibleTeammates(
+    sender: Teammate,
+    recipientEmails: string[],
+    assignedRole: string,
+  ): Promise<void> {
+    const workspace = await this.prismaService.workspace.findUniqueOrThrow({
+      where: { code: sender.workspaceCode },
+    });
+    const role = this.roleService.fetchRole(assignedRole)!;
+    const limit = ConcurrentLimit(
+      WorkspaceManager.INVITE_CONCURRENCY,
+      recipientEmails.length,
+    );
+    await Promise.allSettled(
+      recipientEmails.map((recipientEmail) =>
+        limit.run(() =>
+          this.inviteTeammateIfEligible(
+            workspace,
+            recipientEmail,
+            sender.id,
+            role,
+          ),
+        ),
+      ),
+    );
   }
 
   private async runPreWorkspaceCreationSteps(
@@ -270,14 +306,14 @@ export class WorkspaceManager {
   }
 
   private async tryToSendWorkspaceInvite(
-    workspaceCode: string,
+    workspace: PrismaWorkspace,
     recipientEmail: string,
     senderId: number,
     role: Role,
   ): Promise<WorkspaceInvite> {
     const workspaceInvite = await this.prismaService.workspaceInvite.create({
       data: {
-        ...this.baseSetup(workspaceCode, recipientEmail, senderId, role),
+        ...this.baseSetup(workspace.code, recipientEmail, senderId, role),
         status: InviteStatus.SENT,
       },
     });
@@ -287,13 +323,21 @@ export class WorkspaceManager {
         where: { id: senderId },
       });
 
-      const inviteLink = this.workspaceLinkService.inviteUrl(
-        workspaceInvite.workspaceCode,
+      const encodedInviteCode = this.workspaceInviteService.encodeInvite(
+        recipientEmail,
+        workspace.code,
+        workspaceInvite.inviteCode,
       );
+
+      const inviteLink = this.workspaceLinkService.inviteUrl(encodedInviteCode);
 
       const emailHtml = await render(
         React.createElement(WorkspaceInviteTemplate, {
-          senderName: sender.firstName,
+          senderName: sentenceCase(sender.firstName),
+          workspaceName: workspace.name
+            .split(' ')
+            .map((n) => sentenceCase(n))
+            .join(' '),
           inviteLink,
         }),
       );
@@ -314,7 +358,7 @@ export class WorkspaceManager {
           },
         });
       this.logger.error(
-        `Failed to send workspace invite for invite=${failedWorkspaceInvite.id} workspaceCode=${workspaceCode}`,
+        `Failed to send workspace invite for invite=${failedWorkspaceInvite.id} workspaceCode=${workspace.code}`,
       );
       this.logger.error(error);
       return failedWorkspaceInvite;

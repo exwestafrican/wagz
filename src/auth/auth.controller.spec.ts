@@ -23,6 +23,8 @@ import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { MessagingModule } from '@/messaging/messaging.module';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
+import { RoleService } from '@/permission/role/role.service';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -56,6 +58,8 @@ describe('AuthController', () => {
         PrismaService,
         WorkspaceLinkService,
         WorkspaceManager,
+        WorkspaceInviteService,
+        RoleService,
       ],
     }).compile();
 

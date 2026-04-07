@@ -9,7 +9,7 @@ import {
 import SignupDetails from '../domain/signup.details';
 import { IsNotDisposableEmail } from '@/common/validators/is-not-disposable-email.decorator';
 import { PhoneNumberDto } from '@/auth/dto/phone-number.dto';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import { IsValidPhoneNumberConstraint } from '@/auth/validators/phone-number';
 import { IsValidIANATimezoneConstraint } from '../validators/timezone-iana';
 
@@ -18,6 +18,7 @@ export class SignupEmailDto {
     description: 'The email address of the user',
     example: 'test@example.com',
   })
+  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsEmail({}, { message: 'Invalid email address' })
   @IsNotEmpty()
   @IsNotDisposableEmail({ message: 'Invalid email address' })
@@ -41,6 +42,9 @@ export class SignupEmailDto {
     description: 'The company name of the user',
     example: 'Example Inc.',
   })
+  @Transform(({ value }: { value: string }) =>
+    value.trim().replace(/\s+/g, ' '),
+  )
   @IsNotEmpty()
   companyName: string;
 

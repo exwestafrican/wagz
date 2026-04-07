@@ -3,7 +3,8 @@ import { PermissionService } from './permission.service';
 import { PrismaModule } from '@/prisma/prisma.module';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { PrismaService } from '@/prisma/prisma.service';
-import { INestApplication } from '@nestjs/common';
+import { ForbiddenException, INestApplication } from '@nestjs/common';
+import RequestUser from '@/auth/domain/request-user';
 import { createTestApp } from '@/test-helpers/test-app';
 import { Role } from './domain/role';
 import { PERMISSIONS, ROLES } from './types';
@@ -152,6 +153,55 @@ describe('PermissionService', () => {
         teammate.workspaceCode,
       );
       expect(result).toEqual(['remove_workspace', 'manage_users']);
+    });
+  });
+
+  describe('runIfPermitted', () => {
+    it('returns authorizedAction result and passes the loaded teammate when permitted', async () => {
+      const teammate = await setupWorkspaceWithTeammateRole(factory, [
+        ROLES.SupportStaff.code,
+      ]);
+      const requestUser = RequestUser.of(teammate.email);
+      const result = await service.runIfPermitted(
+        requestUser,
+        teammate.workspaceCode,
+        PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
+        (t) => {
+          expect(t.email).toBe(teammate.email);
+          expect(t.workspaceCode).toBe(teammate.workspaceCode);
+          expect(t.groups).toEqual([ROLES.SupportStaff.code]);
+          return { teammateId: t.id, ok: true };
+        },
+      );
+      expect(result).toEqual({ teammateId: teammate.id, ok: true });
+    });
+
+    it('throws ForbiddenException when teammate lacks the required permission', async () => {
+      const teammate = await setupWorkspaceWithTeammateRole(factory, [
+        ROLES.WorkspaceMember.code,
+      ]);
+      const requestUser = RequestUser.of(teammate.email);
+      await expect(
+        service.runIfPermitted(
+          requestUser,
+          teammate.workspaceCode,
+          PERMISSIONS.MANAGE_TEAMMATES,
+          () => 'should not run',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when teammate has no roles', async () => {
+      const teammate = await setupWorkspaceWithTeammateRole(factory, []);
+      const requestUser = RequestUser.of(teammate.email);
+      await expect(
+        service.runIfPermitted(
+          requestUser,
+          teammate.workspaceCode,
+          PERMISSIONS.MESSAGE_TEAMMATES,
+          () => 'should not run',
+        ),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });
