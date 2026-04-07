@@ -1,4 +1,4 @@
-enum Messagetype {
+enum MessageType {
   TEXT
   IMAGE
 }
@@ -9,11 +9,13 @@ model Message {
   workspace      Workspace    @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
   conversationId Int
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
-  content        String       @db.VarChar(200)
-  url            String       @db.VarChar(100)
+  content        String       @db.VarChar(65000)
+  url            String?      @db.VarChar(2000)
   createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @default(now())
-  contentType    Messagetype  @default(TEXT)
+  updatedAt      DateTime     @updatedAt
+  messagetype    MessageType  @default(TEXT)
 
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
   @@map("message")
 }

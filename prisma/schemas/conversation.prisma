@@ -1,6 +1,7 @@
 enum ConversationStatus {
   ACTIVE
   CLOSED
+  FROZEN
 }
 
 model Conversation {
@@ -8,10 +9,14 @@ model Conversation {
   workspaceCode String             @db.VarChar(6)
   workspace     Workspace          @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
   status        ConversationStatus @default(ACTIVE)
-  subject       String             @db.VarChar(100)
+  subject       String?            @db.VarChar(100)
   customerInfo  String             @db.VarChar(100)
   lastMessage   Int?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
   messages      Message[]
 
+  @@index([workspaceCode])
+  @@index([workspaceCode, status])
   @@map("conversation")
 }
