@@ -323,4 +323,55 @@ describe('WorkspaceController', () => {
         .expect(HttpStatus.FORBIDDEN);
     });
   });
+
+  describe('Accept Invite', () => {
+    it('returns 201 and creates teammate for valid invite', async () => {
+      await sendWorkspaceInvite('laura@useenvoye.co', InviteStatus.SENT);
+
+      await request(getHttpServer(app))
+        .post(URIPaths.ACCEPT_INVITE)
+        .set('Accept', 'application/json')
+        .send({
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          teammateEmail: 'laura@useenvoye.co',
+          firstName: 'Laura',
+          lastName: 'Smith',
+          username: 'laura.smith',
+        })
+        .expect(HttpStatus.CREATED);
+
+      const createdTeammate = await prismaService.teammate.findFirstOrThrow({
+        where: { workspaceCode: '9Jk076', email: 'laura@useenvoye.co' },
+        select: { groups: true, username: true },
+      });
+      expect(createdTeammate.groups).toEqual([ROLES.SupportStaff.code]);
+      expect(createdTeammate.username).toBe('laura.smith');
+
+      const invite = await prismaService.workspaceInvite.findFirstOrThrow({
+        where: {
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          recipientEmail: 'laura@useenvoye.co',
+        },
+      });
+      expect(invite.status).toBe(InviteStatus.ACCEPTED);
+      expect(invite.acceptedAt).toBeTruthy();
+    });
+
+    it('returns forbidden for invalid invite code', async () => {
+      await request(getHttpServer(app))
+        .post(URIPaths.ACCEPT_INVITE)
+        .set('Accept', 'application/json')
+        .send({
+          workspaceCode: '9Jk076',
+          inviteCode: 'nope00',
+          teammateEmail: 'laura@useenvoye.co',
+          firstName: 'Laura',
+          lastName: 'Smith',
+          username: 'laura.smith',
+        })
+        .expect(HttpStatus.FORBIDDEN);
+    });
+  });
 });

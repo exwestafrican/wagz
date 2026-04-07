@@ -36,6 +36,7 @@ import DecodedInviteDto, {
 } from '@/workspace/dto/decoded-invite.dto';
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
 import VerifyInviteCodeQueryDto from '@/workspace/dto/verify-invite-code-query.dto';
+import AcceptWorkspaceInviteDto from '@/workspace/dto/accept-workspace-invite.dto';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -175,6 +176,34 @@ export class WorkspaceController {
           query.inviteCode,
         );
       return toDecodedInviteDto(decodedInvite);
+    } catch (e) {
+      if (e instanceof InvalidInviteCode) {
+        throw new ForbiddenException();
+      }
+      throw e;
+    }
+  }
+
+  @Post('/accept-invite')
+  @ApiOperation({ summary: 'Accept workspace invite and create teammate' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Invite accepted and teammate created',
+  })
+  @ApiBadRequestResponse()
+  @ApiForbiddenResponse()
+  async acceptInvite(@Body() dto: AcceptWorkspaceInviteDto): Promise<void> {
+    try {
+      await this.workspaceInviteService.acceptInvite(
+        dto.workspaceCode,
+        dto.inviteCode,
+        {
+          email: dto.teammateEmail,
+          firstName: dto.firstName,
+          lastName: dto.lastName,
+          username: dto.username,
+        },
+      );
     } catch (e) {
       if (e instanceof InvalidInviteCode) {
         throw new ForbiddenException();
