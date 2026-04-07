@@ -32,7 +32,6 @@ export default class AcceptWorkspaceInviteDto {
     description: 'First name of teammate',
     example: 'Laura',
   })
-  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsString()
   @IsNotEmpty()
   firstName: string;
@@ -41,7 +40,6 @@ export default class AcceptWorkspaceInviteDto {
     description: 'Last name of teammate',
     example: 'Smith',
   })
-  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsString()
   @IsNotEmpty()
   lastName: string;

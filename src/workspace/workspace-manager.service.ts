@@ -334,7 +334,10 @@ export class WorkspaceManager {
       const emailHtml = await render(
         React.createElement(WorkspaceInviteTemplate, {
           senderName: sentenceCase(sender.firstName),
-          workspaceName: sentenceCase(workspace.name),
+          workspaceName: workspace.name
+            .split(' ')
+            .map((n) => sentenceCase(n))
+            .join(' '),
           inviteLink,
         }),
       );
