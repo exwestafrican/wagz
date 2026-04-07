@@ -48,5 +48,5 @@ export default class AcceptWorkspaceInviteDto {
   })
   @IsString()
   @IsNotEmpty()
-  userName: string;
+  username: string;
 }

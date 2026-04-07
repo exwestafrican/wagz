@@ -201,7 +201,7 @@ export class WorkspaceController {
           email: dto.teammateEmail,
           firstName: dto.firstName,
           lastName: dto.lastName,
-          username: dto.userName,
+          username: dto.username,
         },
       );
     } catch (e) {

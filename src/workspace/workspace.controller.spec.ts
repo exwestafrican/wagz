@@ -337,7 +337,7 @@ describe('WorkspaceController', () => {
           teammateEmail: 'laura@useenvoye.co',
           firstName: 'Laura',
           lastName: 'Smith',
-          userName: 'laura.smith',
+          username: 'laura.smith',
         })
         .expect(HttpStatus.CREATED);
 
@@ -369,7 +369,7 @@ describe('WorkspaceController', () => {
           teammateEmail: 'laura@useenvoye.co',
           firstName: 'Laura',
           lastName: 'Smith',
-          userName: 'laura.smith',
+          username: 'laura.smith',
         })
         .expect(HttpStatus.FORBIDDEN);
     });
