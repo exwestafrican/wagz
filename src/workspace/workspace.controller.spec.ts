@@ -31,6 +31,8 @@ import { PermissionService } from '@/permission/permission.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import { AuthService } from '@/auth/auth.service';
+import { mockAuthService } from '@/test-helpers/mocks';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -50,6 +52,10 @@ describe('WorkspaceController', () => {
         RoleService,
         PermissionService,
         WorkspaceInviteService,
+        {
+          provide: AuthService,
+          useValue: mockAuthService as unknown as AuthService,
+        },
       ],
     }).with(requestUser);
     app = await createTestApp(module);
@@ -266,6 +272,7 @@ describe('WorkspaceController', () => {
     const { teammate } = await setupWorkspaceWithTeammate(
       factory,
       teammateFactory.build({
+        id: 7,
         email: 'admin@useenvoye.com',
         groups: ['WorkspaceAdmin'],
         workspaceCode: '9Jk076',
@@ -357,6 +364,9 @@ describe('WorkspaceController', () => {
       });
       expect(invite.status).toBe(InviteStatus.ACCEPTED);
       expect(invite.acceptedAt).toBeTruthy();
+      expect(mockAuthService.requestMagicLink).toHaveBeenCalledWith(
+        'laura@useenvoye.co',
+      );
     });
 
     it('returns forbidden for invalid invite code', async () => {

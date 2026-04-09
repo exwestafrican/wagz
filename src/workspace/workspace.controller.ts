@@ -194,7 +194,7 @@ export class WorkspaceController {
   @ApiForbiddenResponse()
   async acceptInvite(@Body() dto: AcceptWorkspaceInviteDto): Promise<void> {
     try {
-      await this.workspaceInviteService.acceptInvite(
+      await this.workspaceInviteService.tryAcceptInviteAndRequestMagicLink(
         dto.workspaceCode,
         dto.inviteCode,
         {
