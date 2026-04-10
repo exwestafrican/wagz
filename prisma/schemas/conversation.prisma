@@ -1,0 +1,23 @@
+enum ConversationStatus {
+  ACTIVE
+  CLOSED
+  FROZEN
+}
+
+model Conversation {
+  id                       Int                       @id @default(autoincrement())
+  workspaceCode            String                    @db.VarChar(6)
+  workspace                Workspace                 @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
+  status                   ConversationStatus        @default(ACTIVE)
+  subject                  String?                   @db.VarChar(100)
+  customerInfo             String                    @db.VarChar(100)
+  lastMessage              Int?
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  messages                 Message[]
+  conversationParticipants ConversationParticipant[]
+
+  @@index([workspaceCode])
+  @@index([workspaceCode, status])
+  @@map("conversation")
+}
