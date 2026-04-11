@@ -20,5 +20,6 @@ model Teammate {
   workspaceInvites WorkspaceInvite[]
 
   @@unique([workspaceCode, email])
+  @@unique([workspaceCode, username])
   @@map("teammate")
 }
