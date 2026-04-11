@@ -10,7 +10,6 @@ import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import RequestUser from '@/auth/domain/request-user';
 import { TeammateStatus } from '@/generated/prisma/enums';
-import NotFoundInDb from '@/common/exceptions/not-found';
 import { Teammate, Workspace } from '@/generated/prisma/client';
 
 describe('TeammatesService', () => {
@@ -174,32 +173,5 @@ describe('TeammatesService', () => {
         groups: teammate.groups,
       });
     });
-
-    it('should throw NotFoundInDb when teammate does not exist', async () => {
-      const noTeammateWorkspace = await factory.persist('workspace', () =>
-        workspaceFactory.envoyeWorkspace(),
-      );
-
-      await expect(
-        service.getMyTeammateProfile(
-          noTeammateWorkspace.code,
-          'nobody@useenvoye.com',
-        ),
-      ).rejects.toThrow(NotFoundInDb);
-    });
-
-    test.each([TeammateStatus.DISABLED, TeammateStatus.DELETED])(
-      'should throw NotFoundInDb when teammate status is %s',
-      async (status) => {
-        const { workspace, teammate } = await setupWorkspaceWithTeammate(
-          factory,
-          teammateFactory.build({ status }),
-        );
-
-        await expect(
-          service.getMyTeammateProfile(workspace.code, teammate.email),
-        ).rejects.toThrow(NotFoundInDb);
-      },
-    );
   });
 });

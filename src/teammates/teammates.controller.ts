@@ -3,7 +3,6 @@ import {
   Get,
   HttpStatus,
   Logger,
-  NotFoundException,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -16,7 +15,6 @@ import {
 } from '@/teammates/dto/teammate-response.dto';
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
-import NotFoundInDb from '@/common/exceptions/not-found';
 import { PermissionService } from '@/permission/permission.service';
 import { PERMISSIONS } from '@/permission/types';
 import { TeammateStatus } from '@/generated/prisma/enums';
@@ -58,7 +56,7 @@ export class TeammatesController {
     @User() requestUser: RequestUser,
     @Query('workspaceCode') workspaceCode: string,
   ): Promise<TeammateResponseDto[]> {
-    return this.permissionService.runIfWorkspaceMemberAndPermitted(
+    return await this.permissionService.runIfWorkspaceMemberAndPermitted(
       requestUser,
       workspaceCode,
       PERMISSIONS.MANAGE_TEAMMATES,

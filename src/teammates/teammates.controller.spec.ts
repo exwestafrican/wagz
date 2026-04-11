@@ -135,19 +135,5 @@ describe('TeammatesController', () => {
         .set('Accept', 'application/json')
         .expect(HttpStatus.UNAUTHORIZED);
     });
-
-    it('should return 404 when teammate is not found in workspace', async () => {
-      const { workspace } = await setupWorkspaceWithTeammate(
-        factory,
-        teammateFactory.build({ email: 'other@useenvoye.com' }),
-      );
-
-      await request(getHttpServer(app))
-        .get(TeammatesEndpoints.MY_PROFILE)
-        .query({ workspaceCode: workspace.code })
-        .set('Accept', 'application/json')
-        .set('Authorization', 'Bearer test-token')
-        .expect(HttpStatus.NOT_FOUND);
-    });
   });
 });

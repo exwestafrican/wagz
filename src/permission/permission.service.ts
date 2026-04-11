@@ -3,9 +3,8 @@ import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { isEmpty } from '@/common/utils';
 import { RoleService } from './role/role.service';
 import RequestUser from '@/auth/domain/request-user';
-import {Teammate } from '@/generated/prisma/client';
+import { Teammate } from '@/generated/prisma/client';
 import { Permission } from '@/permission/domain/permission';
-
 
 @Injectable()
 export class PermissionService {
