@@ -53,31 +53,34 @@ describe('AuthService', () => {
   });
 
   describe('signTeammateUpAndPushMagicLink', () => {
-    it('when user already has account, we just log into correct workspace', async () => {
-      const email = 'teammate@example.com';
-      const workspaceCode = 'WS01';
+    it.each([['user_already_exists'], ['email_exists']] as const)(
+      'when user already has account, we just log into correct workspace (%s)',
+      async (errorCode) => {
+        const email = 'teammate@example.com';
+        const workspaceCode = 'WS01';
 
-      mockSupabaseClient.auth.admin.createUser.mockResolvedValueOnce({
-        data: { user: null },
-        error: {
-          message: 'User already registered',
-          status: 422,
-          code: 'user_already_exists',
-        },
-      });
+        mockSupabaseClient.auth.admin.createUser.mockResolvedValueOnce({
+          data: { user: null },
+          error: {
+            message: 'User already registered',
+            status: 422,
+            code: errorCode,
+          },
+        });
 
-      await service.signTeammateUpAndPushMagicLink(email, workspaceCode);
+        await service.signTeammateUpAndPushMagicLink(email, workspaceCode);
 
-      expect(mockSupabaseClient.auth.signInWithOtp).toHaveBeenCalledWith({
-        email,
-        options: {
-          shouldCreateUser: false,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-          emailRedirectTo: expect.stringContaining(
-            `/setup/workspace?code=${workspaceCode}`,
-          ),
-        },
-      });
-    });
+        expect(mockSupabaseClient.auth.signInWithOtp).toHaveBeenCalledWith({
+          email,
+          options: {
+            shouldCreateUser: false,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            emailRedirectTo: expect.stringContaining(
+              `/setup/workspace?code=${workspaceCode}`,
+            ),
+          },
+        });
+      },
+    );
   });
 });
