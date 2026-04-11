@@ -11,6 +11,7 @@ import {
   InviteStatus,
   PreVerification,
   PreVerificationStatus,
+  TeammateStatus,
   Workspace,
 } from '@/generated/prisma/client';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
@@ -148,6 +149,7 @@ describe('WorkspaceController', () => {
           email: requestUser.email,
           workspaceCode: workspace.code,
           groups: [ROLES.WorkspaceAdmin.code],
+          status: TeammateStatus.ACTIVE,
         }),
       );
 
@@ -183,6 +185,7 @@ describe('WorkspaceController', () => {
           email: 'colleague@example.com',
           workspaceCode: workspace.code,
           groups: [ROLES.WorkspaceAdmin.code],
+          status: TeammateStatus.ACTIVE,
         }),
       );
 
@@ -193,6 +196,42 @@ describe('WorkspaceController', () => {
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.FORBIDDEN);
     });
+
+    it.each([
+      {
+        workspaceCode: 'disab1',
+        status: TeammateStatus.DISABLED,
+      },
+      {
+        workspaceCode: 'deltd1',
+        status: TeammateStatus.DELETED,
+      },
+    ])(
+      'returns 403 Forbidden when user is not an active workspace member (status $status)',
+      async ({ workspaceCode, status }) => {
+        const workspace = await factory.persist('workspace', () =>
+          workspaceFactory.build({
+            code: workspaceCode,
+            name: 'Non-active member WS',
+          }),
+        );
+        await factory.persist('teammate', () =>
+          teammateFactory.build({
+            email: requestUser.email,
+            workspaceCode: workspace.code,
+            groups: [ROLES.WorkspaceAdmin.code],
+            status,
+          }),
+        );
+
+        await request(getHttpServer(app))
+          .get(AuthEndpoints.WORKSPACE_DETAILS)
+          .query({ code: workspace.code })
+          .set('Accept', 'application/json')
+          .set('Authorization', 'Bearer test-token')
+          .expect(HttpStatus.FORBIDDEN);
+      },
+    );
   });
 
   describe(' Invite Teammates', () => {

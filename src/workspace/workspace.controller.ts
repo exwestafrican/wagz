@@ -112,7 +112,7 @@ export class WorkspaceController {
     @Query('code') code: string,
   ): Promise<WorkspaceResponseDto> {
     try {
-      return await this.permissionService.runIfWorkspaceMember(
+      return await this.permissionService.runIfActiveWorkspaceMember(
         requestUser,
         code,
         async () => await this.workspaceManager.details(code),

@@ -3,7 +3,7 @@ import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { isEmpty } from '@/common/utils';
 import { RoleService } from './role/role.service';
 import RequestUser from '@/auth/domain/request-user';
-import { Teammate } from '@/generated/prisma/client';
+import { Teammate, TeammateStatus } from '@/generated/prisma/client';
 import { Permission } from '@/permission/domain/permission';
 
 @Injectable()
@@ -63,7 +63,7 @@ export class PermissionService {
     }
   }
 
-  private async findWorkspaceMember(
+  private async findActiveWorkspaceMember(
     email: string,
     workspaceCode: string,
   ): Promise<Teammate | null> {
@@ -71,17 +71,19 @@ export class PermissionService {
       where: {
         workspaceCode: workspaceCode,
         email: email,
+        status: TeammateStatus.ACTIVE,
       },
     });
   }
 
-  async runIfWorkspaceMemberAndPermitted<T>(
+
+  async runIfActiveWorkspaceMemberAndPermitted<T>(
     requestUser: RequestUser,
     workspaceCode: string,
     requiredPermission: Permission,
     authorizedAction: (teammate: Teammate) => T,
   ) {
-    const workspaceMember = await this.findWorkspaceMember(
+    const workspaceMember = await this.findActiveWorkspaceMember(
       requestUser.email,
       workspaceCode,
     );
@@ -102,12 +104,12 @@ export class PermissionService {
     }
   }
 
-  async runIfWorkspaceMember<T>(
+  async runIfActiveWorkspaceMember<T>(
     requestUser: RequestUser,
     workspaceCode: string,
     authorizedAction: (teammate: Teammate) => T,
   ) {
-    const workspaceTeammate = await this.findWorkspaceMember(
+    const workspaceTeammate = await this.findActiveWorkspaceMember(
       requestUser.email,
       workspaceCode,
     );
