@@ -19,12 +19,13 @@ import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
-import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { MessagingModule } from '@/messaging/messaging.module';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
-import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import {
+  workspaceManagerTestingProvider,
+  createMockEmailClient,
+} from '@/auth/test-utils/auth.module.test-setup';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -45,8 +46,9 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     mockSupabaseClient = createMockSupabaseClient();
+    const mockEmailClient = createMockEmailClient();
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), MessagingModule], // Add ConfigModule for setupApp to work
+      imports: [ConfigModule.forRoot()], // Add ConfigModule for setupApp to work
       controllers: [AuthController],
       providers: [
         AuthService,
@@ -57,9 +59,8 @@ describe('AuthController', () => {
         },
         PrismaService,
         WorkspaceLinkService,
-        WorkspaceManager,
         WorkspaceInviteService,
-        RoleService,
+        workspaceManagerTestingProvider(mockEmailClient),
       ],
     }).compile();
 

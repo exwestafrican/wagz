@@ -6,34 +6,35 @@ import {
   MockSupabaseClient,
 } from './test-utils/supabase.mock';
 import PasswordGenerator from './services/password.generator';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
-import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { MessagingModule } from '@/messaging/messaging.module';
-import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import {
+  workspaceManagerTestingProvider,
+  createMockEmailClient,
+} from '@/auth/test-utils/auth.module.test-setup';
 
 describe('AuthService', () => {
   let service: AuthService;
-  const mockSupabaseClient: MockSupabaseClient = createMockSupabaseClient();
+  let mockSupabaseClient: MockSupabaseClient;
 
   beforeEach(async () => {
+    mockSupabaseClient = createMockSupabaseClient();
+    const mockEmailClient = createMockEmailClient();
     const module: TestingModule = await Test.createTestingModule({
-      imports: [MessagingModule],
+      imports: [ConfigModule.forRoot()],
       providers: [
         AuthService,
         PasswordGenerator,
-        ConfigService,
         {
           provide: SupabaseClient,
-          useValue: mockSupabaseClient,
+          useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
         PrismaService,
         WorkspaceLinkService,
-        WorkspaceManager,
         WorkspaceInviteService,
-        RoleService,
+        workspaceManagerTestingProvider(mockEmailClient),
       ],
     }).compile();
 
