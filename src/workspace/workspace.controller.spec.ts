@@ -302,6 +302,7 @@ describe('WorkspaceController', () => {
       expect(response.body).toEqual({
         recipientEmail: 'laura@useenvoye.co',
         workspaceCode: '9Jk076',
+        inviteCode: 'ap7ol0',
       });
     });
 
