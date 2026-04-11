@@ -17,10 +17,6 @@ export class LinkService {
     return `${this.siteUrl}/setup/${preverificationId}/workspace`;
   }
 
-  workspaceUrl(workspaceCode: string): string {
-    return `${this.siteUrl}/workspace?code=${workspaceCode}`;
-  }
-
   private get siteUrl(): string {
     return this.configService.get<string>('SITE_URL', '');
   }

@@ -25,16 +25,15 @@ export class AuthService {
     private readonly teammatesService: TeammatesService,
   ) {}
 
-  async requestMagicLink(email: string): Promise<void> {
-    const primaryWorkspace =
-      await this.teammatesService.primaryWorkspace(email);
+  private async signInWithOtp(
+    email: string,
+    workspaceCode: string,
+  ): Promise<void> {
     const { error } = await this.supabaseClient.auth.signInWithOtp({
       email: email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: this.linkService.loadWorkspaceUrl(
-          primaryWorkspace.code,
-        ),
+        emailRedirectTo: this.linkService.loadWorkspaceUrl(workspaceCode),
       },
     });
 
@@ -42,6 +41,12 @@ export class AuthService {
       this.logger.error(error);
       throw new UnauthorizedException();
     }
+  }
+
+  async requestMagicLink(email: string): Promise<void> {
+    const primaryWorkspace =
+      await this.teammatesService.primaryWorkspace(email);
+    await this.signInWithOtp(email, primaryWorkspace.code);
   }
 
   async emailOnlySignup(signupDetails: SignupDetails): Promise<void> {
@@ -111,19 +116,7 @@ export class AuthService {
     if (error) {
       this.handleAuthError(error);
     }
-
-    const { error: otpError } = await this.supabaseClient.auth.signInWithOtp({
-      email: email,
-      options: {
-        shouldCreateUser: false,
-        emailRedirectTo: this.linkService.loadWorkspaceUrl(workspaceCode),
-      },
-    });
-
-    if (otpError) {
-      this.logger.error(otpError);
-      throw new UnauthorizedException();
-    }
+    await this.signInWithOtp(email, workspaceCode);
   }
 
   async signup(signupDetails: SignupDetails, password: string): Promise<void> {
