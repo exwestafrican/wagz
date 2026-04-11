@@ -1,9 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { TeammateStatus } from '@/generated/prisma/enums';
-import { Prisma, Teammate } from '@/generated/prisma/client';
-import PRISMA_CODES from '@/prisma/consts';
-import NotFoundInDb from '@/common/exceptions/not-found';
+import { Teammate } from '@/generated/prisma/client';
 
 @Injectable()
 export class TeammatesService {
