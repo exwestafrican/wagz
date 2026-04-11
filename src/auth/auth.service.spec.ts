@@ -8,12 +8,8 @@ import {
 import PasswordGenerator from './services/password.generator';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
-import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
-import {
-  workspaceManagerTestingProvider,
-  createMockEmailClient,
-} from '@/auth/test-utils/auth.module.test-setup';
+import { LinkService } from '@/common/link-service';
+import { TeammatesService } from '@/teammates/teammates.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -21,7 +17,6 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     mockSupabaseClient = createMockSupabaseClient();
-    const mockEmailClient = createMockEmailClient();
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot()],
       providers: [
@@ -32,9 +27,8 @@ describe('AuthService', () => {
           useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
         PrismaService,
-        WorkspaceLinkService,
-        WorkspaceInviteService,
-        workspaceManagerTestingProvider(mockEmailClient),
+        LinkService,
+        TeammatesService,
       ],
     }).compile();
 

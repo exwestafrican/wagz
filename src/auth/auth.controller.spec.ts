@@ -18,14 +18,10 @@ import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
-import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
-import {
-  workspaceManagerTestingProvider,
-  createMockEmailClient,
-} from '@/auth/test-utils/auth.module.test-setup';
+import { LinkService } from '@/common/link-service';
+import { TeammatesService } from '@/teammates/teammates.service';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -46,7 +42,6 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     mockSupabaseClient = createMockSupabaseClient();
-    const mockEmailClient = createMockEmailClient();
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot()], // Add ConfigModule for setupApp to work
       controllers: [AuthController],
@@ -58,9 +53,8 @@ describe('AuthController', () => {
           useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
         PrismaService,
-        WorkspaceLinkService,
-        WorkspaceInviteService,
-        workspaceManagerTestingProvider(mockEmailClient),
+        LinkService,
+        TeammatesService,
       ],
     }).compile();
 

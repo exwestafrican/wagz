@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { MessagingModule } from '@/messaging/messaging.module';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { RoleService } from '@/permission/role/role.service';
 import { createTestApp } from '@/test-helpers/test-app';
 import {
@@ -20,6 +19,10 @@ import Factory, { PersistStrategy } from '@/factories/factory';
 import { PrismaService } from '@/prisma/prisma.service';
 import { resetDb } from '@/test-helpers/rest-db';
 import { ROLES } from '@/permission/types';
+import { AuthService } from '@/auth/auth.service';
+import { Teammate, Workspace } from '@/generated/prisma/client';
+import { mockAuthService } from '@/test-helpers/mocks';
+import { LinkService } from '@/common/link-service';
 
 describe('WorkspaceInviteService', () => {
   let app: INestApplication;
@@ -27,14 +30,36 @@ describe('WorkspaceInviteService', () => {
   let factory: PersistStrategy;
   let prismaService: PrismaService;
 
+  async function inviteTeammate(
+    adminTeammate: Teammate,
+    recipientEmail: string,
+    workspace: Workspace,
+  ) {
+    await factory.persist('workspaceInvite', () =>
+      workspaceInviteFactory.build({
+        recipientEmail: recipientEmail,
+        senderId: adminTeammate.id,
+        workspaceCode: workspace.code,
+        inviteCode: 'ap7ol0',
+        status: InviteStatus.SENT,
+        recipientRole: ROLES.SupportStaff.code,
+        acceptedAt: null,
+      }),
+    );
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
       providers: [
         WorkspaceManager,
-        WorkspaceLinkService,
         RoleService,
         WorkspaceInviteService,
+        LinkService,
+        {
+          provide: AuthService,
+          useValue: mockAuthService as unknown as AuthService,
+        },
       ],
     }).compile();
 
@@ -150,28 +175,20 @@ describe('WorkspaceInviteService', () => {
 
   describe('acceptInvite', () => {
     it('creates teammate and marks invite as accepted', async () => {
-      const { teammate: adminTeammate } = await setupWorkspaceWithTeammate(
-        factory,
-        teammateFactory.build({
-          email: 'admin@useenvoye.com',
-          groups: ['WorkspaceAdmin'],
-          workspaceCode: '9Jk076',
-        }),
-      );
+      const { teammate: adminTeammate, workspace } =
+        await setupWorkspaceWithTeammate(
+          factory,
+          teammateFactory.build({
+            id: 6,
+            email: 'admin@useenvoye.com',
+            groups: ['WorkspaceAdmin'],
+            workspaceCode: '9Jk076',
+          }),
+        );
 
-      await factory.persist('workspaceInvite', () =>
-        workspaceInviteFactory.build({
-          recipientEmail: 'laura@useenvoye.co',
-          senderId: adminTeammate.id,
-          workspaceCode: '9Jk076',
-          inviteCode: 'ap7ol0',
-          status: InviteStatus.SENT,
-          recipientRole: ROLES.SupportStaff.code,
-          acceptedAt: null,
-        }),
-      );
+      await inviteTeammate(adminTeammate, 'laura@useenvoye.co', workspace);
 
-      await workspaceInviteService.acceptInvite('9Jk076', 'ap7ol0', {
+      await workspaceInviteService.tryAcceptInvite('9Jk076', 'ap7ol0', {
         email: 'laura@useenvoye.co',
         firstName: 'Laura',
         lastName: 'Smith',
@@ -197,13 +214,60 @@ describe('WorkspaceInviteService', () => {
 
     it('throws InvalidInviteCode when invite does not exist', async () => {
       await expect(
-        workspaceInviteService.acceptInvite('9Jk076', 'nope00', {
+        workspaceInviteService.tryAcceptInvite('9Jk076', 'nope00', {
           email: 'laura@useenvoye.co',
           firstName: 'Laura',
           lastName: 'Smith',
           username: 'laura.smith',
         }),
       ).rejects.toThrow(InvalidInviteCode);
+    });
+  });
+
+  describe('tryAcceptInviteAndRequestMagicLink', () => {
+    it('creates teammate and marks invite as accepted and sends magic link', async () => {
+      const { teammate: adminTeammate, workspace } =
+        await setupWorkspaceWithTeammate(
+          factory,
+          teammateFactory.build({
+            id: 6,
+            email: 'admin@useenvoye.com',
+            groups: ['WorkspaceAdmin'],
+            workspaceCode: '9Jk076',
+          }),
+        );
+
+      await inviteTeammate(adminTeammate, 'laura@useenvoye.co', workspace);
+
+      await workspaceInviteService.tryAcceptInviteAndRequestMagicLink(
+        '9Jk076',
+        'ap7ol0',
+        {
+          email: 'laura@useenvoye.co',
+          firstName: 'Laura',
+          lastName: 'Smith',
+          username: 'laura.smith',
+        },
+      );
+
+      const createdTeammate = await prismaService.teammate.findFirstOrThrow({
+        where: { workspaceCode: '9Jk076', email: 'laura@useenvoye.co' },
+      });
+
+      expect(createdTeammate).toBeTruthy();
+
+      const invite = await prismaService.workspaceInvite.findFirstOrThrow({
+        where: {
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          recipientEmail: 'laura@useenvoye.co',
+        },
+      });
+      expect(invite.status).toBe(InviteStatus.ACCEPTED);
+      expect(invite.acceptedAt).toBeTruthy();
+      expect(mockAuthService.requestMagicLink).toHaveBeenCalledWith(
+        'laura@useenvoye.co',
+      );
     });
   });
 });

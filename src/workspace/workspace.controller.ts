@@ -185,16 +185,20 @@ export class WorkspaceController {
   }
 
   @Post('/accept-invite')
-  @ApiOperation({ summary: 'Accept workspace invite and create teammate' })
+  @ApiOperation({
+    summary: 'Accept workspace invite, creates teammate and logs teammate in',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Invite accepted and teammate created',
   })
   @ApiBadRequestResponse()
   @ApiForbiddenResponse()
-  async acceptInvite(@Body() dto: AcceptWorkspaceInviteDto): Promise<void> {
+  async acceptInviteAndLogUserIn(
+    @Body() dto: AcceptWorkspaceInviteDto,
+  ): Promise<void> {
     try {
-      await this.workspaceInviteService.acceptInvite(
+      await this.workspaceInviteService.tryAcceptInviteAndRequestMagicLink(
         dto.workspaceCode,
         dto.inviteCode,
         {

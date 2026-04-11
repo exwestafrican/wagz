@@ -23,15 +23,17 @@ import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { MessagingModule } from '@/messaging/messaging.module';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import { LinkService } from '@/common/link-service';
+import { AuthService } from '@/auth/auth.service';
+import { mockAuthService } from '@/test-helpers/mocks';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
   let app: INestApplication;
   let prismaService: PrismaService;
-  let workspaceLinkService: WorkspaceLinkService;
+  let workspaceLinkService: LinkService;
   let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
   let workspaceInviteService: WorkspaceInviteService;
@@ -41,15 +43,19 @@ describe('WorkspaceService', () => {
       imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
       providers: [
         WorkspaceManager,
-        WorkspaceLinkService,
+        LinkService,
         RoleService,
         WorkspaceInviteService,
+        {
+          provide: AuthService,
+          useValue: mockAuthService as unknown as AuthService,
+        },
       ],
     }).compile();
     app = await createTestApp(module);
     service = app.get<WorkspaceManager>(WorkspaceManager);
     prismaService = app.get<PrismaService>(PrismaService);
-    workspaceLinkService = app.get<WorkspaceLinkService>(WorkspaceLinkService);
+    workspaceLinkService = app.get<LinkService>(LinkService);
     workspaceInviteService = app.get<WorkspaceInviteService>(
       WorkspaceInviteService,
     );
