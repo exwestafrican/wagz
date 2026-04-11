@@ -76,7 +76,6 @@ export class PermissionService {
     });
   }
 
-
   async runIfActiveWorkspaceMemberAndPermitted<T>(
     requestUser: RequestUser,
     workspaceCode: string,
