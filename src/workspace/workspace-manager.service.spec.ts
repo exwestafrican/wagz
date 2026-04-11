@@ -26,6 +26,8 @@ import { MessagingModule } from '@/messaging/messaging.module';
 import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { LinkService } from '@/link-service';
+import { AuthService } from '@/auth/auth.service';
+import { mockAuthService } from '@/test-helpers/mocks';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -44,6 +46,10 @@ describe('WorkspaceService', () => {
         LinkService,
         RoleService,
         WorkspaceInviteService,
+        {
+          provide: AuthService,
+          useValue: mockAuthService as unknown as AuthService,
+        },
       ],
     }).compile();
     app = await createTestApp(module);

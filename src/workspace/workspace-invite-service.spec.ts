@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { MessagingModule } from '@/messaging/messaging.module';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { RoleService } from '@/permission/role/role.service';
 import { createTestApp } from '@/test-helpers/test-app';
 import {
@@ -23,6 +22,7 @@ import { ROLES } from '@/permission/types';
 import { AuthService } from '@/auth/auth.service';
 import { Teammate, Workspace } from '@/generated/prisma/client';
 import { mockAuthService } from '@/test-helpers/mocks';
+import { LinkService } from '@/link-service';
 
 describe('WorkspaceInviteService', () => {
   let app: INestApplication;
@@ -53,9 +53,9 @@ describe('WorkspaceInviteService', () => {
       imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
       providers: [
         WorkspaceManager,
-        WorkspaceLinkService,
         RoleService,
         WorkspaceInviteService,
+        LinkService,
         {
           provide: AuthService,
           useValue: mockAuthService as unknown as AuthService,

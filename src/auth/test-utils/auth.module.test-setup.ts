@@ -25,21 +25,3 @@ export function useWorkspaceManagerFactory(
     workspaceInviteService,
   );
 }
-
-export function workspaceManagerTestingProvider(mockEmailClient: EmailClient) {
-  return {
-    provide: WorkspaceManager,
-    useFactory: (
-      prismaService: PrismaService,
-      linkService: LinkService,
-      workspaceInviteService: WorkspaceInviteService,
-    ) =>
-      useWorkspaceManagerFactory(
-        mockEmailClient,
-        prismaService,
-        linkService,
-        workspaceInviteService,
-      ),
-    inject: [PrismaService, LinkService, WorkspaceInviteService],
-  };
-}

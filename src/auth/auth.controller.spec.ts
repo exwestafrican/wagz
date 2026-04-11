@@ -20,12 +20,8 @@ import preVerificationFactory from '@/factories/roadmap/preverification.factory'
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
-import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
-import {
-  workspaceManagerTestingProvider,
-  createMockEmailClient,
-} from '@/auth/test-utils/auth.module.test-setup';
 import { LinkService } from '@/link-service';
+import { TeammatesService } from '@/teammates/teammates.service';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -46,7 +42,6 @@ describe('AuthController', () => {
 
   beforeEach(async () => {
     mockSupabaseClient = createMockSupabaseClient();
-    const mockEmailClient = createMockEmailClient();
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot()], // Add ConfigModule for setupApp to work
       controllers: [AuthController],
@@ -59,8 +54,7 @@ describe('AuthController', () => {
         },
         PrismaService,
         LinkService,
-        WorkspaceInviteService,
-        workspaceManagerTestingProvider(mockEmailClient),
+        TeammatesService,
       ],
     }).compile();
 

@@ -6,9 +6,10 @@ import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { MessagingModule } from '@/messaging/messaging.module';
 import { LinkService } from '@/link-service';
+import { AuthModule } from '@/auth/auth.module';
 
 @Module({
-  imports: [PermissionModule, PrismaModule, MessagingModule],
+  imports: [PermissionModule, PrismaModule, MessagingModule, AuthModule],
   providers: [WorkspaceManager, LinkService, WorkspaceInviteService],
   controllers: [WorkspaceController],
   exports: [WorkspaceManager],
