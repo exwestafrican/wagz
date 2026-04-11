@@ -51,4 +51,33 @@ describe('AuthService', () => {
       });
     });
   });
+
+  describe('signTeammateUpAndPushMagicLink', () => {
+    it('when user already has account, we just log into correct workspace', async () => {
+      const email = 'teammate@example.com';
+      const workspaceCode = 'WS01';
+
+      mockSupabaseClient.auth.admin.createUser.mockResolvedValueOnce({
+        data: { user: null },
+        error: {
+          message: 'User already registered',
+          status: 422,
+          code: 'user_already_exists',
+        },
+      });
+
+      await service.signTeammateUpAndPushMagicLink(email, workspaceCode);
+
+      expect(mockSupabaseClient.auth.signInWithOtp).toHaveBeenCalledWith({
+        email,
+        options: {
+          shouldCreateUser: false,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          emailRedirectTo: expect.stringContaining(
+            `/setup/workspace?code=${workspaceCode}`,
+          ),
+        },
+      });
+    });
+  });
 });
