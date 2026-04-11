@@ -106,17 +106,25 @@ export class AuthService {
   }
 
   async signTeammateUpAndPushMagicLink(email: string, workspaceCode: string) {
-    const password = this.passwordGenerator.generateRandomPassword();
-    const { error } = await this.supabaseClient.auth.admin.createUser({
-      email: email,
-      password: password,
-      email_confirm: true,
-    });
-
-    if (error) {
-      this.handleAuthError(error);
+    try {
+      const password = this.passwordGenerator.generateRandomPassword();
+      const { error } = await this.supabaseClient.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true,
+      });
+      if (error) {
+        this.handleAuthError(error);
+      }
+      await this.signInWithOtp(email, workspaceCode);
+    } catch (e) {
+      if (e instanceof AccountExistsException) {
+        // user might exist in another workspace with same email just log user in
+        await this.signInWithOtp(email, workspaceCode);
+        return;
+      }
+      throw e;
     }
-    await this.signInWithOtp(email, workspaceCode);
   }
 
   async signup(signupDetails: SignupDetails, password: string): Promise<void> {
