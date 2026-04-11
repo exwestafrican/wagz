@@ -66,23 +66,6 @@ export class WorkspaceInviteService {
     return decoded;
   }
 
-  async tryAcceptInviteAndRequestMagicLink(
-    workspaceCode: string,
-    inviteCode: string,
-    teammateDetails: TeammateDetails,
-  ): Promise<void> {
-    const invite = await this.tryAcceptInvite(
-      workspaceCode,
-      inviteCode,
-      teammateDetails,
-    );
-
-    await this.authService.signTeammateUpAndPushMagicLink(
-      invite.recipientEmail,
-      invite.workspaceCode,
-    );
-  }
-
   private async findPendingInvite(
     workspaceCode: string,
     inviteCode: string,
@@ -98,7 +81,7 @@ export class WorkspaceInviteService {
     });
   }
 
-  async tryAcceptInvite(
+  async tryAcceptInviteAndRequestMagicLink(
     workspaceCode: string,
     inviteCode: string,
     teammateDetails: TeammateDetails,
@@ -132,6 +115,11 @@ export class WorkspaceInviteService {
           acceptedAt: new Date(),
         },
       });
+
+      await this.authService.signTeammateUpAndPushMagicLink(
+        invite.recipientEmail,
+        invite.workspaceCode,
+      );
     });
     return invite;
   }
