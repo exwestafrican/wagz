@@ -2,8 +2,8 @@ import { type EmailClient } from '@/messaging/email/email-client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
+import { LinkService } from '@/link-service';
 
 export function createMockEmailClient(): EmailClient {
   return {
@@ -14,13 +14,13 @@ export function createMockEmailClient(): EmailClient {
 export function useWorkspaceManagerFactory(
   mockEmailClient: EmailClient,
   prismaService: PrismaService,
-  workspaceLinkService: WorkspaceLinkService,
+  linkService: LinkService,
   workspaceInviteService: WorkspaceInviteService,
 ): WorkspaceManager {
   return new WorkspaceManager(
     prismaService,
     mockEmailClient,
-    workspaceLinkService,
+    linkService,
     new RoleService(),
     workspaceInviteService,
   );
@@ -31,15 +31,15 @@ export function workspaceManagerTestingProvider(mockEmailClient: EmailClient) {
     provide: WorkspaceManager,
     useFactory: (
       prismaService: PrismaService,
-      workspaceLinkService: WorkspaceLinkService,
+      linkService: LinkService,
       workspaceInviteService: WorkspaceInviteService,
     ) =>
       useWorkspaceManagerFactory(
         mockEmailClient,
         prismaService,
-        workspaceLinkService,
+        linkService,
         workspaceInviteService,
       ),
-    inject: [PrismaService, WorkspaceLinkService, WorkspaceInviteService],
+    inject: [PrismaService, LinkService, WorkspaceInviteService],
   };
 }

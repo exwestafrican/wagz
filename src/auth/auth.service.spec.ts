@@ -8,12 +8,12 @@ import {
 import PasswordGenerator from './services/password.generator';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import {
   workspaceManagerTestingProvider,
   createMockEmailClient,
 } from '@/auth/test-utils/auth.module.test-setup';
+import { LinkService } from '@/link-service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -32,7 +32,7 @@ describe('AuthService', () => {
           useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
         PrismaService,
-        WorkspaceLinkService,
+        LinkService,
         WorkspaceInviteService,
         workspaceManagerTestingProvider(mockEmailClient),
       ],

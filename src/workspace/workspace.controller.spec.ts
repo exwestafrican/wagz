@@ -20,7 +20,6 @@ import request from 'supertest';
 import { AuthEndpoints, URIPaths } from '@/common/const';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { MailerProvider } from '@/messaging/messaging.module';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { faker } from '@faker-js/faker';
 import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
@@ -33,6 +32,7 @@ import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
+import { LinkService } from '@/link-service';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -48,7 +48,7 @@ describe('WorkspaceController', () => {
       providers: [
         WorkspaceManager,
         MailerProvider,
-        WorkspaceLinkService,
+        LinkService,
         RoleService,
         PermissionService,
         WorkspaceInviteService,

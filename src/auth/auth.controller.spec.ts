@@ -18,7 +18,6 @@ import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
@@ -26,6 +25,7 @@ import {
   workspaceManagerTestingProvider,
   createMockEmailClient,
 } from '@/auth/test-utils/auth.module.test-setup';
+import { LinkService } from '@/link-service';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -58,7 +58,7 @@ describe('AuthController', () => {
           useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
         PrismaService,
-        WorkspaceLinkService,
+        LinkService,
         WorkspaceInviteService,
         workspaceManagerTestingProvider(mockEmailClient),
       ],

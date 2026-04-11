@@ -1,12 +1,12 @@
 import { ConfigService } from '@nestjs/config';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { LinkService } from '@/link-service';
 
-describe('WorkspaceLinkService', () => {
+describe('LinkService', () => {
   const mockConfigService = {
     get: jest.fn().mockReturnValue('https://app.usewaggz.com'),
   } as unknown as ConfigService;
 
-  const service = new WorkspaceLinkService(mockConfigService);
+  const service = new LinkService(mockConfigService);
 
   beforeEach(() => {
     jest.clearAllMocks();

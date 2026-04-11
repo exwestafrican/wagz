@@ -28,4 +28,21 @@ export class TeammatesService {
       },
     });
   }
+
+  async primaryWorkspace(email: string) {
+    // primary workspace for now is the oldest active workspace
+    return this.prismaService.workspace.findFirstOrThrow({
+      where: {
+        teammates: {
+          some: {
+            email,
+            status: TeammateStatus.ACTIVE,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'asc', //from oldest to newest
+      },
+    });
+  }
 }

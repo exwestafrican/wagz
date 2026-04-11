@@ -1,8 +1,8 @@
-import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class WorkspaceLinkService {
+export class LinkService {
   constructor(private readonly configService: ConfigService) {}
 
   inviteUrl(inviteCode: string): string {

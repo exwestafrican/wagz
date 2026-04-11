@@ -23,15 +23,15 @@ import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { MessagingModule } from '@/messaging/messaging.module';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import { LinkService } from '@/link-service';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
   let app: INestApplication;
   let prismaService: PrismaService;
-  let workspaceLinkService: WorkspaceLinkService;
+  let workspaceLinkService: LinkService;
   let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
   let workspaceInviteService: WorkspaceInviteService;
@@ -41,7 +41,7 @@ describe('WorkspaceService', () => {
       imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
       providers: [
         WorkspaceManager,
-        WorkspaceLinkService,
+        LinkService,
         RoleService,
         WorkspaceInviteService,
       ],
@@ -49,7 +49,7 @@ describe('WorkspaceService', () => {
     app = await createTestApp(module);
     service = app.get<WorkspaceManager>(WorkspaceManager);
     prismaService = app.get<PrismaService>(PrismaService);
-    workspaceLinkService = app.get<WorkspaceLinkService>(WorkspaceLinkService);
+    workspaceLinkService = app.get<LinkService>(LinkService);
     workspaceInviteService = app.get<WorkspaceInviteService>(
       WorkspaceInviteService,
     );
