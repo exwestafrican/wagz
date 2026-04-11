@@ -1,5 +1,5 @@
 export const ENVIROMENT = {
-  PRODUCTION: 'production',
+  PRODUCTION: 'prod',
   DEVELOPMENT: 'dev',
   TEST: 'test',
 };
