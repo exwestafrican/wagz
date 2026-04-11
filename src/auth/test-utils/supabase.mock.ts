@@ -14,9 +14,10 @@ export const createMockSupabaseClient = (): MockSupabaseClient => {
       signUp: jest.fn(),
       signInWithOtp: jest.fn().mockResolvedValue({ error: null }),
       admin: {
-        createUser: jest
-          .fn()
-          .mockResolvedValue({ data: { user: { id: 'mock-user' } }, error: null }),
+        createUser: jest.fn().mockResolvedValue({
+          data: { user: { id: 'mock-user' } },
+          error: null,
+        }),
       },
     },
   };

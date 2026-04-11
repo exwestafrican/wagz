@@ -60,6 +60,7 @@ export class WorkspaceInviteService {
     );
 
     if (isEmpty(workspaceInvite)) {
+      this.logger.warn('Cannot find invite for teammate');
       throw new InvalidInviteCode('Cannot verify decoded invite for teammate');
     }
 

@@ -96,7 +96,7 @@ export class AuthService {
 
   private handleAuthError(error: AuthError) {
     this.logger.error(error);
-    if (error.code === 'user_already_exists') {
+    if (error.code === 'user_already_exists' || error.code === 'email_exists') {
       throw new AccountExistsException(error.message); // this is thrown when user has verified email
     } else {
       //TODO: we need to alert outselves of every error here except for the AccountExistsException
