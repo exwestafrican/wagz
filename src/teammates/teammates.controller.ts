@@ -99,17 +99,10 @@ export class TeammatesController {
     @User() requestUser: RequestUser,
     @Query('workspaceCode') workspaceCode: string,
   ): Promise<TeammateResponseDto> {
-    try {
-      const teammate = await this.teammatesService.getMyTeammateProfile(
-        workspaceCode,
-        requestUser.email,
-      );
-      return toTeammateResponse(teammate);
-    } catch (error) {
-      if (error instanceof NotFoundInDb) {
-        throw new NotFoundException();
-      }
-      throw error;
-    }
+    const teammate = await this.teammatesService.getMyTeammateProfile(
+      workspaceCode,
+      requestUser.email,
+    );
+    return toTeammateResponse(teammate);
   }
 }
