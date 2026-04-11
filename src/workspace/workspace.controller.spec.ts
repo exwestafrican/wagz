@@ -32,7 +32,7 @@ import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
-import { LinkService } from '@/link-service';
+import { LinkService } from '@/common/link-service';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;

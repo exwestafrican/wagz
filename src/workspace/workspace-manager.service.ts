@@ -28,7 +28,7 @@ import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { RoleService } from '@/permission/role/role.service';
 import { ConcurrentLimit } from '@/common/concurrent-runner';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
-import { LinkService } from '@/link-service';
+import { LinkService } from '@/common/link-service';
 
 @Injectable()
 export class WorkspaceManager {

@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { LinkService } from '@/link-service';
+import { LinkService } from '@/common/link-service';
 
 describe('LinkService', () => {
   const mockConfigService = {

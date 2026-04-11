@@ -3,7 +3,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { LinkService } from '@/link-service';
+import { LinkService } from '@/common/link-service';
 
 export function createMockEmailClient(): EmailClient {
   return {

@@ -25,7 +25,7 @@ import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import { MessagingModule } from '@/messaging/messaging.module';
 import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
-import { LinkService } from '@/link-service';
+import { LinkService } from '@/common/link-service';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
 

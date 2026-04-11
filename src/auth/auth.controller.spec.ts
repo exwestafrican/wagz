@@ -20,7 +20,7 @@ import preVerificationFactory from '@/factories/roadmap/preverification.factory'
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
-import { LinkService } from '@/link-service';
+import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/teammates/teammates.service';
 
 describe('AuthController', () => {

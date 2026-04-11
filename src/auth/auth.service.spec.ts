@@ -8,7 +8,7 @@ import {
 import PasswordGenerator from './services/password.generator';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
-import { LinkService } from '@/link-service';
+import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/teammates/teammates.service';
 
 describe('AuthService', () => {

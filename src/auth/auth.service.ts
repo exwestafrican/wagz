@@ -12,7 +12,7 @@ import SignupDetails from './domain/signup.details';
 import { PreVerification, Prisma } from '@/generated/prisma/client';
 import PRISMA_CODES from '@/prisma/consts';
 import { TeammatesService } from '@/teammates/teammates.service';
-import { LinkService } from '@/link-service';
+import { LinkService } from '@/common/link-service';
 
 @Injectable()
 export class AuthService {

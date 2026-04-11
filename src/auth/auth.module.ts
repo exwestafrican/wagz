@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import PasswordGenerator from './services/password.generator';
 import { PassportModule } from '@nestjs/passport';
+import { TeammatesModule } from '@/teammates/teammates.module';
+import { CommonModule } from '@/common/common.module';
 
 const SupabaseAuthClient = {
   provide: SupabaseClient,
@@ -19,7 +21,7 @@ const SupabaseAuthClient = {
 };
 
 @Module({
-  imports: [PassportModule],
+  imports: [PassportModule, CommonModule, TeammatesModule],
   controllers: [AuthController],
   providers: [AuthService, SupabaseAuthClient, PasswordGenerator],
   exports: [AuthService],

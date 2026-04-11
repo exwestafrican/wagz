@@ -7,5 +7,6 @@ import { PermissionModule } from '@/permission/permission.module';
   imports: [PermissionModule],
   providers: [TeammatesService],
   controllers: [TeammatesController],
+  exports: [TeammatesService],
 })
 export class TeammatesModule {}

@@ -22,7 +22,7 @@ import { ROLES } from '@/permission/types';
 import { AuthService } from '@/auth/auth.service';
 import { Teammate, Workspace } from '@/generated/prisma/client';
 import { mockAuthService } from '@/test-helpers/mocks';
-import { LinkService } from '@/link-service';
+import { LinkService } from '@/common/link-service';
 
 describe('WorkspaceInviteService', () => {
   let app: INestApplication;
