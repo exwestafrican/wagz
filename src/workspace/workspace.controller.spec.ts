@@ -365,9 +365,9 @@ describe('WorkspaceController', () => {
       });
       expect(invite.status).toBe(InviteStatus.ACCEPTED);
       expect(invite.acceptedAt).toBeTruthy();
-      expect(mockAuthService.requestMagicLink).toHaveBeenCalledWith(
-        'laura@useenvoye.co',
-      );
+      expect(
+        mockAuthService.signTeammateUpAndPushMagicLink,
+      ).toHaveBeenCalledWith('laura@useenvoye.co', '9Jk076');
     });
 
     it('returns forbidden for invalid invite code', async () => {
