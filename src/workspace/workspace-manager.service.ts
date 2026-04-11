@@ -324,7 +324,7 @@ export class WorkspaceManager {
       );
 
       await this.emailClient.send({
-        from: { email: sender.email, name: sender.firstName },
+        from: { email: 'invite@envoye.co', name: sender.firstName },
         to: { email: recipientEmail, name: '' },
         subject: 'Workspace Invite',
         html: emailHtml,
