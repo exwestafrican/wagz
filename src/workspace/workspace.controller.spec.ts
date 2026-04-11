@@ -11,6 +11,7 @@ import {
   InviteStatus,
   PreVerification,
   PreVerificationStatus,
+  TeammateStatus,
   Workspace,
 } from '@/generated/prisma/client';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
@@ -143,6 +144,14 @@ describe('WorkspaceController', () => {
       const workspace = await factory.persist('workspace', () =>
         workspaceFactory.build({ code: 'abc123', name: 'Test Workspace' }),
       );
+      await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: workspace.code,
+          groups: [ROLES.WorkspaceAdmin.code],
+          status: TeammateStatus.ACTIVE,
+        }),
+      );
 
       const response = await request(getHttpServer(app))
         .get(AuthEndpoints.WORKSPACE_DETAILS)
@@ -158,14 +167,71 @@ describe('WorkspaceController', () => {
       });
     });
 
-    it('returns 404 when workspace does not exist', async () => {
+    it('returns 403 when workspace does not exist', async () => {
       await request(getHttpServer(app))
         .get(AuthEndpoints.WORKSPACE_DETAILS)
         .query({ code: 'nonex1' })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .expect(HttpStatus.NOT_FOUND);
+        .expect(HttpStatus.FORBIDDEN);
     });
+
+    it('returns 403 when user is not a member of the workspace', async () => {
+      const workspace = await factory.persist('workspace', () =>
+        workspaceFactory.build({ code: 'othr01', name: 'Other Workspace' }),
+      );
+      await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'colleague@example.com',
+          workspaceCode: workspace.code,
+          groups: [ROLES.WorkspaceAdmin.code],
+          status: TeammateStatus.ACTIVE,
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .get(AuthEndpoints.WORKSPACE_DETAILS)
+        .query({ code: workspace.code })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it.each([
+      {
+        workspaceCode: 'disab1',
+        status: TeammateStatus.DISABLED,
+      },
+      {
+        workspaceCode: 'deltd1',
+        status: TeammateStatus.DELETED,
+      },
+    ])(
+      'returns 403 Forbidden when user is not an active workspace member (status $status)',
+      async ({ workspaceCode, status }) => {
+        const workspace = await factory.persist('workspace', () =>
+          workspaceFactory.build({
+            code: workspaceCode,
+            name: 'Non-active member WS',
+          }),
+        );
+        await factory.persist('teammate', () =>
+          teammateFactory.build({
+            email: requestUser.email,
+            workspaceCode: workspace.code,
+            groups: [ROLES.WorkspaceAdmin.code],
+            status,
+          }),
+        );
+
+        await request(getHttpServer(app))
+          .get(AuthEndpoints.WORKSPACE_DETAILS)
+          .query({ code: workspace.code })
+          .set('Accept', 'application/json')
+          .set('Authorization', 'Bearer test-token')
+          .expect(HttpStatus.FORBIDDEN);
+      },
+    );
   });
 
   describe(' Invite Teammates', () => {
