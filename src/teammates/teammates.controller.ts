@@ -58,7 +58,7 @@ export class TeammatesController {
     @User() requestUser: RequestUser,
     @Query('workspaceCode') workspaceCode: string,
   ): Promise<TeammateResponseDto[]> {
-    return this.permissionService.runIfPermitted(
+    return this.permissionService.runIfWorkspaceMemberAndPermitted(
       requestUser,
       workspaceCode,
       PERMISSIONS.MANAGE_TEAMMATES,
