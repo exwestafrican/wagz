@@ -4,7 +4,7 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { AuthError, SupabaseClient } from '@supabase/supabase-js';
 import { AccountExistsException } from './exceptions/account.exists';
 import PasswordGenerator from './services/password.generator';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -89,9 +89,47 @@ export class AuthService {
     }
   }
 
+  private handleAuthError(error: AuthError) {
+    this.logger.error(error);
+    if (error.code === 'user_already_exists') {
+      throw new AccountExistsException(error.message); // this is thrown when user has verified email
+    } else {
+      //TODO: we need to alert outselves of every error here except for the AccountExistsException
+      // store this users email and contact them.
+      throw new ServiceUnavailableException(error.message);
+    }
+  }
+
+  async signTeammateUpAndPushMagicLink(email: string, workspaceCode: string) {
+    const password = this.passwordGenerator.generateRandomPassword();
+    const { error } = await this.supabaseClient.auth.admin.createUser({
+      email: email,
+      password: password,
+      email_confirm: true,
+    });
+
+    if (error) {
+      this.handleAuthError(error);
+    }
+
+    const { error: otpError } = await this.supabaseClient.auth.signInWithOtp({
+      email: email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo: this.linkService.loadWorkspaceUrl(workspaceCode),
+      },
+    });
+
+    if (otpError) {
+      this.logger.error(otpError);
+      throw new UnauthorizedException();
+    }
+  }
+
   async signup(signupDetails: SignupDetails, password: string): Promise<void> {
     const preverificationDetails =
       await this.storePreverificationDetails(signupDetails);
+
     const { error } = await this.supabaseClient.auth.signUp({
       email: signupDetails.email,
       password,
@@ -103,14 +141,7 @@ export class AuthService {
     });
 
     if (error) {
-      this.logger.error(error);
-      if (error.code === 'user_already_exists') {
-        throw new AccountExistsException(error.message); // this is thrown when user has verified email
-      } else {
-        //TODO: we need to alert outselves of every error here except for the AccountExistsException
-        // store this users email and contact them.
-        throw new ServiceUnavailableException(error.message);
-      }
+      this.handleAuthError(error);
     }
   }
 }

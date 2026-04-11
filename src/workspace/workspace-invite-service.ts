@@ -76,7 +76,11 @@ export class WorkspaceInviteService {
       inviteCode,
       teammateDetails,
     );
-    await this.authService.requestMagicLink(invite.recipientEmail);
+
+    await this.authService.signTeammateUpAndPushMagicLink(
+      invite.recipientEmail,
+      invite.workspaceCode,
+    );
   }
 
   private async findPendingInvite(
