@@ -143,6 +143,13 @@ describe('WorkspaceController', () => {
       const workspace = await factory.persist('workspace', () =>
         workspaceFactory.build({ code: 'abc123', name: 'Test Workspace' }),
       );
+      await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: workspace.code,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
 
       const response = await request(getHttpServer(app))
         .get(AuthEndpoints.WORKSPACE_DETAILS)
@@ -158,13 +165,33 @@ describe('WorkspaceController', () => {
       });
     });
 
-    it('returns 404 when workspace does not exist', async () => {
+    it('returns 403 when workspace does not exist', async () => {
       await request(getHttpServer(app))
         .get(AuthEndpoints.WORKSPACE_DETAILS)
         .query({ code: 'nonex1' })
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .expect(HttpStatus.NOT_FOUND);
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns 403 when user is not a member of the workspace', async () => {
+      const workspace = await factory.persist('workspace', () =>
+        workspaceFactory.build({ code: 'othr01', name: 'Other Workspace' }),
+      );
+      await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'colleague@example.com',
+          workspaceCode: workspace.code,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .get(AuthEndpoints.WORKSPACE_DETAILS)
+        .query({ code: workspace.code })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.FORBIDDEN);
     });
   });
 

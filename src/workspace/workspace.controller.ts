@@ -107,9 +107,16 @@ export class WorkspaceController {
     description: 'Workspace not found',
   })
   @UseGuards(SupabaseAuthGuard)
-  async getByCode(@Query('code') code: string): Promise<WorkspaceResponseDto> {
+  async getByCode(
+    @User() requestUser: RequestUser,
+    @Query('code') code: string,
+  ): Promise<WorkspaceResponseDto> {
     try {
-      return await this.workspaceManager.details(code);
+      return await this.permissionService.runIfWorkspaceMember(
+        requestUser,
+        code,
+        async () => await this.workspaceManager.details(code),
+      );
     } catch (error) {
       if (error instanceof NotFoundInDb) {
         throw new NotFoundException();

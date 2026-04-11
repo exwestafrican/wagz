@@ -63,20 +63,29 @@ export class PermissionService {
     }
   }
 
+  private async findWorkspaceMember(
+    email: string,
+    workspaceCode: string,
+  ): Promise<Teammate | null> {
+    return this.prismaService.teammate.findFirst({
+      where: {
+        workspaceCode: workspaceCode,
+        email: email,
+      },
+    });
+  }
+
   async runIfWorkspaceMemberAndPermitted<T>(
     requestUser: RequestUser,
     workspaceCode: string,
     requiredPermission: Permission,
     authorizedAction: (teammate: Teammate) => T,
   ) {
-    const isWorkspaceMember = await this.prismaService.teammate.findFirst({
-      where: {
-        workspaceCode: workspaceCode,
-        email: requestUser.email,
-      },
-    });
-
-    if (isWorkspaceMember) {
+    const workspaceMember = await this.findWorkspaceMember(
+      requestUser.email,
+      workspaceCode,
+    );
+    if (workspaceMember) {
       return await this.runIfPermitted(
         requestUser,
         workspaceCode,
@@ -91,5 +100,24 @@ export class PermissionService {
       );
       throw new ForbiddenException();
     }
+  }
+
+  async runIfWorkspaceMember<T>(
+    requestUser: RequestUser,
+    workspaceCode: string,
+    authorizedAction: (teammate: Teammate) => T,
+  ) {
+    const workspaceTeammate = await this.findWorkspaceMember(
+      requestUser.email,
+      workspaceCode,
+    );
+
+    if (workspaceTeammate) {
+      return authorizedAction(workspaceTeammate);
+    }
+    //TODO: add metric here or envoye alert to message us
+    // TODO: write the attempt into the db  and log id of atttmept. let attempt contain user email.
+    this.logger.log('Tried to access workspace without permission');
+    throw new ForbiddenException();
   }
 }
