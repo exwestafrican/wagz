@@ -25,3 +25,8 @@ export const URIPaths = {
   VERIFY_INVITE: '/workspace/verify-invite',
   ACCEPT_INVITE: '/workspace/accept-invite',
 };
+
+export const TeammatesEndpoints = {
+  TEAMMATES: '/teammates',
+  MY_PROFILE: '/teammates/me',
+};

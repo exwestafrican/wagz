@@ -15,6 +15,7 @@ export class CreateWorkspaceAdminStep implements PostSetupStep {
         email: pointOfContact.email,
         firstName: pointOfContact.firstName,
         lastName: pointOfContact.lastName,
+        username: `${pointOfContact.firstName.toLowerCase()} ${pointOfContact.lastName.toLowerCase()}`,
         workspaceCode: workspaceDetails.code,
         groups: [ROLES.WorkspaceAdmin.code],
       },
