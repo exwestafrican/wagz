@@ -3,7 +3,7 @@ import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { isEmpty } from '@/common/utils';
 import { RoleService } from './role/role.service';
 import RequestUser from '@/auth/domain/request-user';
-import { Teammate } from '@/generated/prisma/client';
+import { Teammate, TeammateStatus } from '@/generated/prisma/client';
 import { Permission } from '@/permission/domain/permission';
 
 @Injectable()
@@ -63,20 +63,30 @@ export class PermissionService {
     }
   }
 
-  async runIfWorkspaceMemberAndPermitted<T>(
+  private async findActiveWorkspaceMember(
+    email: string,
+    workspaceCode: string,
+  ): Promise<Teammate | null> {
+    return this.prismaService.teammate.findFirst({
+      where: {
+        workspaceCode: workspaceCode,
+        email: email,
+        status: TeammateStatus.ACTIVE,
+      },
+    });
+  }
+
+  async runIfActiveWorkspaceMemberAndPermitted<T>(
     requestUser: RequestUser,
     workspaceCode: string,
     requiredPermission: Permission,
     authorizedAction: (teammate: Teammate) => T,
   ) {
-    const isWorkspaceMember = await this.prismaService.teammate.findFirst({
-      where: {
-        workspaceCode: workspaceCode,
-        email: requestUser.email,
-      },
-    });
-
-    if (isWorkspaceMember) {
+    const workspaceMember = await this.findActiveWorkspaceMember(
+      requestUser.email,
+      workspaceCode,
+    );
+    if (workspaceMember) {
       return await this.runIfPermitted(
         requestUser,
         workspaceCode,
@@ -91,5 +101,24 @@ export class PermissionService {
       );
       throw new ForbiddenException();
     }
+  }
+
+  async runIfActiveWorkspaceMember<T>(
+    requestUser: RequestUser,
+    workspaceCode: string,
+    authorizedAction: (teammate: Teammate) => T,
+  ) {
+    const workspaceTeammate = await this.findActiveWorkspaceMember(
+      requestUser.email,
+      workspaceCode,
+    );
+
+    if (workspaceTeammate) {
+      return authorizedAction(workspaceTeammate);
+    }
+    //TODO: add metric here or envoye alert to message us
+    // TODO: write the attempt into the db  and log id of atttmept. let attempt contain user email.
+    this.logger.log('Tried to access workspace without permission');
+    throw new ForbiddenException();
   }
 }
