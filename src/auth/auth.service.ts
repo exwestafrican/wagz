@@ -13,6 +13,7 @@ import { PreVerification, Prisma } from '@/generated/prisma/client';
 import PRISMA_CODES from '@/prisma/consts';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { LinkService } from '@/common/link-service';
+import { notInDbError } from '@/common/error-type';
 
 @Injectable()
 export class AuthService {
@@ -43,10 +44,17 @@ export class AuthService {
     }
   }
 
-  async requestMagicLink(email: string): Promise<void> {
-    const primaryWorkspace =
-      await this.teammatesService.primaryWorkspace(email);
-    await this.signInWithOtp(email, primaryWorkspace.code);
+  async requestMagicLinkOrThrow(email: string): Promise<void> {
+    try {
+      const primaryWorkspace =
+        await this.teammatesService.primaryWorkspace(email);
+      await this.signInWithOtp(email, primaryWorkspace.code);
+    } catch (e) {
+      if (notInDbError(e as Error)) {
+        throw new UnauthorizedException();
+      }
+      throw e;
+    }
   }
 
   async emailOnlySignup(signupDetails: SignupDetails): Promise<void> {

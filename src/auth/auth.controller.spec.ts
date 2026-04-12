@@ -3,7 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import request from 'supertest';
 
-import { INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -22,6 +22,8 @@ import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/teammates/teammates.service';
+import { TeammateStatus } from '@/generated/prisma/client';
+import { ROLES } from '@/permission/types';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -65,6 +67,7 @@ describe('AuthController', () => {
 
   afterEach(async () => {
     await prismaService.preVerification.deleteMany();
+    await prismaService.companyProfile.deleteMany();
     await app.close();
   });
 
@@ -110,7 +113,7 @@ describe('AuthController', () => {
         factory,
         teammateFactory.build({
           email: 'test@example.com',
-          groups: ['WorkspaceAdmin'],
+          groups: [ROLES.WorkspaceAdmin.code],
         }),
       );
       return request(getHttpServer(app))
@@ -118,6 +121,31 @@ describe('AuthController', () => {
         .send({ email: 'test@example.com' })
         .set('Accept', 'application/json')
         .expect(200);
+    });
+
+    it('should return unauthorized when email is valid but user is not an active workspace member', () => {
+      return request(getHttpServer(app))
+        .post(AuthEndpoints.REQUEST_MAGIC_LINK)
+        .send({ email: 'test@example.com' })
+        .set('Accept', 'application/json')
+        .expect(401);
+    });
+
+    it('should return 401 when teammate has no active workspace', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: 'test@example.com',
+          workspaceCode: '67u9qa',
+          groups: [ROLES.WorkspaceAdmin.code],
+          status: TeammateStatus.DISABLED,
+        }),
+      );
+      return request(getHttpServer(app))
+        .post(AuthEndpoints.REQUEST_MAGIC_LINK)
+        .send({ email: 'test@example.com' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 
