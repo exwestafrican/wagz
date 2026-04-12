@@ -22,6 +22,10 @@ import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/teammates/teammates.service';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
+import { TeammateStatus } from '@/generated/prisma/client';
+import { ROLES } from '@/permission/types';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -55,6 +59,8 @@ describe('AuthController', () => {
         PrismaService,
         LinkService,
         TeammatesService,
+        RoleService,
+        PermissionService,
       ],
     }).compile();
 
@@ -65,6 +71,8 @@ describe('AuthController', () => {
 
   afterEach(async () => {
     await prismaService.preVerification.deleteMany();
+    await prismaService.workspace.deleteMany();
+    await prismaService.companyProfile.deleteMany();
     await app.close();
   });
 
@@ -105,12 +113,13 @@ describe('AuthController', () => {
       expect(body.property).toMatchObject(['email']);
     });
 
-    it('should return 200 when email is valid', async () => {
+    it('should return 200 when email is valid and user is an active workspace member', async () => {
       await setupWorkspaceWithTeammate(
         factory,
         teammateFactory.build({
           email: 'test@example.com',
-          groups: ['WorkspaceAdmin'],
+          workspaceCode: '67u9qa',
+          groups: [ROLES.WorkspaceAdmin.code],
         }),
       );
       return request(getHttpServer(app))
@@ -118,6 +127,31 @@ describe('AuthController', () => {
         .send({ email: 'test@example.com' })
         .set('Accept', 'application/json')
         .expect(200);
+    });
+
+    it('should return 403 when email is valid but user is not an active workspace member', () => {
+      return request(getHttpServer(app))
+        .post(AuthEndpoints.REQUEST_MAGIC_LINK)
+        .send({ email: 'test@example.com' })
+        .set('Accept', 'application/json')
+        .expect(403);
+    });
+
+    it('should return 403 when teammate exists for that email key but is not ACTIVE', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: 'test@example.com',
+          workspaceCode: '67u9qa',
+          groups: [ROLES.WorkspaceAdmin.code],
+          status: TeammateStatus.DISABLED,
+        }),
+      );
+      return request(getHttpServer(app))
+        .post(AuthEndpoints.REQUEST_MAGIC_LINK)
+        .send({ email: 'test@example.com' })
+        .set('Accept', 'application/json')
+        .expect(403);
     });
   });
 
