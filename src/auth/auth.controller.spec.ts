@@ -67,6 +67,7 @@ describe('AuthController', () => {
 
   afterEach(async () => {
     await prismaService.preVerification.deleteMany();
+    await prismaService.companyProfile.deleteMany();
     await app.close();
   });
 
