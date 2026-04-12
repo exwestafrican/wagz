@@ -15,18 +15,13 @@ import { MagicLinkAuthDto } from './dto/magic-link-auth';
 import { SignupEmailDto } from './dto/signup.dto';
 import { AccountExistsException } from './exceptions/account.exists';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
-import { PermissionService } from '@/permission/permission.service';
-import RequestUser from '@/auth/domain/request-user';
 
 @Controller('auth')
 @ApiTags('auth')
 export class AuthController {
   logger = new Logger(AuthController.name);
 
-  constructor(
-    private readonly authService: AuthService,
-    private readonly permissionService: PermissionService,
-  ) {}
+  constructor(private readonly authService: AuthService) {}
 
   @Post('magic-link/request')
   @ApiOperation({ summary: 'Allow user to authenticate with a magic link' })
@@ -40,14 +35,8 @@ export class AuthController {
     description: 'Magic link request failed',
   })
   @HttpCode(HttpStatus.OK)
-  async requestMagicLink(
-    @Body() magicLinkAuthDto: MagicLinkAuthDto,
-  ): Promise<void> {
-    await this.permissionService.runIfActiveWorkspaceMember(
-      new RequestUser(magicLinkAuthDto.email),
-      magicLinkAuthDto.email,
-      () => this.authService.requestMagicLink(magicLinkAuthDto.email),
-    );
+  requestMagicLink(@Body() magicLinkAuthDto: MagicLinkAuthDto): Promise<void> {
+    return this.authService.requestMagicLinkOrThrow(magicLinkAuthDto.email);
   }
 
   @Post('signup/email-only')

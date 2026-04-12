@@ -3,7 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import request from 'supertest';
 
-import { INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -22,8 +22,6 @@ import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/teammates/teammates.service';
-import { PermissionService } from '@/permission/permission.service';
-import { RoleService } from '@/permission/role/role.service';
 import { TeammateStatus } from '@/generated/prisma/client';
 import { ROLES } from '@/permission/types';
 
@@ -59,8 +57,6 @@ describe('AuthController', () => {
         PrismaService,
         LinkService,
         TeammatesService,
-        RoleService,
-        PermissionService,
       ],
     }).compile();
 
@@ -71,8 +67,6 @@ describe('AuthController', () => {
 
   afterEach(async () => {
     await prismaService.preVerification.deleteMany();
-    await prismaService.workspace.deleteMany();
-    await prismaService.companyProfile.deleteMany();
     await app.close();
   });
 
@@ -113,12 +107,11 @@ describe('AuthController', () => {
       expect(body.property).toMatchObject(['email']);
     });
 
-    it('should return 200 when email is valid and user is an active workspace member', async () => {
+    it('should return 200 when email is valid', async () => {
       await setupWorkspaceWithTeammate(
         factory,
         teammateFactory.build({
           email: 'test@example.com',
-          workspaceCode: '67u9qa',
           groups: [ROLES.WorkspaceAdmin.code],
         }),
       );
@@ -137,7 +130,7 @@ describe('AuthController', () => {
         .expect(403);
     });
 
-    it('should return 403 when teammate exists for that email key but is not ACTIVE', async () => {
+    it('should return 401 when teammate has no active workspace', async () => {
       await setupWorkspaceWithTeammate(
         factory,
         teammateFactory.build({
@@ -151,7 +144,7 @@ describe('AuthController', () => {
         .post(AuthEndpoints.REQUEST_MAGIC_LINK)
         .send({ email: 'test@example.com' })
         .set('Accept', 'application/json')
-        .expect(403);
+        .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 
