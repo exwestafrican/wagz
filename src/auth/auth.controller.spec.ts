@@ -122,12 +122,12 @@ describe('AuthController', () => {
         .expect(200);
     });
 
-    it('should return 403 when email is valid but user is not an active workspace member', () => {
+    it('should return unauthorized when email is valid but user is not an active workspace member', () => {
       return request(getHttpServer(app))
         .post(AuthEndpoints.REQUEST_MAGIC_LINK)
         .send({ email: 'test@example.com' })
         .set('Accept', 'application/json')
-        .expect(403);
+        .expect(401);
     });
 
     it('should return 401 when teammate has no active workspace', async () => {
