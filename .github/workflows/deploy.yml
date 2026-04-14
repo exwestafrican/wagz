@@ -5,8 +5,7 @@ on:
       branches:
         - main
       paths-ignore:
-        - 'prisma/schemas/**'
-        - 'prisma/migrations/**'
+        - 'prisma/**'
         - 'src/factories/**'
         - '.gitignore'
         - '**.md'

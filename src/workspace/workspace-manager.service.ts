@@ -7,7 +7,6 @@ import {
   Prisma,
   Workspace as PrismaWorkspace,
   Teammate,
-  TeammateStatus,
   WorkspaceInvite,
 } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -26,10 +25,10 @@ import { render } from '@react-email/render';
 import { WorkspaceInviteTemplate } from '@/emails/templates/workspace-invite-template';
 import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
 import { RoleService } from '@/permission/role/role.service';
 import { ConcurrentLimit } from '@/common/concurrent-runner';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import { LinkService } from '@/common/link-service';
 
 @Injectable()
 export class WorkspaceManager {
@@ -39,7 +38,7 @@ export class WorkspaceManager {
   constructor(
     private readonly prismaService: PrismaService,
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
-    private readonly workspaceLinkService: WorkspaceLinkService,
+    private readonly linkService: LinkService,
     private readonly roleService: RoleService,
     private readonly workspaceInviteService: WorkspaceInviteService,
   ) {}
@@ -132,24 +131,6 @@ export class WorkspaceManager {
       );
     }
   }
-
-  async primaryWorkspace(email: string) {
-    // primary workspace for now is the oldest active workspace
-    return this.prismaService.workspace.findFirstOrThrow({
-      where: {
-        teammates: {
-          some: {
-            email,
-            status: TeammateStatus.ACTIVE,
-          },
-        },
-      },
-      orderBy: {
-        createdAt: 'asc', //from oldest to newest
-      },
-    });
-  }
-
   async inviteEligibleTeammates(
     sender: Teammate,
     recipientEmails: string[],
@@ -329,7 +310,7 @@ export class WorkspaceManager {
         workspaceInvite.inviteCode,
       );
 
-      const inviteLink = this.workspaceLinkService.inviteUrl(encodedInviteCode);
+      const inviteLink = this.linkService.inviteUrl(encodedInviteCode);
 
       const emailHtml = await render(
         React.createElement(WorkspaceInviteTemplate, {
@@ -343,7 +324,7 @@ export class WorkspaceManager {
       );
 
       await this.emailClient.send({
-        from: { email: sender.email, name: sender.firstName },
+        from: { email: 'invite@envoye.co', name: sender.firstName },
         to: { email: recipientEmail, name: '' },
         subject: 'Workspace Invite',
         html: emailHtml,

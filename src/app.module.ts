@@ -11,6 +11,8 @@ import { PermissionModule } from './permission/permission.module';
 import { WorkspaceModule } from './workspace/workspace.module';
 import { MessagingModule } from './messaging/messaging.module';
 import { FeatureFlagModule } from './feature-flag/feature-flag.module';
+import { TeammatesModule } from './teammates/teammates.module';
+import { CommonModule } from '@/common/common.module';
 
 @Module({
   imports: [
@@ -26,6 +28,8 @@ import { FeatureFlagModule } from './feature-flag/feature-flag.module';
     WorkspaceModule,
     MessagingModule,
     FeatureFlagModule,
+    TeammatesModule,
+    CommonModule,
   ],
   controllers: [AppController],
   providers: [AppService],

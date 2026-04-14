@@ -21,5 +21,6 @@ model Teammate {
   conversationParticipants ConversationParticipant[]
 
   @@unique([workspaceCode, email])
+  @@unique([workspaceCode, username])
   @@map("teammate")
 }

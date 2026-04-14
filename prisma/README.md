@@ -1,7 +1,7 @@
 ### Making DB Change
 1. create a file `<model_name>.prisma`
 2. update schema and run `pnpm format:schema`
-3. generate migration using `pnpx prisma migrate dev --name change_table_name`
+3. generate migration using `pnpx prisma migrate dev --name change_table_name --create-only`
 4. Check status of migration with `pnpx prisma migrate status`
 5. Run `pnpx prisma migrate deploy` to update schema
 

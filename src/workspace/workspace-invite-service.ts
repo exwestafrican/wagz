@@ -3,6 +3,8 @@ import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
 import { PrismaService } from '@/prisma/prisma.service';
 import { isEmpty } from '@/common/utils';
 import { InviteStatus } from '@/generated/prisma/enums';
+import { AuthService } from '@/auth/auth.service';
+import { WorkspaceInvite } from '@/generated/prisma/client';
 
 export interface TeammateDetails {
   firstName: string;
@@ -21,7 +23,10 @@ export interface DecodedResult {
 export class WorkspaceInviteService {
   logger = new Logger(WorkspaceInviteService.name);
 
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly authService: AuthService,
+  ) {}
 
   encodeInvite(
     recipientEmail: string,
@@ -48,35 +53,45 @@ export class WorkspaceInviteService {
   async decodeAndVerifyOrThrow(inviteCode: string): Promise<DecodedResult> {
     const decoded = this.decodeInviteOrThrow(inviteCode);
 
-    const workspaceInvite = await this.prismaService.workspaceInvite.findFirst({
-      where: {
-        inviteCode: decoded.codeInInvite,
-        workspaceCode: decoded.workspaceCode,
-        recipientEmail: decoded.recipientEmail,
-        status: InviteStatus.SENT,
-      },
-    });
+    const workspaceInvite = await this.findPendingInvite(
+      decoded.workspaceCode,
+      decoded.codeInInvite,
+      decoded.recipientEmail,
+    );
 
     if (isEmpty(workspaceInvite)) {
+      this.logger.warn('Cannot find invite for teammate');
       throw new InvalidInviteCode('Cannot verify decoded invite for teammate');
     }
 
     return decoded;
   }
 
-  async acceptInvite(
+  private async findPendingInvite(
     workspaceCode: string,
     inviteCode: string,
-    teammateDetails: TeammateDetails,
-  ): Promise<void> {
-    const invite = await this.prismaService.workspaceInvite.findFirst({
+    email: string,
+  ): Promise<WorkspaceInvite | null> {
+    return this.prismaService.workspaceInvite.findFirst({
       where: {
         workspaceCode: workspaceCode,
         inviteCode: inviteCode,
-        recipientEmail: teammateDetails.email,
+        recipientEmail: email,
         status: InviteStatus.SENT,
       },
     });
+  }
+
+  async tryAcceptInviteAndRequestMagicLink(
+    workspaceCode: string,
+    inviteCode: string,
+    teammateDetails: TeammateDetails,
+  ): Promise<WorkspaceInvite> {
+    const invite = await this.findPendingInvite(
+      workspaceCode,
+      inviteCode,
+      teammateDetails.email,
+    );
 
     if (!invite) {
       throw new InvalidInviteCode('Invalid invite code');
@@ -101,7 +116,13 @@ export class WorkspaceInviteService {
           acceptedAt: new Date(),
         },
       });
+
+      await this.authService.signTeammateUpAndPushMagicLink(
+        invite.recipientEmail,
+        invite.workspaceCode,
+      );
     });
+    return invite;
   }
 
   private decodedValue(inviteCode: string): string {

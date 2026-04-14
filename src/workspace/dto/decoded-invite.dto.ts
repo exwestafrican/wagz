@@ -13,15 +13,24 @@ export default class DecodedInviteDto {
   @IsNotEmpty()
   @IsString()
   @ApiProperty({
-    description: 'Code of workspace user was invited tr',
+    description: 'Code of workspace user was invited to',
     example: 'ap7ol0',
   })
   workspaceCode: string;
+
+  @IsNotEmpty()
+  @IsString()
+  @ApiProperty({
+    description: 'invite code sent to teammate',
+    example: '69a7no',
+  })
+  inviteCode: string;
 }
 
 export function toDecodedInviteDto(decodedResult: DecodedResult) {
   return {
     recipientEmail: decodedResult.recipientEmail,
     workspaceCode: decodedResult.workspaceCode,
+    inviteCode: decodedResult.codeInInvite,
   };
 }

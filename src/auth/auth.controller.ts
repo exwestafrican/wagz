@@ -36,7 +36,7 @@ export class AuthController {
   })
   @HttpCode(HttpStatus.OK)
   requestMagicLink(@Body() magicLinkAuthDto: MagicLinkAuthDto): Promise<void> {
-    return this.authService.requestMagicLink(magicLinkAuthDto.email);
+    return this.authService.requestMagicLinkOrThrow(magicLinkAuthDto.email);
   }
 
   @Post('signup/email-only')

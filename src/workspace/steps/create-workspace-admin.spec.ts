@@ -62,13 +62,18 @@ describe('CreateWorkspaceAdminStep', () => {
     );
     await step.execute(workspaceDetails);
 
-    expect(
-      await prismaService.teammate.count({
-        where: {
+    const createdTeammate = await prismaService.teammate.findUniqueOrThrow({
+      where: {
+        workspaceCode_email: {
+          workspaceCode: workspaceDetails.code,
           email: workspaceDetails.pointOfContact.email,
         },
-      }),
-    ).toBe(1);
+      },
+    });
+
+    expect(createdTeammate.username).toBe(
+      `${workspaceDetails.pointOfContact.firstName.toLowerCase()} ${workspaceDetails.pointOfContact.lastName.toLowerCase()}`,
+    );
 
     await step.compensate(workspaceDetails);
 

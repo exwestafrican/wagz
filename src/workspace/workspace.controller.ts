@@ -107,9 +107,16 @@ export class WorkspaceController {
     description: 'Workspace not found',
   })
   @UseGuards(SupabaseAuthGuard)
-  async getByCode(@Query('code') code: string): Promise<WorkspaceResponseDto> {
+  async getByCode(
+    @User() requestUser: RequestUser,
+    @Query('code') code: string,
+  ): Promise<WorkspaceResponseDto> {
     try {
-      return await this.workspaceManager.details(code);
+      return await this.permissionService.runIfActiveWorkspaceMember(
+        requestUser,
+        code,
+        async () => await this.workspaceManager.details(code),
+      );
     } catch (error) {
       if (error instanceof NotFoundInDb) {
         throw new NotFoundException();
@@ -185,16 +192,20 @@ export class WorkspaceController {
   }
 
   @Post('/accept-invite')
-  @ApiOperation({ summary: 'Accept workspace invite and create teammate' })
+  @ApiOperation({
+    summary: 'Accept workspace invite, creates teammate and logs teammate in',
+  })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Invite accepted and teammate created',
   })
   @ApiBadRequestResponse()
   @ApiForbiddenResponse()
-  async acceptInvite(@Body() dto: AcceptWorkspaceInviteDto): Promise<void> {
+  async acceptInviteAndLogUserIn(
+    @Body() dto: AcceptWorkspaceInviteDto,
+  ): Promise<void> {
     try {
-      await this.workspaceInviteService.acceptInvite(
+      await this.workspaceInviteService.tryAcceptInviteAndRequestMagicLink(
         dto.workspaceCode,
         dto.inviteCode,
         {

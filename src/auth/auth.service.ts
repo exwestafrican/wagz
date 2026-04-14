@@ -4,15 +4,16 @@ import {
   ServiceUnavailableException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { SupabaseClient } from '@supabase/supabase-js';
+import { AuthError, SupabaseClient } from '@supabase/supabase-js';
 import { AccountExistsException } from './exceptions/account.exists';
 import PasswordGenerator from './services/password.generator';
 import { PrismaService } from '@/prisma/prisma.service';
 import SignupDetails from './domain/signup.details';
 import { PreVerification, Prisma } from '@/generated/prisma/client';
 import PRISMA_CODES from '@/prisma/consts';
-import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
+import { TeammatesService } from '@/teammates/teammates.service';
+import { LinkService } from '@/common/link-service';
+import { notInDbError } from '@/common/error-type';
 
 @Injectable()
 export class AuthService {
@@ -21,26 +22,38 @@ export class AuthService {
     private readonly supabaseClient: SupabaseClient,
     private readonly passwordGenerator: PasswordGenerator,
     private readonly prismaService: PrismaService,
-    private readonly workspaceLinkService: WorkspaceLinkService,
-    private readonly workspaceManager: WorkspaceManager,
+    private readonly linkService: LinkService,
+    private readonly teammatesService: TeammatesService,
   ) {}
 
-  async requestMagicLink(email: string): Promise<void> {
-    const primaryWorkspace =
-      await this.workspaceManager.primaryWorkspace(email);
+  private async signInWithOtp(
+    email: string,
+    workspaceCode: string,
+  ): Promise<void> {
     const { error } = await this.supabaseClient.auth.signInWithOtp({
       email: email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: this.workspaceLinkService.loadWorkspaceUrl(
-          primaryWorkspace.code,
-        ),
+        emailRedirectTo: this.linkService.loadWorkspaceUrl(workspaceCode),
       },
     });
 
     if (error) {
       this.logger.error(error);
       throw new UnauthorizedException();
+    }
+  }
+
+  async requestMagicLinkOrThrow(email: string): Promise<void> {
+    try {
+      const primaryWorkspace =
+        await this.teammatesService.primaryWorkspace(email);
+      await this.signInWithOtp(email, primaryWorkspace.code);
+    } catch (e) {
+      if (notInDbError(e as Error)) {
+        throw new UnauthorizedException();
+      }
+      throw e;
     }
   }
 
@@ -89,28 +102,55 @@ export class AuthService {
     }
   }
 
+  private handleAuthError(error: AuthError) {
+    this.logger.error(error);
+    if (error.code === 'user_already_exists' || error.code === 'email_exists') {
+      throw new AccountExistsException(error.message); // this is thrown when user has verified email
+    } else {
+      //TODO: we need to alert outselves of every error here except for the AccountExistsException
+      // store this users email and contact them.
+      throw new ServiceUnavailableException(error.message);
+    }
+  }
+
+  async signTeammateUpAndPushMagicLink(email: string, workspaceCode: string) {
+    try {
+      const password = this.passwordGenerator.generateRandomPassword();
+      const { error } = await this.supabaseClient.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true,
+      });
+      if (error) {
+        this.handleAuthError(error);
+      }
+      await this.signInWithOtp(email, workspaceCode);
+    } catch (e) {
+      if (e instanceof AccountExistsException) {
+        // user might exist in another workspace with same email just log user in
+        await this.signInWithOtp(email, workspaceCode);
+        return;
+      }
+      throw e;
+    }
+  }
+
   async signup(signupDetails: SignupDetails, password: string): Promise<void> {
     const preverificationDetails =
       await this.storePreverificationDetails(signupDetails);
+
     const { error } = await this.supabaseClient.auth.signUp({
       email: signupDetails.email,
       password,
       options: {
-        emailRedirectTo: this.workspaceLinkService.setupWorkspaceUrl(
+        emailRedirectTo: this.linkService.setupWorkspaceUrl(
           preverificationDetails.id,
         ),
       },
     });
 
     if (error) {
-      this.logger.error(error);
-      if (error.code === 'user_already_exists') {
-        throw new AccountExistsException(error.message); // this is thrown when user has verified email
-      } else {
-        //TODO: we need to alert outselves of every error here except for the AccountExistsException
-        // store this users email and contact them.
-        throw new ServiceUnavailableException(error.message);
-      }
+      this.handleAuthError(error);
     }
   }
 }

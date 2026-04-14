@@ -3,7 +3,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import request from 'supertest';
 
-import { INestApplication } from '@nestjs/common';
+import { HttpStatus, INestApplication } from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
@@ -18,13 +18,12 @@ import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
-import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { MessagingModule } from '@/messaging/messaging.module';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
-import { RoleService } from '@/permission/role/role.service';
-import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import { LinkService } from '@/common/link-service';
+import { TeammatesService } from '@/teammates/teammates.service';
+import { TeammateStatus } from '@/generated/prisma/client';
+import { ROLES } from '@/permission/types';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -46,7 +45,7 @@ describe('AuthController', () => {
   beforeEach(async () => {
     mockSupabaseClient = createMockSupabaseClient();
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), MessagingModule], // Add ConfigModule for setupApp to work
+      imports: [ConfigModule.forRoot()], // Add ConfigModule for setupApp to work
       controllers: [AuthController],
       providers: [
         AuthService,
@@ -56,10 +55,8 @@ describe('AuthController', () => {
           useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
         PrismaService,
-        WorkspaceLinkService,
-        WorkspaceManager,
-        WorkspaceInviteService,
-        RoleService,
+        LinkService,
+        TeammatesService,
       ],
     }).compile();
 
@@ -70,6 +67,7 @@ describe('AuthController', () => {
 
   afterEach(async () => {
     await prismaService.preVerification.deleteMany();
+    await prismaService.companyProfile.deleteMany();
     await app.close();
   });
 
@@ -115,7 +113,7 @@ describe('AuthController', () => {
         factory,
         teammateFactory.build({
           email: 'test@example.com',
-          groups: ['WorkspaceAdmin'],
+          groups: [ROLES.WorkspaceAdmin.code],
         }),
       );
       return request(getHttpServer(app))
@@ -123,6 +121,31 @@ describe('AuthController', () => {
         .send({ email: 'test@example.com' })
         .set('Accept', 'application/json')
         .expect(200);
+    });
+
+    it('should return unauthorized when email is valid but user is not an active workspace member', () => {
+      return request(getHttpServer(app))
+        .post(AuthEndpoints.REQUEST_MAGIC_LINK)
+        .send({ email: 'test@example.com' })
+        .set('Accept', 'application/json')
+        .expect(401);
+    });
+
+    it('should return 401 when teammate has no active workspace', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: 'test@example.com',
+          workspaceCode: '67u9qa',
+          groups: [ROLES.WorkspaceAdmin.code],
+          status: TeammateStatus.DISABLED,
+        }),
+      );
+      return request(getHttpServer(app))
+        .post(AuthEndpoints.REQUEST_MAGIC_LINK)
+        .send({ email: 'test@example.com' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 

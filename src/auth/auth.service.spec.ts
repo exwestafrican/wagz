@@ -6,34 +6,29 @@ import {
   MockSupabaseClient,
 } from './test-utils/supabase.mock';
 import PasswordGenerator from './services/password.generator';
-import { ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
-import { WorkspaceLinkService } from '@/workspace/workspace-link.service';
-import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { MessagingModule } from '@/messaging/messaging.module';
-import { RoleService } from '@/permission/role/role.service';
-import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import { LinkService } from '@/common/link-service';
+import { TeammatesService } from '@/teammates/teammates.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  const mockSupabaseClient: MockSupabaseClient = createMockSupabaseClient();
+  let mockSupabaseClient: MockSupabaseClient;
 
   beforeEach(async () => {
+    mockSupabaseClient = createMockSupabaseClient();
     const module: TestingModule = await Test.createTestingModule({
-      imports: [MessagingModule],
+      imports: [ConfigModule.forRoot()],
       providers: [
         AuthService,
         PasswordGenerator,
-        ConfigService,
         {
           provide: SupabaseClient,
-          useValue: mockSupabaseClient,
+          useValue: mockSupabaseClient as unknown as SupabaseClient,
         },
         PrismaService,
-        WorkspaceLinkService,
-        WorkspaceManager,
-        WorkspaceInviteService,
-        RoleService,
+        LinkService,
+        TeammatesService,
       ],
     }).compile();
 
@@ -55,5 +50,37 @@ describe('AuthService', () => {
         },
       });
     });
+  });
+
+  describe('signTeammateUpAndPushMagicLink', () => {
+    it.each([['user_already_exists'], ['email_exists']] as const)(
+      'when user already has account, we just log into correct workspace (%s)',
+      async (errorCode) => {
+        const email = 'teammate@example.com';
+        const workspaceCode = 'WS01';
+
+        mockSupabaseClient.auth.admin.createUser.mockResolvedValueOnce({
+          data: { user: null },
+          error: {
+            message: 'User already registered',
+            status: 422,
+            code: errorCode,
+          },
+        });
+
+        await service.signTeammateUpAndPushMagicLink(email, workspaceCode);
+
+        expect(mockSupabaseClient.auth.signInWithOtp).toHaveBeenCalledWith({
+          email,
+          options: {
+            shouldCreateUser: false,
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+            emailRedirectTo: expect.stringContaining(
+              `/setup/workspace?code=${workspaceCode}`,
+            ),
+          },
+        });
+      },
+    );
   });
 });

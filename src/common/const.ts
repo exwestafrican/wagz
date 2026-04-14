@@ -1,5 +1,5 @@
 export const ENVIROMENT = {
-  PRODUCTION: 'production',
+  PRODUCTION: 'prod',
   DEVELOPMENT: 'dev',
   TEST: 'test',
 };
@@ -24,4 +24,10 @@ export const URIPaths = {
   INVITE_TEAMMATES: '/workspace/invite-teammates',
   VERIFY_INVITE: '/workspace/verify-invite',
   ACCEPT_INVITE: '/workspace/accept-invite',
+};
+
+export const TeammatesEndpoints = {
+  TEAMMATES: '/teammates',
+  MY_PROFILE: '/teammates/me',
+  CHECK_USERNAME: '/teammates/check-username',
 };
