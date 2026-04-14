@@ -50,12 +50,15 @@ export class TeammatesService {
     workspaceCode: string,
     username: string,
   ) {
-    const count = await this.prismaService.teammate.count({
+    const exists = await this.prismaService.teammate.findUnique({
       where: {
-        workspaceCode,
-        username,
+        workspaceCode_username: {
+          workspaceCode,
+          username,
+        },
       },
+      select: { id: true },
     });
-    return count > 0;
+    return !!exists;
   }
 }
