@@ -45,4 +45,20 @@ export class TeammatesService {
       },
     });
   }
+
+  async usernameAlreadyExistsInWorkspace(
+    workspaceCode: string,
+    username: string,
+  ) {
+    const exists = await this.prismaService.teammate.findUnique({
+      where: {
+        workspaceCode_username: {
+          workspaceCode,
+          username,
+        },
+      },
+      select: { id: true },
+    });
+    return !!exists;
+  }
 }

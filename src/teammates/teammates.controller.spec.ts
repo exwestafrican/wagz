@@ -136,4 +136,38 @@ describe('TeammatesController', () => {
         .expect(HttpStatus.UNAUTHORIZED);
     });
   });
+
+  describe('checkIfUsernameExists', () => {
+    it('should return 200 when the username is available in the workspace', async () => {
+      const { workspace } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          username: 'laura.smith',
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .get(TeammatesEndpoints.CHECK_USERNAME)
+        .query({ workspaceCode: workspace.code, username: 'john.doe' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.OK);
+    });
+
+    it('should return 409 when the username is already taken in the workspace', async () => {
+      const { workspace } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          username: 'laura.smith',
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .get(TeammatesEndpoints.CHECK_USERNAME)
+        .query({ workspaceCode: workspace.code, username: 'laura.smith' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.CONFLICT);
+    });
+  });
 });

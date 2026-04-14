@@ -15,4 +15,3 @@ export class IsValidIANATimezoneConstraint implements ValidatorConstraintInterfa
     return `${args.value} must be a valid IANA timezone`;
   }
 }
-
