@@ -45,4 +45,17 @@ export class TeammatesService {
       },
     });
   }
+
+  async usernameAlreadyExistsInWorkspace(
+    workspaceCode: string,
+    username: string,
+  ) {
+    const count = await this.prismaService.teammate.count({
+      where: {
+        workspaceCode,
+        username,
+      },
+    });
+    return count > 0;
+  }
 }

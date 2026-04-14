@@ -174,4 +174,40 @@ describe('TeammatesService', () => {
       });
     });
   });
+
+  describe('usernameAlreadyExistsInWorkspace', () => {
+    it('should return true when a teammate with that username exists in the workspace', async () => {
+      const { workspace } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          username: 'laura.smith',
+        }),
+      );
+
+      const result = await service.usernameAlreadyExistsInWorkspace(
+        workspace.code,
+        'laura.smith',
+      );
+
+      expect(result).toBe(true);
+    });
+
+    it('should return false when no teammate with that username exists in the workspace', async () => {
+      const { workspace } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          username: 'laura.smith',
+        }),
+      );
+
+      const result = await service.usernameAlreadyExistsInWorkspace(
+        workspace.code,
+        'john.doe',
+      );
+
+      expect(result).toBe(false);
+    });
+  });
 });

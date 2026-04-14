@@ -1,4 +1,5 @@
 import {
+  ConflictException,
   Controller,
   Get,
   HttpStatus,
@@ -18,6 +19,7 @@ import RequestUser from '@/auth/domain/request-user';
 import { PermissionService } from '@/permission/permission.service';
 import { PERMISSIONS } from '@/permission/types';
 import { TeammateStatus } from '@/generated/prisma/enums';
+import { CheckUsernameQueryDto } from '@/teammates/dto/check-username-query.dto';
 
 @Controller('teammates')
 export class TeammatesController {
@@ -102,5 +104,29 @@ export class TeammatesController {
       requestUser.email,
     );
     return toTeammateResponse(teammate);
+  }
+
+  @Get('check-username')
+  @ApiOperation({
+    summary: 'Check if a username is already taken in a workspace',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Username is available',
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'Username is already taken in this workspace',
+  })
+  async checkIfUsernameExists(
+    @Query() query: CheckUsernameQueryDto,
+  ): Promise<void> {
+    const exists = await this.teammatesService.usernameAlreadyExistsInWorkspace(
+      query.workspaceCode,
+      query.username,
+    );
+    if (exists) {
+      throw new ConflictException();
+    }
   }
 }
