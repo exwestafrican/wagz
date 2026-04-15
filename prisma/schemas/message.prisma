@@ -16,7 +16,6 @@ model Message {
   messagetype              MessageType               @default(TEXT)
   conversationParticipants ConversationParticipant[]
 
-  @@index([conversationId])
-  @@index([conversationId, createdAt])
+  @@index([workspaceCode, conversationId])
   @@map("message")
 }
