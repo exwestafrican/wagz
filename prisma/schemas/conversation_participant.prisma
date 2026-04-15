@@ -9,5 +9,7 @@ model ConversationParticipant {
   lastReadMessage Int?
   lastReadMsg     Message?     @relation(fields: [lastReadMessage], references: [id], onDelete: SetNull)
 
+  @@index([teammateId])
+  @@index([conversationId])
   @@map("conversation_participant")
 }

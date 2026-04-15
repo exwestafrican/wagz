@@ -16,5 +16,7 @@ model Message {
   messagetype              MessageType               @default(TEXT)
   conversationParticipants ConversationParticipant[]
 
+  @@index([conversationId])
+  @@index([conversationId, createdAt])
   @@map("message")
 }
