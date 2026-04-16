@@ -8,6 +8,8 @@ model ConversationParticipant {
   teammate        Teammate     @relation(fields: [teammateId], references: [id], onDelete: Cascade)
   lastReadMessage Int?
   lastReadMsg     Message?     @relation(fields: [lastReadMessage], references: [id], onDelete: SetNull)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
   @@index([workspaceCode, teammateId])
   @@index([workspaceCode, conversationId])
