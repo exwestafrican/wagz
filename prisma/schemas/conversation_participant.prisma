@@ -1,0 +1,17 @@
+model ConversationParticipant {
+  id              Int          @id @default(autoincrement())
+  workspaceCode   String       @db.VarChar(6)
+  workspace       Workspace    @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
+  conversationId  Int
+  conversation    Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  teammateId      Int
+  teammate        Teammate     @relation(fields: [teammateId], references: [id], onDelete: Cascade)
+  lastReadMessage Int?
+  lastReadMsg     Message?     @relation(fields: [lastReadMessage], references: [id], onDelete: SetNull)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([workspaceCode, teammateId])
+  @@index([workspaceCode, conversationId])
+  @@map("conversation_participant")
+}
