@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "ConversationStatus" AS ENUM ('ACTIVE', 'CLOSED', 'FROZEN');
+CREATE TYPE "ConversationStatus" AS ENUM ('open', 'frozen', 'resolved', 'closed');
 
 -- CreateEnum
 CREATE TYPE "MessageType" AS ENUM ('TEXT', 'IMAGE');
@@ -8,7 +8,7 @@ CREATE TYPE "MessageType" AS ENUM ('TEXT', 'IMAGE');
 CREATE TABLE "conversation" (
     "id" SERIAL NOT NULL,
     "workspaceCode" VARCHAR(6) NOT NULL,
-    "status" "ConversationStatus" NOT NULL DEFAULT 'ACTIVE',
+    "status" "ConversationStatus" NOT NULL DEFAULT 'open',
     "subject" VARCHAR(100),
     "customerInfo" VARCHAR(100) NOT NULL,
     "lastMessage" INTEGER,
@@ -25,6 +25,8 @@ CREATE TABLE "conversation_participant" (
     "conversationId" INTEGER NOT NULL,
     "teammateId" INTEGER NOT NULL,
     "lastReadMessage" INTEGER,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "conversation_participant_pkey" PRIMARY KEY ("id")
 );
@@ -42,6 +44,15 @@ CREATE TABLE "message" (
 
     CONSTRAINT "message_pkey" PRIMARY KEY ("id")
 );
+
+-- CreateIndex
+CREATE INDEX "conversation_participant_workspaceCode_teammateId_idx" ON "conversation_participant"("workspaceCode", "teammateId");
+
+-- CreateIndex
+CREATE INDEX "conversation_participant_workspaceCode_conversationId_idx" ON "conversation_participant"("workspaceCode", "conversationId");
+
+-- CreateIndex
+CREATE INDEX "message_workspaceCode_conversationId_idx" ON "message"("workspaceCode", "conversationId");
 
 -- AddForeignKey
 ALTER TABLE "conversation" ADD CONSTRAINT "conversation_workspaceCode_fkey" FOREIGN KEY ("workspaceCode") REFERENCES "workspace"("code") ON DELETE CASCADE ON UPDATE CASCADE;
