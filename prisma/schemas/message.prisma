@@ -1,6 +1,6 @@
 enum MessageType {
-  TEXT
-  IMAGE
+  TEXT  @map("text")
+  IMAGE @map("image")
 }
 
 model Message {

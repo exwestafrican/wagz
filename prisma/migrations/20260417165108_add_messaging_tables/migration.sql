@@ -2,7 +2,7 @@
 CREATE TYPE "ConversationStatus" AS ENUM ('open', 'frozen', 'resolved', 'closed');
 
 -- CreateEnum
-CREATE TYPE "MessageType" AS ENUM ('TEXT', 'IMAGE');
+CREATE TYPE "MessageType" AS ENUM ('text', 'image');
 
 -- CreateTable
 CREATE TABLE "conversation" (
@@ -40,7 +40,7 @@ CREATE TABLE "message" (
     "url" VARCHAR(2000),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
-    "messagetype" "MessageType" NOT NULL DEFAULT 'TEXT',
+    "messagetype" "MessageType" NOT NULL DEFAULT 'text',
 
     CONSTRAINT "message_pkey" PRIMARY KEY ("id")
 );
