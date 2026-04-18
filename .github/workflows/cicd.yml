@@ -3,6 +3,9 @@ name: Node.js CI
 on:
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - 'prisma/**'
+      - 'iac/**'
 
 jobs:
   test:
