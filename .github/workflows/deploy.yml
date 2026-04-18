@@ -9,6 +9,7 @@ on:
         - 'src/factories/**'
         - '.gitignore'
         - '**.md'
+        - 'iac/**'
 jobs:
   test:
     runs-on: ubuntu-latest
