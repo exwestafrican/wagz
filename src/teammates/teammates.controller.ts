@@ -17,7 +17,6 @@ import {
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { PermissionService } from '@/permission/permission.service';
-import { PERMISSIONS } from '@/permission/types';
 import { TeammateStatus } from '@/generated/prisma/enums';
 import { CheckUsernameQueryDto } from '@/teammates/dto/check-username-query.dto';
 
