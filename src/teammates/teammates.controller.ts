@@ -61,7 +61,7 @@ export class TeammatesController {
     return await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
       requestUser,
       workspaceCode,
-      PERMISSIONS.MANAGE_TEAMMATES,
+      PERMISSIONS.VIEW_TEAMMATES,
       async () => {
         const teammates = await this.teammatesService.getTeammates(
           workspaceCode,
