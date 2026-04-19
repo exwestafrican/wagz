@@ -26,7 +26,7 @@ export const PERMISSIONS = {
     'Connect Messaging Platforms',
     'Allows user to connect supported messaging platforms, like whatsapp etc',
     'manage_channels',
-  )
+  ),
 } as const;
 
 export const ROLES: Record<string, Role> = {
