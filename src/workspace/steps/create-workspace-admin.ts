@@ -3,10 +3,17 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
 import { ROLES } from '@/permission/types';
+import { PointOfContact } from '../domain/point-of-contact';
 
 export class CreateWorkspaceAdminStep implements PostSetupStep {
   logger = new Logger(CreateWorkspaceAdminStep.name);
   constructor(private readonly prismaService: PrismaService) {}
+
+  private username(pointOfContact: PointOfContact) {
+    return [pointOfContact.firstName, pointOfContact.lastName]
+      .map((name) => name.toLowerCase())
+      .join('.');
+  }
 
   async execute(workspaceDetails: WorkspaceDetails): Promise<void> {
     const pointOfContact = workspaceDetails.pointOfContact;
@@ -15,7 +22,7 @@ export class CreateWorkspaceAdminStep implements PostSetupStep {
         email: pointOfContact.email,
         firstName: pointOfContact.firstName,
         lastName: pointOfContact.lastName,
-        username: `${pointOfContact.firstName.toLowerCase()} ${pointOfContact.lastName.toLowerCase()}`,
+        username: this.username(pointOfContact),
         workspaceCode: workspaceDetails.code,
         groups: [ROLES.WorkspaceAdmin.code],
       },
