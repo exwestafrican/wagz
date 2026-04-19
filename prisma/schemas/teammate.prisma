@@ -5,19 +5,20 @@ enum TeammateStatus {
 }
 
 model Teammate {
-  id               Int               @id @default(autoincrement())
-  email            String            @db.VarChar(255)
-  firstName        String            @db.VarChar(100)
-  lastName         String            @db.VarChar(100)
-  username         String?           @db.VarChar(50)
-  workspaceCode    String            @db.VarChar(6)
-  workspace        Workspace         @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
-  status           TeammateStatus    @default(ACTIVE)
-  avatarUrl        String?           @db.VarChar(600)
-  groups           String[]          @default([])
-  createdAt        DateTime          @default(now())
-  updatedAt        DateTime          @updatedAt
-  workspaceInvites WorkspaceInvite[]
+  id                       Int                       @id @default(autoincrement())
+  email                    String                    @db.VarChar(255)
+  firstName                String                    @db.VarChar(100)
+  lastName                 String                    @db.VarChar(100)
+  username                 String?                   @db.VarChar(50)
+  workspaceCode            String                    @db.VarChar(6)
+  workspace                Workspace                 @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
+  status                   TeammateStatus            @default(ACTIVE)
+  avatarUrl                String?                   @db.VarChar(600)
+  groups                   String[]                  @default([])
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  workspaceInvites         WorkspaceInvite[]
+  conversationParticipants ConversationParticipant[]
 
   @@unique([workspaceCode, email])
   @@unique([workspaceCode, username])
