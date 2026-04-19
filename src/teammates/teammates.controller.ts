@@ -58,10 +58,9 @@ export class TeammatesController {
     @User() requestUser: RequestUser,
     @Query('workspaceCode') workspaceCode: string,
   ): Promise<TeammateResponseDto[]> {
-    return await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+    return await this.permissionService.runIfActiveWorkspaceMember(
       requestUser,
       workspaceCode,
-      PERMISSIONS.VIEW_TEAMMATES,
       async () => {
         const teammates = await this.teammatesService.getTeammates(
           workspaceCode,

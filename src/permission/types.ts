@@ -26,12 +26,7 @@ export const PERMISSIONS = {
     'Connect Messaging Platforms',
     'Allows user to connect supported messaging platforms, like whatsapp etc',
     'manage_channels',
-  ),
-  VIEW_TEAMMATES: Permission.of(
-    'View Workspace Teammates',
-    'Allows user to view teammates in workspace',
-    'view_teammates',
-  ),
+  )
 } as const;
 
 export const ROLES: Record<string, Role> = {
@@ -40,14 +35,12 @@ export const ROLES: Record<string, Role> = {
     PERMISSIONS.REPLY_SUPPORT_CONVERSATIONS,
     PERMISSIONS.MESSAGE_TEAMMATES,
     PERMISSIONS.MANAGE_TEAMMATES,
-    PERMISSIONS.VIEW_TEAMMATES,
     PERMISSIONS.MANAGE_CHANNELS,
   ]),
   SupportStaff: Role.of('SupportStaff', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
     PERMISSIONS.REPLY_SUPPORT_CONVERSATIONS,
     PERMISSIONS.MESSAGE_TEAMMATES,
-    PERMISSIONS.VIEW_TEAMMATES,
   ]),
   WorkspaceMember: Role.of('WorkspaceMember', [PERMISSIONS.MESSAGE_TEAMMATES]),
 };
