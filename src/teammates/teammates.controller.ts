@@ -17,7 +17,6 @@ import {
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { PermissionService } from '@/permission/permission.service';
-import { PERMISSIONS } from '@/permission/types';
 import { TeammateStatus } from '@/generated/prisma/enums';
 import { CheckUsernameQueryDto } from '@/teammates/dto/check-username-query.dto';
 
@@ -58,10 +57,9 @@ export class TeammatesController {
     @User() requestUser: RequestUser,
     @Query('workspaceCode') workspaceCode: string,
   ): Promise<TeammateResponseDto[]> {
-    return await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+    return await this.permissionService.runIfActiveWorkspaceMember(
       requestUser,
       workspaceCode,
-      PERMISSIONS.MANAGE_TEAMMATES,
       async () => {
         const teammates = await this.teammatesService.getTeammates(
           workspaceCode,
