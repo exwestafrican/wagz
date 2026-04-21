@@ -11,7 +11,31 @@ on:
         - '**.md'
         - 'iac/**'
 jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Use Node.js 24.x
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24.x
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v5
+        with:
+          version: latest
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name:  Generate Prisma Client
+        run: pnpm prisma generate
+
+      - name: Run Tests
+        run: pnpm test
+
   push-image:
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
