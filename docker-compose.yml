@@ -1,7 +1,7 @@
 services:
   app:
     container_name: envoye-nest-app
-    image: exwestafrican/waggz:latest
+    image: exwestafrican/waggz:${IMAGE_TAG}
     restart: always
     ports:
       - '3001:3001'
