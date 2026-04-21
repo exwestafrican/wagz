@@ -1,8 +1,9 @@
 services:
   app:
     container_name: envoye-nest-app
-    image: exwestafrican/waggz:latest
-    restart: always
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
       - '3001:3001'
     environment:
