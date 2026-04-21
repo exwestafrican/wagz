@@ -14,7 +14,7 @@
     "start": "nest start",
     "start:dev": "pnpm install && nest start --watch",
     "email:dev": "email dev --dir src/emails -p 3001",
-    "start:container-dev": "pnpx supabase start && docker compose up --build",
+    "start:container-dev": "pnpx supabase start && docker compose -f docker-compose.local.yml up --build ",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
     "lint": "eslint \"{src,apps,libs,test}/**/*.{ts,tsx}\" --fix",
