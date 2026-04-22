@@ -1,13 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
-import { MessagingModule } from '@/messaging/messaging.module';
-import { WorkspaceManager } from '@/workspace/workspace-manager.service';
-import { LinkService } from '@/common/link-service';
-import { RoleService } from '@/permission/role/role.service';
-import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
-import { AuthService } from '@/auth/auth.service';
-import { mockAuthService } from '@/test-helpers/mocks';
 import { createTestApp } from '@/test-helpers/test-app';
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -16,7 +9,6 @@ import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import { ROLES } from '@/permission/types';
 import { Teammate } from '@/generated/prisma/client';
-import { BackfillModule } from '@/backfill/backfill.module';
 import { NormalizeUsernames } from '@/backfill/tasks/normalize-username';
 
 describe('Normalize Username Backfill Task', () => {
