@@ -11,10 +11,10 @@ import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
 import BackfillResponseDto, {
   toBackfillResponseDto,
 } from '@/backfill/dto/backfill-response.dto';
-import { createTaskRegistry } from '@/backfill/task';
-import { BACKFILL_REGISTRY } from '@/backfill/backfill-registry.provider';
-
-type Registry = ReturnType<typeof createTaskRegistry>;
+import {
+  BACKFILL_REGISTRY,
+  type Registry,
+} from '@/backfill/backfill-registry.provider';
 
 @Controller('backfill')
 export class BackfillController {
