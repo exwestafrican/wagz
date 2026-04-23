@@ -24,7 +24,7 @@ describe('BackfillController', () => {
       providers: [BackfillRegistryProvider],
     }).with(requestUser);
 
-    controller = module.get<BackfillController>(BackfillController)
+    controller = module.get<BackfillController>(BackfillController);
     app = await createTestApp(module);
   });
 
@@ -38,8 +38,8 @@ describe('BackfillController', () => {
         .expect(HttpStatus.OK);
       const body = response.body as BackfillResponseDto[];
       expect(body.length).toBe(1);
-    })
-  })
+    });
+  });
 
   it('should be defined', () => {
     expect(controller).toBeDefined();
