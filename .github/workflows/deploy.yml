@@ -75,6 +75,7 @@ jobs:
           script: |
             cd ${{ vars.APP_DIR }}
             git pull origin main
-            echo "IMAGE_TAG=sha-${{ github.sha }}" > .env
+            sed -i '/^IMAGE_TAG=/d' .env
+            echo "IMAGE_TAG=sha-${{ github.sha }}" >> .env
             docker compose pull 
             docker compose up -d --remove-orphans
