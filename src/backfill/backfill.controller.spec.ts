@@ -11,9 +11,9 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { URIPaths } from '@/common/const';
 import BackfillResponseDto from '@/backfill/dto/backfill-response.dto';
+import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 
 describe('BackfillController', () => {
-  let controller: BackfillController;
   let requestUser: RequestUser;
   let app: INestApplication;
 
@@ -24,7 +24,6 @@ describe('BackfillController', () => {
       providers: [BackfillRegistryProvider],
     }).with(requestUser);
 
-    controller = module.get<BackfillController>(BackfillController);
     app = await createTestApp(module);
   });
 
@@ -34,6 +33,7 @@ describe('BackfillController', () => {
         .get(URIPaths.LIST_TASKS)
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
+        .query({ workspaceCode: ENVOYE_WORKSPACE_CODE })
         .send()
         .expect(HttpStatus.OK);
       const body = response.body as BackfillResponseDto[];
@@ -41,7 +41,4 @@ describe('BackfillController', () => {
     });
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
 });

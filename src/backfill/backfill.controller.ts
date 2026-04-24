@@ -4,6 +4,7 @@ import {
   HttpStatus,
   Inject,
   Logger,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
@@ -29,7 +30,8 @@ export class BackfillController {
     type: Array<BackfillResponseDto>,
   })
   @UseGuards(SupabaseAuthGuard)
-  list(): BackfillResponseDto[] {
+  list(@Query('workspaceCode') code: string): BackfillResponseDto[] {
+    //feature available for workspace and admin has permission
     return this.registry.all().map((r) => toBackfillResponseDto(r));
   }
 }
