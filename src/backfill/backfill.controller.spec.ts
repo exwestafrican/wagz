@@ -40,5 +40,4 @@ describe('BackfillController', () => {
       expect(body.length).toBe(1);
     });
   });
-
 });
