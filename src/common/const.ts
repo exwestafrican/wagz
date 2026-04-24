@@ -30,4 +30,5 @@ export const TeammatesEndpoints = {
   TEAMMATES: '/teammates',
   MY_PROFILE: '/teammates/me',
   CHECK_USERNAME: '/teammates/check-username',
+  RANDOM: '',
 };
