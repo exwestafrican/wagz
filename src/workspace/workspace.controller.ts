@@ -11,6 +11,7 @@ import {
   UseGuards,
   HttpCode,
   ForbiddenException,
+  Inject,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
@@ -37,6 +38,8 @@ import DecodedInviteDto, {
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
 import VerifyInviteCodeQueryDto from '@/workspace/dto/verify-invite-code-query.dto';
 import AcceptWorkspaceInviteDto from '@/workspace/dto/accept-workspace-invite.dto';
+import DebounceService, { DEBOUNCE_SERVICE } from '@/common/debounce.service';
+import { Time } from '@/common/utils';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -46,6 +49,7 @@ export class WorkspaceController {
     private readonly workspaceManager: WorkspaceManager,
     private readonly permissionService: PermissionService,
     private readonly workspaceInviteService: WorkspaceInviteService,
+    @Inject(DEBOUNCE_SERVICE) private readonly debounceService: DebounceService,
   ) {}
 
   @Post('/setup')
@@ -73,16 +77,24 @@ export class WorkspaceController {
     @Body() dto: SetupWorkspaceDto,
   ): Promise<WorkspaceDetailsResponseDto> {
     try {
-      const workspaceDetails = await this.workspaceManager.setup(
-        requestUser.email,
+      const workspaceDetails = await this.debounceService.runOrThrow(
         dto.id,
+        Time.durationInSeconds.minutes(1),
+        () => {
+          return this.workspaceManager.setup(requestUser.email, dto.id);
+        },
       );
+
       return toWorkspaceDetailsResponse(workspaceDetails);
     } catch (error) {
       if (error instanceof InvalidState) {
         throw new ConflictException();
       } else if (error instanceof NotFoundInDb) {
         throw new NotFoundException();
+      } else if (error instanceof DebounceService) {
+        //TODO: after issue https://github.com/exwestafrican/wagz/issues/155 we can use the pre verification id to fetch
+        // workspace details and return to user.
+        throw error;
       }
       throw error;
     }
