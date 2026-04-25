@@ -13,6 +13,7 @@ import { MessagingModule } from './messaging/messaging.module';
 import { FeatureFlagModule } from './feature-flag/feature-flag.module';
 import { TeammatesModule } from './teammates/teammates.module';
 import { CommonModule } from '@/common/common.module';
+import { BackfillModule } from './backfill/backfill.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { CommonModule } from '@/common/common.module';
     FeatureFlagModule,
     TeammatesModule,
     CommonModule,
+    BackfillModule,
   ],
   controllers: [AppController],
   providers: [AppService],
