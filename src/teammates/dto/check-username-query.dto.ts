@@ -1,19 +1,21 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
-import { Transform } from 'class-transformer';
+import { IsNotEmpty, IsString } from 'class-validator';
+import {
+  IsValidUsername,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  USERNAME_REGEX,
+} from '@/common/validators/is-valid-username';
 
 export class CheckUsernameQueryDto {
   @ApiProperty({
     description: 'Username of teammate to check',
     example: 'laura.smith',
-    minLength: 2,
-    maxLength: 50,
+    minLength: USERNAME_MIN_LENGTH,
+    maxLength: USERNAME_MAX_LENGTH,
+    pattern: USERNAME_REGEX,
   })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(2)
-  @MaxLength(50)
-  @Transform(({ value }: { value: string }) => value.toLowerCase())
+  @IsValidUsername()
   username: string;
 
   @ApiProperty({ description: 'Workspace code', example: '9Jk076' })
