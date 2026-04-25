@@ -13,9 +13,7 @@ import { URIPaths } from '@/common/const';
 import BackfillResponseDto from '@/backfill/dto/backfill-response.dto';
 import { PermissionService } from '@/permission/permission.service';
 import { RoleService } from '@/permission/role/role.service';
-import {
-  setupWorkspaceWithTeammate,
-} from '@/test-helpers/workspace-helpers';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import { ROLES } from '@/permission/types';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -41,6 +39,12 @@ describe('BackfillController', () => {
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
     factory = Factory.createStrategy(prismaService);
+  });
+
+  afterEach(async () => {
+    await prismaService.preVerification.deleteMany();
+    await prismaService.companyProfile.deleteMany();
+    await app.close();
   });
 
   describe('list', () => {
