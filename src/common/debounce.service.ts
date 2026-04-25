@@ -8,7 +8,7 @@ interface DebounceItem {
 
 export const DEBOUNCE_SERVICE = Symbol('DEBOUNCE_SERVICE');
 
-class DebounceService {
+export default class DebounceService {
   logger = new Logger(DebounceService.name);
 
   private store: Record<string, DebounceItem> = {};
