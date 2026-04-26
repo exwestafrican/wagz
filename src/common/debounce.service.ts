@@ -29,7 +29,7 @@ export default class DebounceService {
     delete this.store[debounceId];
   }
 
-  async ignoreOrRun<T>(debounceId: string, ignoreSec: number, action: () => T) {
+  async runOrIgnore<T>(debounceId: string, ignoreSec: number, action: () => T) {
     try {
       this.logger.log(`running with debouncer; requestId=${debounceId}`);
       if (this.notInStore(debounceId)) {
@@ -39,7 +39,7 @@ export default class DebounceService {
         this.addToStore(debounceId, ignoreSec);
         return await action();
       }
-      return await this.ignoreOrRunInStore(debounceId, action);
+      return await this.runOrIgnoreInStore(debounceId, action);
     } catch (e) {
       this.logger.error('Rolling back debouncing due to error', e);
       this.removeFromStore(debounceId);
@@ -48,7 +48,7 @@ export default class DebounceService {
   }
 
   async runOrThrow<T>(debounceId: string, ignoreSec: number, action: () => T) {
-    const result = await this.ignoreOrRun(debounceId, ignoreSec, action);
+    const result = await this.runOrIgnore(debounceId, ignoreSec, action);
     if (result) {
       return result;
     }
@@ -57,12 +57,13 @@ export default class DebounceService {
     );
   }
 
-  private async ignoreOrRunInStore<T>(debounceId: string, action: () => T) {
+  private async runOrIgnoreInStore<T>(debounceId: string, action: () => T) {
     const debounceItem = this.store[debounceId];
     const now = Math.floor(Date.now() / 1000);
     const ignoreTill = debounceItem.issuedAt + debounceItem.ignoreSec;
+    const outsideCoolOffPeriod = now > ignoreTill;
 
-    if (now > ignoreTill) {
+    if (outsideCoolOffPeriod) {
       this.logger.log(`Taking action for request; requestId=${debounceId}`);
       //remove it from store
       return await action();
