@@ -46,11 +46,8 @@ export class WorkspaceManager {
   async runPostWorkspaceCreationSteps(
     workspaceDetails: WorkspaceDetails,
     preverificationDetails: PreVerification,
+    postWorkspaceSetupSteps: PostSetupStep[],
   ): Promise<void> {
-    const postWorkspaceSetupSteps: PostSetupStep[] = [
-      new CreateWorkspaceAdminStep(this.prismaService),
-    ];
-
     const completedSteps: PostSetupStep[] = [];
 
     try {
@@ -95,6 +92,7 @@ export class WorkspaceManager {
     await this.runPostWorkspaceCreationSteps(
       workspaceDetails,
       preverificationDetails,
+      [new CreateWorkspaceAdminStep(this.prismaService)],
     );
 
     return workspaceDetails;
