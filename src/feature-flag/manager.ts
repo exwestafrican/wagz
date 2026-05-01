@@ -36,7 +36,7 @@ export default class FeatureFlagManager {
     }
   }
 
-  async turnOn(workspaceCode: string, key: string): Promise<void> {
+  async turnOnFF(workspaceCode: string, key: string): Promise<void> {
     // TODO(activity-log): record admin action (who, what, key, workspaceCode) when activity logging exists.
     const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow({
       where: { key },
@@ -66,7 +66,7 @@ export default class FeatureFlagManager {
     }
   }
 
-  async turnOnGlobally(key: string): Promise<void> {
+  async turnOnFFGlobally(key: string): Promise<void> {
     // TODO(activity-log): record admin action (who, what, key) when activity logging exists.
     const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow({
       where: { key },
@@ -151,5 +151,29 @@ export default class FeatureFlagManager {
       }
       throw e;
     }
+  }
+
+  async enabledFFs(workspaceCode: string) {
+    const workspaceFeatureFlags =
+      await this.prismaService.workspaceFeature.findMany({
+        where: {
+          workspaceCode: workspaceCode,
+        },
+      });
+
+    const featureFlags = await this.prismaService.featureFlag.findMany({
+      where: {
+        OR: [
+          { status: FeatureFlagStatus.GLOBAL },
+          {
+            id: {
+              in: workspaceFeatureFlags.map((ff) => ff.featureFlagId), // your array of IDs
+            },
+          },
+        ],
+      },
+    });
+
+    return new Set(featureFlags.map((ff) => ff.key));
   }
 }
