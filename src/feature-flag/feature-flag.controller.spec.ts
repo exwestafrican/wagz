@@ -1,5 +1,5 @@
 import { FeatureFlagController } from './feature-flag.controller';
-import { FeatureFlagService } from './feature-flag.service';
+import { DeprecatedFeatureFlagService } from './deprecated-feature-flag.service';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import {
   createTestApp,
@@ -20,7 +20,7 @@ describe('FeatureFlagController', () => {
     const module = await TestControllerModuleWithAuthUser({
       controllers: [FeatureFlagController],
       providers: [
-        FeatureFlagService,
+        DeprecatedFeatureFlagService,
         { provide: FEATURE_FLAG_LOADER, useClass: TestFeatureFlagLoader },
       ],
     }).with(requestUser);

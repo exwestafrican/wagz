@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
-import { FeatureFlagService } from './feature-flag.service';
+import { DeprecatedFeatureFlagService } from './deprecated-feature-flag.service';
 import { FEATURE_FLAG_LOADER } from './const';
 import { LocalFeatureFlagLoader } from './service/local-feature-flag-loader';
+import FeatureFlagManager from './feature-flag.service';
 
 const FeatureFlagLoaderProvider = {
   provide: FEATURE_FLAG_LOADER,
@@ -10,7 +11,11 @@ const FeatureFlagLoaderProvider = {
   },
 };
 @Module({
-  providers: [FeatureFlagService, FeatureFlagLoaderProvider],
-  exports: [FEATURE_FLAG_LOADER],
+  providers: [
+    DeprecatedFeatureFlagService,
+    FeatureFlagManager,
+    FeatureFlagLoaderProvider,
+  ],
+  exports: [FEATURE_FLAG_LOADER, FeatureFlagManager],
 })
 export class FeatureFlagModule {}

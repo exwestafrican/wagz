@@ -7,14 +7,16 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { FeatureFlagService } from './feature-flag.service';
+import { DeprecatedFeatureFlagService } from './deprecated-feature-flag.service';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
 
 @Controller('feature-flags')
 @ApiTags('feature-flag')
 export class FeatureFlagController {
-  constructor(private readonly featureFlagService: FeatureFlagService) {}
+  constructor(
+    private readonly featureFlagService: DeprecatedFeatureFlagService,
+  ) {}
 
   @Get('enabled')
   @ApiOperation({ summary: 'Fetch enabled features for the workspace' })

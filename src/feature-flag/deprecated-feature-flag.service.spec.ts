@@ -1,5 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { FeatureFlagService } from './feature-flag.service';
+import { DeprecatedFeatureFlagService } from './deprecated-feature-flag.service';
 import { INestApplication } from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
 import workspaceFactory from '@/factories/workspace.factory';
@@ -11,8 +11,8 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import Factory from '@/factories/factory';
 import { PersistStrategy } from '@/factories/factory';
 
-describe('FeatureFlagService', () => {
-  let service: FeatureFlagService;
+describe('DeprecatedFeatureFlagService', () => {
+  let service: DeprecatedFeatureFlagService;
   let prismaService: PrismaService;
   let app: INestApplication;
   let factory: PersistStrategy;
@@ -23,13 +23,15 @@ describe('FeatureFlagService', () => {
       imports: [ConfigModule.forRoot(), PrismaModule],
       providers: [
         {
-          provide: FeatureFlagService,
-          useValue: new FeatureFlagService(featureFlagLoader),
+          provide: DeprecatedFeatureFlagService,
+          useValue: new DeprecatedFeatureFlagService(featureFlagLoader),
         },
       ],
     }).compile();
     app = await createTestApp(module);
-    service = app.get<FeatureFlagService>(FeatureFlagService);
+    service = app.get<DeprecatedFeatureFlagService>(
+      DeprecatedFeatureFlagService,
+    );
     prismaService = app.get<PrismaService>(PrismaService);
     factory = Factory.createStrategy(prismaService);
   });

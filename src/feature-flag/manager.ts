@@ -1,0 +1,155 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { PrismaService } from '@/prisma/prisma.service';
+import { FeatureFlagStatus } from '@/generated/prisma/enums';
+import { UnExpectedStatusException } from '@/feature-flag/exceptions/unexpected-status.exception';
+import { notInDbError } from '@/common/error-type';
+
+@Injectable()
+export default class Manager {
+  constructor(private readonly prismaService: PrismaService) {}
+
+  async enabled(workspaceCode: string, key: string) {
+    const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow({
+      where: { key: key },
+    });
+    switch (featureFlag.status) {
+      case FeatureFlagStatus.GLOBAL:
+        return true;
+      case FeatureFlagStatus.DISABLED:
+        return false;
+      case FeatureFlagStatus.PARTIAL: {
+        const workspaceFeature =
+          await this.prismaService.workspaceFeature.findFirst({
+            where: {
+              featureFlagId: featureFlag.id,
+              workspaceCode: workspaceCode,
+            },
+          });
+        return !!workspaceFeature; // return true if we found it else false
+      }
+      default:
+        throw new UnExpectedStatusException(
+          `Unexpected feature flag status for key "${key}": ${String(
+            featureFlag.status,
+          )}`,
+        );
+    }
+  }
+
+  async turnOn(workspaceCode: string, key: string): Promise<void> {
+    // TODO(activity-log): record admin action (who, what, key, workspaceCode) when activity logging exists.
+    const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow({
+      where: { key },
+    });
+
+    switch (featureFlag.status) {
+      case FeatureFlagStatus.GLOBAL:
+        throw new BadRequestException(
+          'Cannot enable a globally enabled feature flag for a single workspace.',
+        );
+      case FeatureFlagStatus.DISABLED:
+        throw new BadRequestException(
+          'Cannot enable a disabled feature flag for a single workspace. Set it to PARTIAL first.',
+        );
+      case FeatureFlagStatus.PARTIAL:
+        await this.createWorkspaceFeatureIfMissing({
+          featureFlagId: featureFlag.id,
+          workspaceCode,
+        });
+        return;
+      default:
+        throw new UnExpectedStatusException(
+          `Unexpected feature flag status for key "${key}": ${String(
+            featureFlag.status,
+          )}`,
+        );
+    }
+  }
+
+  async turnOnGlobally(key: string): Promise<void> {
+    // TODO(activity-log): record admin action (who, what, key) when activity logging exists.
+    const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow({
+      where: { key },
+    });
+
+    if (featureFlag.status === FeatureFlagStatus.GLOBAL) {
+      return;
+    }
+
+    await this.prismaService.featureFlag.update({
+      where: { id: featureFlag.id },
+      data: {
+        status: FeatureFlagStatus.GLOBAL,
+        enabledAt: new Date(),
+      },
+    });
+  }
+
+  async turnOffGlobally(key: string): Promise<void> {
+    // TODO(activity-log): record admin action (who, what, key) when activity logging exists.
+    const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow({
+      where: { key },
+    });
+
+    if (featureFlag.status === FeatureFlagStatus.DISABLED) {
+      return;
+    }
+
+    await this.prismaService.featureFlag.update({
+      where: { id: featureFlag.id },
+      data: {
+        status: FeatureFlagStatus.DISABLED,
+        enabledAt: null,
+      },
+    });
+  }
+
+  async turnOff(workspaceCode: string, key: string): Promise<void> {
+    // TODO(activity-log): record admin action (who, what, key, workspaceCode) when activity logging exists.
+    const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow({
+      where: { key },
+    });
+
+    switch (featureFlag.status) {
+      case FeatureFlagStatus.GLOBAL:
+        throw new BadRequestException(
+          'Cannot turn off a single workspace while the feature flag is enabled globally.',
+        );
+      case FeatureFlagStatus.DISABLED:
+        return;
+      case FeatureFlagStatus.PARTIAL:
+        await this.prismaService.workspaceFeature.deleteMany({
+          where: {
+            featureFlagId: featureFlag.id,
+            workspaceCode,
+          },
+        });
+        return;
+      default:
+        throw new UnExpectedStatusException(
+          `Unexpected feature flag status for key "${key}": ${String(
+            featureFlag.status,
+          )}`,
+        );
+    }
+  }
+
+  private async createWorkspaceFeatureIfMissing(args: {
+    featureFlagId: number;
+    workspaceCode: string;
+  }): Promise<void> {
+    try {
+      await this.prismaService.workspaceFeature.create({
+        data: {
+          featureFlagId: args.featureFlagId,
+          workspaceCode: args.workspaceCode,
+        },
+      });
+    } catch (e) {
+      if (notInDbError(e)) {
+        return;
+      }
+      throw e;
+    }
+  }
+}
