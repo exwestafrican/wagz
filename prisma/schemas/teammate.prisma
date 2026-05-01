@@ -10,6 +10,7 @@ model Teammate {
   firstName                String                    @db.VarChar(100)
   lastName                 String                    @db.VarChar(100)
   username                 String?                   @db.VarChar(50)
+  normalizedUsername       String?                   @db.VarChar(50)
   workspaceCode            String                    @db.VarChar(6)
   workspace                Workspace                 @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
   status                   TeammateStatus            @default(ACTIVE)

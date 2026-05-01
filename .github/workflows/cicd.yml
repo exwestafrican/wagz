@@ -3,6 +3,8 @@ name: Node.js CI
 on:
   pull_request:
     branches: [ "main" ]
+    paths-ignore:
+      - 'iac/**'
 
 jobs:
   test:
@@ -54,7 +56,7 @@ jobs:
           version: latest
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
       - name: Generate Prisma Client
         run: pnpm prisma generate

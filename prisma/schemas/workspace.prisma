@@ -35,6 +35,7 @@ model Workspace {
   conversations            Conversation[]
   messages                 Message[]
   conversationParticipants ConversationParticipant[]
+  workspaceFeatures        WorkspaceFeature[]
 
   @@map("workspace")
 }

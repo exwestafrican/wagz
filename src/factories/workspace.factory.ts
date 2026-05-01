@@ -34,7 +34,7 @@ const workspaceFactory = WorkspaceFactory.define(({ sequence }) => {
     id: sequence,
     name: faker.company.name(),
     status: WorkspaceStatus.ACTIVE,
-    ownedById: 1,
+    ownedById: faker.number.int({ min: 10, max: 100 }),
     code: sixCharHumanFriendlyCode(),
     hasActivePlan: true,
     createdAt: faker.date.past(),

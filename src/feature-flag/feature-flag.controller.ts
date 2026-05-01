@@ -7,14 +7,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { FeatureFlagService } from './feature-flag.service';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import FeatureFlagManager from '@/feature-flag/manager';
 
 @Controller('feature-flags')
 @ApiTags('feature-flag')
 export class FeatureFlagController {
-  constructor(private readonly featureFlagService: FeatureFlagService) {}
+  constructor(private readonly featureFlagManager: FeatureFlagManager) {}
 
   @Get('enabled')
   @ApiOperation({ summary: 'Fetch enabled features for the workspace' })
@@ -34,7 +34,9 @@ export class FeatureFlagController {
   @ApiBadRequestResponse()
   @UseGuards(SupabaseAuthGuard)
   @HttpCode(HttpStatus.OK)
-  getEnabledFeatures(@Query('workspaceCode') workspaceCode: string): string[] {
-    return this.featureFlagService.enabledFeatures(workspaceCode);
+  async getEnabledFeatures(
+    @Query('workspaceCode') workspaceCode: string,
+  ): Promise<string[]> {
+    return await this.featureFlagManager.enabledFFs(workspaceCode);
   }
 }

@@ -10,17 +10,22 @@ export const Time = {
     milliseconds(value: number) {
       return value;
     },
-    seconds(value) {
+    seconds(value: number) {
       return value * 1000;
     },
-    minutes(value) {
+    minutes(value: number) {
       return value * 60 * 1000;
     },
-    hours(value) {
+    hours(value: number) {
       return value * 60 * 60 * 1000;
     },
-    days(value) {
+    days(value: number) {
       return value * 24 * 60 * 60 * 1000;
+    },
+  },
+  durationInSeconds: {
+    minutes(value: number) {
+      return value * 60;
     },
   },
 };
