@@ -6,7 +6,12 @@ import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import { AuthService } from '@/auth/auth.service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { CreateSuperAdminStep } from '@/workspace/steps/create-super-admin';
-import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import {
+  ENVOYE_WORKSPACE_CODE,
+  FEATURE_ADMINISTRATIVE_WORKSPACE_KEY,
+} from '@/feature-flag/const';
+import FeatureFlagManager from '@/feature-flag/manager';
+import { OptIntoAdministrativeWorkspaceStep } from '@/workspace/steps/opt-into-administrative-workspace';
 
 interface Options {
   email: string;
@@ -26,6 +31,7 @@ export class SetupAdministrativeWorkspaceCommand extends CommandRunner {
     private readonly prismaService: PrismaService,
     private readonly authService: AuthService,
     private readonly workspaceManager: WorkspaceManager,
+    private readonly featureFlagManager: FeatureFlagManager,
   ) {
     super();
   }
@@ -47,7 +53,10 @@ export class SetupAdministrativeWorkspaceCommand extends CommandRunner {
     await this.workspaceManager.runPostWorkspaceCreationSteps(
       workspaceDetails,
       preverification,
-      [new CreateSuperAdminStep(this.prismaService)],
+      [
+        new CreateSuperAdminStep(this.prismaService),
+        new OptIntoAdministrativeWorkspaceStep(this.featureFlagManager),
+      ],
     );
 
     this.logger.log(`Successfully created ${workspaceDetails.name}`);
@@ -79,10 +88,10 @@ export class SetupAdministrativeWorkspaceCommand extends CommandRunner {
     try {
       await this.prismaService.featureFlag.create({
         data: {
-          key: 'feature_administrative_workspace',
+          key: FEATURE_ADMINISTRATIVE_WORKSPACE_KEY,
           name: 'Administrative workspace',
           description: 'Enables administrative workspace behavior',
-          status: FeatureFlagStatus.DISABLED,
+          status: FeatureFlagStatus.PARTIAL,
           addedBy,
         },
       });
