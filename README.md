@@ -121,6 +121,8 @@ $ pnpm install
 $ pnpx supabase start
 $ make setup-prisma
 $ make setup-ssl
+$ pnpm start:container-dev
+$ docker exec -it  envoye-nest-app  node dist/src/cli.js setup --email <yourEmail>
 ```
 
 while running $make setup-ssl, password requested is your system password.
