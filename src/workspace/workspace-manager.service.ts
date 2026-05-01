@@ -43,22 +43,15 @@ export class WorkspaceManager {
     private readonly workspaceInviteService: WorkspaceInviteService,
   ) {}
 
-  async setup(
-    ownerEmail: string,
-    preVerificationId: string,
-  ): Promise<WorkspaceDetails> {
+  async runPostWorkspaceCreationSteps(
+    workspaceDetails: WorkspaceDetails,
+    preverificationDetails: PreVerification,
+  ): Promise<void> {
     const postWorkspaceSetupSteps: PostSetupStep[] = [
       new CreateWorkspaceAdminStep(this.prismaService),
     ];
-    const completedSteps: PostSetupStep[] = [];
-    const preverificationDetails = await this.getDetailsOrThrow(
-      ownerEmail,
-      preVerificationId,
-    );
 
-    const workspaceDetails = await this.runPreWorkspaceCreationSteps(
-      preverificationDetails,
-    );
+    const completedSteps: PostSetupStep[] = [];
 
     try {
       for (const step of postWorkspaceSetupSteps) {
@@ -66,12 +59,11 @@ export class WorkspaceManager {
         completedSteps.push(step);
       }
       await this.prismaService.preVerification.update({
-        where: { id: preVerificationId },
+        where: { id: preverificationDetails.id },
         data: {
           status: PreVerificationStatus.VERIFIED,
         },
       });
-      return workspaceDetails;
     } catch (error) {
       this.logger.error(
         `Workspace setup failed, rolling back completed steps; steps=[${completedSteps.map((step) => step.constructor.name).join(', ')}] preverificationId=${preverificationDetails.id} `,
@@ -84,6 +76,28 @@ export class WorkspaceManager {
       await this.rollBackPreWorkspaceCreationSteps(workspaceDetails);
       throw error;
     }
+  }
+
+  async setup(
+    ownerEmail: string,
+    preVerificationId: string,
+  ): Promise<WorkspaceDetails> {
+    const preverificationDetails = await this.getDetailsOrThrow(
+      ownerEmail,
+      preVerificationId,
+    );
+
+    const workspaceDetails = await this.runPreWorkspaceCreationSteps(
+      preverificationDetails,
+      this.generateCode(),
+    );
+
+    await this.runPostWorkspaceCreationSteps(
+      workspaceDetails,
+      preverificationDetails,
+    );
+
+    return workspaceDetails;
   }
 
   async details(code: string): Promise<Workspace> {
@@ -160,6 +174,7 @@ export class WorkspaceManager {
 
   private async runPreWorkspaceCreationSteps(
     preVerification: PreVerification,
+    workspaceCode: string,
   ): Promise<WorkspaceDetails> {
     return this.prismaService.$transaction(async (tx) => {
       const companyProfile: CompanyProfile = await tx.companyProfile.create({
@@ -179,7 +194,7 @@ export class WorkspaceManager {
         data: {
           name: companyProfile.companyName,
           ownedById: companyProfile.id,
-          code: this.generateCode(),
+          code: workspaceCode,
           timezone: preVerification.timezone,
         },
       });
