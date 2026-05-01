@@ -52,6 +52,7 @@ describe('FeatureFlagManager', () => {
   afterEach(async () => {
     await prismaService.preVerification.deleteMany();
     await prismaService.companyProfile.deleteMany();
+    await prismaService.workspaceFeature.deleteMany();
     await prismaService.featureFlag.deleteMany();
 
     await app.close();
@@ -62,7 +63,7 @@ describe('FeatureFlagManager', () => {
     const zuriBakery = await createWorkspace();
     const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
 
-    await featureFlagManager.turnOnGlobally(featureFlag.key);
+    await featureFlagManager.turnOnFFGlobally(featureFlag.key);
 
     await expectFeatureEnabled(koboMart.code, featureFlag.key);
     await expectFeatureEnabled(zuriBakery.code, featureFlag.key);
@@ -79,7 +80,7 @@ describe('FeatureFlagManager', () => {
     const zuriBakery = await createWorkspace();
     const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
 
-    await featureFlagManager.turnOnGlobally(featureFlag.key);
+    await featureFlagManager.turnOnFFGlobally(featureFlag.key);
     await featureFlagManager.turnOffGlobally(featureFlag.key);
 
     await expectFeatureDisabled(koboMart.code, featureFlag.key);
@@ -97,7 +98,7 @@ describe('FeatureFlagManager', () => {
     const zuriBakery = await createWorkspace();
     const featureFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
 
-    await featureFlagManager.turnOn(koboMart.code, featureFlag.key);
+    await featureFlagManager.turnOnFF(koboMart.code, featureFlag.key);
 
     await expectFeatureEnabled(koboMart.code, featureFlag.key);
     await expectFeatureDisabled(zuriBakery.code, featureFlag.key);
@@ -106,10 +107,34 @@ describe('FeatureFlagManager', () => {
   it('turnOff throws when flag is globally enabled', async () => {
     const workspace = await createWorkspace();
     const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
-    await featureFlagManager.turnOnGlobally(featureFlag.key);
+    await featureFlagManager.turnOnFFGlobally(featureFlag.key);
 
     await expect(
       featureFlagManager.turnOff(workspace.code, featureFlag.key),
     ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('returns only features enabled for user workspace', async () => {
+    const koboMart = await createWorkspace();
+    const zuriBakery = await createWorkspace();
+
+    const globalFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+    const partialFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
+    const disabledFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+
+    await featureFlagManager.turnOnFFGlobally(globalFlag.key);
+    await featureFlagManager.turnOnFF(koboMart.code, partialFlag.key);
+
+    const koboMartFeatures = await featureFlagManager.enabledFFs(koboMart.code);
+    expect(koboMartFeatures.length).toBe(2);
+    expect(koboMartFeatures).toMatchObject([partialFlag.key, globalFlag.key]);
+
+    const zuriBakeryFeatures = await featureFlagManager.enabledFFs(
+      zuriBakery.code,
+    );
+    expect(zuriBakeryFeatures).toEqual([globalFlag.key]);
+
+    expect(koboMartFeatures).not.toContain(disabledFlag.key);
+    expect(zuriBakeryFeatures).not.toContain(partialFlag.key);
   });
 });
