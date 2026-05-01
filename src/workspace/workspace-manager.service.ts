@@ -170,7 +170,7 @@ export class WorkspaceManager {
     );
   }
 
-  private async runPreWorkspaceCreationSteps(
+  async runPreWorkspaceCreationSteps(
     preVerification: PreVerification,
     workspaceCode: string,
   ): Promise<WorkspaceDetails> {

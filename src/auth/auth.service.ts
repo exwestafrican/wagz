@@ -14,6 +14,7 @@ import PRISMA_CODES from '@/prisma/consts';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { LinkService } from '@/common/link-service';
 import { notInDbError } from '@/common/error-type';
+import { faker } from '@faker-js/faker';
 
 @Injectable()
 export class AuthService {
@@ -60,6 +61,40 @@ export class AuthService {
   async emailOnlySignup(signupDetails: SignupDetails): Promise<void> {
     const password = this.passwordGenerator.generateRandomPassword();
     return await this.signup(signupDetails, password);
+  }
+
+  async signupAutoVerifiedForWorkspace(
+    email: string,
+  ): Promise<PreVerification> {
+    const signupDetails = new SignupDetails(
+      email.trim().toLowerCase(),
+      faker.person.firstName(),
+      faker.person.lastName(),
+      'Envoye',
+      'UTC',
+    );
+
+    const preverificationDetails =
+      await this.storePreverificationDetails(signupDetails);
+
+    try {
+      const password = this.passwordGenerator.generateRandomPassword();
+      const { error } = await this.supabaseClient.auth.admin.createUser({
+        email: signupDetails.email,
+        password,
+        email_confirm: true,
+      });
+      if (error) {
+        this.handleAuthError(error);
+      }
+    } catch (e) {
+      if (e instanceof AccountExistsException) {
+        return preverificationDetails;
+      }
+      throw e;
+    }
+
+    return preverificationDetails;
   }
 
   private existsInDBError(error: unknown): boolean {
