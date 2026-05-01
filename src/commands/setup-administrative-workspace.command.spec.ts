@@ -65,7 +65,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     await app.close();
   });
 
-  async function asserWorkspaceCreated() {
+  async function assertWorkspaceCreated() {
     const workspace = await prismaService.workspace.findUniqueOrThrow({
       where: { code: ENVOYE_WORKSPACE_CODE },
     });
@@ -119,7 +119,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
 
     await command.run([], { email: teammate.email });
 
-    await asserWorkspaceCreated();
+    await assertWorkspaceCreated();
     await assertTeammateIsAddedAsSuperAdmin(teammate.email);
   });
 });
