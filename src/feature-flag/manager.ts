@@ -174,6 +174,6 @@ export default class FeatureFlagManager {
       },
     });
 
-    return new Set(featureFlags.map((ff) => ff.key));
+    return [...new Set(featureFlags.map((ff) => ff.key))];
   }
 }

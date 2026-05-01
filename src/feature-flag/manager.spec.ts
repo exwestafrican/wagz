@@ -126,16 +126,15 @@ describe('FeatureFlagManager', () => {
     await featureFlagManager.turnOnFF(koboMart.code, partialFlag.key);
 
     const koboMartFeatures = await featureFlagManager.enabledFFs(koboMart.code);
-    expect([...koboMartFeatures]).toEqual(
-      [globalFlag.key, partialFlag.key].sort(),
-    );
+    expect(koboMartFeatures.length).toBe(2);
+    expect(koboMartFeatures).toMatchObject([partialFlag.key, globalFlag.key]);
 
     const zuriBakeryFeatures = await featureFlagManager.enabledFFs(
       zuriBakery.code,
     );
-    expect([...zuriBakeryFeatures]).toEqual([globalFlag.key]);
+    expect(zuriBakeryFeatures).toEqual([globalFlag.key]);
 
-    expect([...koboMartFeatures]).not.toContain(disabledFlag.key);
-    expect([...zuriBakeryFeatures]).not.toContain(partialFlag.key);
+    expect(koboMartFeatures).not.toContain(disabledFlag.key);
+    expect(zuriBakeryFeatures).not.toContain(partialFlag.key);
   });
 });
