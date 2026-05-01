@@ -16,7 +16,6 @@ import {
   FEATURE_ADMINISTRATIVE_WORKSPACE_KEY,
 } from '@/feature-flag/const';
 import FeatureFlagManager from '@/feature-flag/manager';
-import { FeatureFlagModule } from '@/feature-flag/feature-flag.module';
 import { ROLES } from '@/permission/types';
 import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
@@ -31,8 +30,9 @@ import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { AuthService } from '@/auth/auth.service';
-import { mockAuthService } from '@/test-helpers/mocks';
-import { MessagingModule } from '@/messaging/messaging.module';
+import PasswordGenerator from '@/auth/services/password.generator';
+import { TeammatesService } from '@/teammates/teammates.service';
+import { TestEmailClient } from '@/messaging/email/test-email-client';
 
 describe('SetupAdministrativeWorkspaceCommand', () => {
   let app: INestApplication;
@@ -45,37 +45,42 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     mockSupabaseClient = createMockSupabaseClient();
 
     const module = await Test.createTestingModule({
-      imports: [
-        ConfigModule.forRoot(),
-        PrismaModule,
-        MessagingModule,
-        FeatureFlagModule,
-      ],
-      providers: [
-        SetupAdministrativeWorkspaceCommand,
-        WorkspaceManager,
-        LinkService,
-        RoleService,
-        WorkspaceInviteService,
-
-        {
-          provide: AuthService,
-          useValue: mockAuthService as unknown as AuthService,
-        },
-      ],
-    })
-      .overrideProvider(SupabaseClient)
-      .useValue(mockSupabaseClient as unknown as SupabaseClient)
-      .compile();
+      imports: [ConfigModule.forRoot(), PrismaModule],
+      providers: [],
+    }).compile();
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
-    command = app.get(SetupAdministrativeWorkspaceCommand);
-    featureFlagManager = app.get(FeatureFlagManager);
+
+    featureFlagManager = new FeatureFlagManager(prismaService);
+    const teammateService = new TeammatesService(prismaService);
+    const authService = new AuthService(
+      mockSupabaseClient as unknown as SupabaseClient,
+      new PasswordGenerator(),
+      prismaService,
+      jest.fn() as unknown as LinkService,
+      teammateService,
+    );
+
+    const workspaceManager = new WorkspaceManager(
+      prismaService,
+      new TestEmailClient(),
+      jest.fn() as unknown as LinkService,
+      new RoleService(),
+      new WorkspaceInviteService(prismaService, authService),
+    );
+
+    command = new SetupAdministrativeWorkspaceCommand(
+      prismaService,
+      authService,
+      workspaceManager,
+      featureFlagManager,
+    );
   });
 
   afterEach(async () => {
     await prismaService.preVerification.deleteMany();
+    await prismaService.workspace.deleteMany();
     await prismaService.workspaceFeature.deleteMany();
     await prismaService.featureFlag.deleteMany();
     await app.close();
@@ -115,12 +120,12 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
   }
 
   it('creates verified preverification and super-admin teammate', async () => {
-    const userEmail = faker.internet.email();
+    const userEmail = faker.internet.email().toLowerCase();
 
     await command.run([], { email: userEmail });
 
     const preverification =
-      await prismaService.preVerification.findUniqueOrThrow({
+      await prismaService.preVerification.findFirstOrThrow({
         where: { email: userEmail },
       });
     expect(preverification.status).toBe(PreVerificationStatus.VERIFIED);
@@ -133,13 +138,16 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     const factory = Factory.createStrategy(prismaService);
 
     const sowetoWorkspace = await factory.persist('workspace', () =>
-      workspaceFactory.build({ code: 'ws_other' }),
+      workspaceFactory.build({ id: 6, code: 'other0' }),
     );
 
-    const teammate = teammateFactory.build({
-      workspaceCode: sowetoWorkspace.code,
-      groups: [ROLES.WorkspaceAdmin.code],
-    });
+    const teammate = await factory.persist('teammate', () =>
+      teammateFactory.build({
+        id: 6,
+        workspaceCode: 'other0',
+        groups: [ROLES.WorkspaceAdmin.code],
+      }),
+    );
 
     expect(
       await prismaService.teammate.count({
@@ -150,7 +158,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     await command.run([], { email: teammate.email });
 
     await assertWorkspaceCreated();
-    await assertTeammateIsAddedAsSuperAdmin(teammate.email);
+    await assertTeammateIsAddedAsSuperAdmin(teammate.email.toLowerCase());
     await assertFeatureIsOptedInto();
   });
 });
