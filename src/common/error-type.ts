@@ -7,3 +7,10 @@ export function notInDbError(error: unknown) {
     error.code === PRISMA_CODES.NOT_FOUND
   );
 }
+
+export function existsInDbError(error: unknown) {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === PRISMA_CODES.EXISTS_IN_DB
+  );
+}

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import { UnExpectedStatusException } from '@/feature-flag/exceptions/unexpected-status.exception';
-import { notInDbError } from '@/common/error-type';
+import { existsInDbError } from '@/common/error-type';
 
 @Injectable()
 export default class FeatureFlagManager {
@@ -146,7 +146,7 @@ export default class FeatureFlagManager {
         },
       });
     } catch (e) {
-      if (notInDbError(e)) {
+      if (existsInDbError(e)) {
         return;
       }
       throw e;
