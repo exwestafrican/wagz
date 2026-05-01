@@ -35,11 +35,6 @@ export class SetupAdministrativeWorkspaceCommand extends CommandRunner {
 
     await this.createAdministrativeWorkspaceFeatureFlag(email);
 
-    // todo ensure pre verification is verified
-    // ensure we have a super admin
-    // can create even if email used for another workspace
-    // will not update verification date
-
     const preverification =
       await this.authService.signupAutoVerifiedForWorkspace(email);
 
