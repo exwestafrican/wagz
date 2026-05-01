@@ -9,6 +9,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import FeatureFlagManager from '@/feature-flag/manager';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
+import { faker } from '@faker-js/faker';
 
 describe('FeatureFlagManager', () => {
   let featureFlagManager: FeatureFlagManager;
@@ -17,7 +18,11 @@ describe('FeatureFlagManager', () => {
   let factory: PersistStrategy;
 
   async function createWorkspace() {
-    return await factory.persist('workspace', () => workspaceFactory.build());
+    return await factory.persist('workspace', () =>
+      workspaceFactory.build({
+        ownedById: faker.number.int({ min: 10, max: 100 }),
+      }),
+    );
   }
 
   async function createFeatureFlag(status: FeatureFlagStatus) {
