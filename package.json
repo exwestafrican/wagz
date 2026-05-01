@@ -45,6 +45,7 @@
     "generate-password": "^1.7.1",
     "jose": "^6.1.3",
     "libphonenumber-js": "^1.12.33",
+    "nest-commander": "^3.20.1",
     "nodemailer": "^7.0.13",
     "passport": "^0.7.0",
     "pg": "^8.16.3",
