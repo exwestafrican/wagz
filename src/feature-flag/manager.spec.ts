@@ -7,11 +7,11 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
 import Factory, { PersistStrategy } from '@/factories/factory';
-import Manager from '@/feature-flag/manager';
+import FeatureFlagManager from '@/feature-flag/manager';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 
 describe('FeatureFlagManager', () => {
-  let manager: Manager;
+  let featureFlagManager: FeatureFlagManager;
   let prismaService: PrismaService;
   let app: INestApplication;
   let factory: PersistStrategy;
@@ -27,20 +27,24 @@ describe('FeatureFlagManager', () => {
   }
 
   async function expectFeatureEnabled(workspaceCode: string, key: string) {
-    await expect(manager.enabled(workspaceCode, key)).resolves.toBe(true);
+    await expect(featureFlagManager.enabled(workspaceCode, key)).resolves.toBe(
+      true,
+    );
   }
 
   async function expectFeatureDisabled(workspaceCode: string, key: string) {
-    await expect(manager.enabled(workspaceCode, key)).resolves.toBe(false);
+    await expect(featureFlagManager.enabled(workspaceCode, key)).resolves.toBe(
+      false,
+    );
   }
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule],
-      providers: [Manager],
+      providers: [FeatureFlagManager],
     }).compile();
     app = await createTestApp(module);
-    manager = app.get<Manager>(Manager);
+    featureFlagManager = app.get<FeatureFlagManager>(FeatureFlagManager);
     prismaService = app.get<PrismaService>(PrismaService);
     factory = Factory.createStrategy(prismaService);
   });
@@ -61,7 +65,7 @@ describe('FeatureFlagManager', () => {
     const zuriBakery = await createWorkspace();
     const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
 
-    await manager.turnOnGlobally(featureFlag.key);
+    await featureFlagManager.turnOnGlobally(featureFlag.key);
 
     await expectFeatureEnabled(koboMart.code, featureFlag.key);
     await expectFeatureEnabled(zuriBakery.code, featureFlag.key);
@@ -78,8 +82,8 @@ describe('FeatureFlagManager', () => {
     const zuriBakery = await createWorkspace();
     const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
 
-    await manager.turnOnGlobally(featureFlag.key);
-    await manager.turnOffGlobally(featureFlag.key);
+    await featureFlagManager.turnOnGlobally(featureFlag.key);
+    await featureFlagManager.turnOffGlobally(featureFlag.key);
 
     await expectFeatureDisabled(koboMart.code, featureFlag.key);
     await expectFeatureDisabled(zuriBakery.code, featureFlag.key);
@@ -96,7 +100,7 @@ describe('FeatureFlagManager', () => {
     const zuriBakery = await createWorkspace();
     const featureFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
 
-    await manager.turnOn(koboMart.code, featureFlag.key);
+    await featureFlagManager.turnOn(koboMart.code, featureFlag.key);
 
     await expectFeatureEnabled(koboMart.code, featureFlag.key);
     await expectFeatureDisabled(zuriBakery.code, featureFlag.key);
@@ -105,10 +109,10 @@ describe('FeatureFlagManager', () => {
   it('turnOff throws when flag is globally enabled', async () => {
     const workspace = await createWorkspace();
     const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
-    await manager.turnOnGlobally(featureFlag.key);
+    await featureFlagManager.turnOnGlobally(featureFlag.key);
 
     await expect(
-      manager.turnOff(workspace.code, featureFlag.key),
+      featureFlagManager.turnOff(workspace.code, featureFlag.key),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 });

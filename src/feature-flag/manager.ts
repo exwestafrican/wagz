@@ -5,7 +5,7 @@ import { UnExpectedStatusException } from '@/feature-flag/exceptions/unexpected-
 import { notInDbError } from '@/common/error-type';
 
 @Injectable()
-export default class Manager {
+export default class FeatureFlagManager {
   constructor(private readonly prismaService: PrismaService) {}
 
   async enabled(workspaceCode: string, key: string) {
