@@ -5,7 +5,7 @@ import { FeatureFlag } from './domain/feature-flag';
 import type FeatureFlagLoader from './service/feature-flag-loader';
 
 @Injectable()
-export class FeatureFlagService {
+export class DeprecatedFeatureFlagService {
   private cache: {
     value: Map<string, FeatureFlag>;
     ttl: number;

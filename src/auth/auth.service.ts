@@ -151,6 +151,7 @@ export class AuthService {
 
     if (error) {
       this.handleAuthError(error);
+      //TODO: mark as faileed, add reason
     }
   }
 }
