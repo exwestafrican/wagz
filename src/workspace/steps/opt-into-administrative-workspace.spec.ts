@@ -9,7 +9,6 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import FeatureFlagManager from '@/feature-flag/manager';
-import { FeatureFlagModule } from '@/feature-flag/feature-flag.module';
 import { FEATURE_ADMINISTRATIVE_WORKSPACE_KEY } from '@/feature-flag/const';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import Factory, { PersistStrategy } from '@/factories/factory';
@@ -24,13 +23,13 @@ describe('OptIntoAdministrativeWorkspaceStep', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), PrismaModule, FeatureFlagModule],
+      imports: [ConfigModule.forRoot(), PrismaModule],
       providers: [],
     }).compile();
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
-    featureFlagManager = app.get(FeatureFlagManager);
+    featureFlagManager = new FeatureFlagManager(prismaService);
     step = new OptIntoAdministrativeWorkspaceStep(featureFlagManager);
     factory = Factory.createStrategy(prismaService);
 
