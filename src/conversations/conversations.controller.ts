@@ -21,7 +21,7 @@ import {
 export class ConversationsController {
   constructor(private readonly conversationsService: ConversationsService) {}
 
-  @Post()
+  @Post('/create')
   @ApiOperation({ summary: 'Create a new conversation' })
   @ApiResponse({
     status: HttpStatus.CREATED,
