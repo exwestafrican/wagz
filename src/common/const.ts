@@ -33,3 +33,7 @@ export const TeammatesEndpoints = {
   CHECK_USERNAME: '/teammates/check-username',
   RANDOM: '',
 };
+
+export const ConversationEndpoints = {
+  CREATE_CONVERSATION: '/conversations'
+}

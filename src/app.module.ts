@@ -14,6 +14,7 @@ import { FeatureFlagModule } from './feature-flag/feature-flag.module';
 import { TeammatesModule } from './teammates/teammates.module';
 import { CommonModule } from '@/common/common.module';
 import { BackfillModule } from './backfill/backfill.module';
+import { ConversationsModule } from './conversations/conversations.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { BackfillModule } from './backfill/backfill.module';
     TeammatesModule,
     CommonModule,
     BackfillModule,
+    ConversationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
