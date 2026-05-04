@@ -15,6 +15,7 @@ import { TeammatesModule } from './teammates/teammates.module';
 import { CommonModule } from '@/common/common.module';
 import { BackfillModule } from './backfill/backfill.module';
 import { CommandsModule } from '@/commands/commands.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { CommandsModule } from '@/commands/commands.module';
     CommonModule,
     BackfillModule,
     CommandsModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService],
