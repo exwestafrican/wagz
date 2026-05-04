@@ -63,16 +63,16 @@ describe('FeatureFlagManager', () => {
   });
 
   it('create persists disabled flag with addedBy', async () => {
-    const row = await featureFlagManager.create(
+    const featureFlag = await featureFlagManager.create(
       'created_via_manager',
       'Created flag',
       'Test description',
       'creator@example.com',
     );
 
-    expect(row.status).toBe(FeatureFlagStatus.DISABLED);
-    expect(row.addedBy).toBe('creator@example.com');
-    expect(row.key).toBe('created_via_manager');
+    expect(featureFlag.status).toBe(FeatureFlagStatus.DISABLED);
+    expect(featureFlag.addedBy).toBe('creator@example.com');
+    expect(featureFlag.key).toBe('created_via_manager');
   });
 
   it('create throws ConflictException on duplicate key', async () => {
