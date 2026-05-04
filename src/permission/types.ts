@@ -42,6 +42,11 @@ export const PERMISSIONS = {
     'Allows user to see all Feature Flags',
     'view_feature_flags',
   ),
+  CREATE_FEATURE_FLAG: Permission.of(
+    'Create Feature Flags',
+    'Allows user to create new Feature Flags',
+    'create_feature_flags',
+  ),
 } as const;
 
 export const ROLES: Record<string, Role> = {
@@ -55,6 +60,7 @@ export const ROLES: Record<string, Role> = {
     PERMISSIONS.VIEW_BACKFILL_TASK,
     PERMISSIONS.RUN_BACKFILL_TASK,
     PERMISSIONS.VIEW_ALL_FEATURE_FLAGS,
+    PERMISSIONS.CREATE_FEATURE_FLAG,
   ]),
   WorkspaceAdmin: Role.of('WorkspaceAdmin', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,

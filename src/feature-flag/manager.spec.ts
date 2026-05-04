@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, INestApplication } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  INestApplication,
+} from '@nestjs/common';
 import { createTestApp } from '@/test-helpers/test-app';
 import workspaceFactory from '@/factories/workspace.factory';
 import featureFlagFactory from '@/factories/feature-flag.factory';
@@ -56,6 +60,32 @@ describe('FeatureFlagManager', () => {
     await prismaService.featureFlag.deleteMany();
 
     await app.close();
+  });
+
+  it('create persists disabled flag with addedBy', async () => {
+    const featureFlag = await featureFlagManager.create(
+      'created_via_manager',
+      'Created flag',
+      'Test description',
+      'creator@example.com',
+    );
+
+    expect(featureFlag.status).toBe(FeatureFlagStatus.DISABLED);
+    expect(featureFlag.addedBy).toBe('creator@example.com');
+    expect(featureFlag.key).toBe('created_via_manager');
+  });
+
+  it('create throws ConflictException on duplicate key', async () => {
+    const existing = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+
+    await expect(
+      featureFlagManager.create(
+        existing.key,
+        'Another name',
+        'Another description',
+        'other@example.com',
+      ),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('turnOnGlobally enables the flag for every workspace', async () => {

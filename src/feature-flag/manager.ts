@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+} from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import { UnExpectedStatusException } from '@/feature-flag/exceptions/unexpected-status.exception';
@@ -7,6 +11,32 @@ import { existsInDbError } from '@/common/error-type';
 @Injectable()
 export default class FeatureFlagManager {
   constructor(private readonly prismaService: PrismaService) {}
+
+  async create(
+    key: string,
+    name: string,
+    description: string,
+    addedBy: string,
+  ) {
+    try {
+      return await this.prismaService.featureFlag.create({
+        data: {
+          key,
+          name,
+          description,
+          addedBy,
+          status: FeatureFlagStatus.DISABLED,
+        },
+      });
+    } catch (e) {
+      if (existsInDbError(e)) {
+        throw new ConflictException(
+          `Feature flag with key already exists; key=${key}`,
+        );
+      }
+      throw e;
+    }
+  }
 
   async enabled(workspaceCode: string, key: string) {
     const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow({
