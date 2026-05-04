@@ -1,4 +1,4 @@
-import { Controller, Get, HttpStatus, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import FeatureFlagDto, { toFeatureFlagDto } from '@/admin/dto/feature-flag.dto';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
