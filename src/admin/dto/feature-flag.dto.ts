@@ -1,6 +1,34 @@
-import { IsString } from 'class-validator';
+import { IsString, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { FeatureFlag } from '@/generated/prisma/client';
+
+const FEATURE_FLAG_KEY_PATTERN = /^[a-z_]+$/;
+
+export class CreateFeatureFlagDto {
+  @IsString()
+  @Matches(FEATURE_FLAG_KEY_PATTERN, {
+    message: 'key must contain only lowercase letters and underscores',
+  })
+  @ApiProperty({
+    description: 'Unique key (lowercase letters and underscores only)',
+    example: 'can_use_whatsapp',
+  })
+  key: string;
+
+  @IsString()
+  @ApiProperty({
+    description: 'Feature name',
+    example: 'WhatsApp integration',
+  })
+  name: string;
+
+  @IsString()
+  @ApiProperty({
+    description: 'Description of the feature',
+    example: 'Enabling this feature allows connecting WhatsApp',
+  })
+  description: string;
+}
 
 export default class FeatureFlagDto {
   @IsString()

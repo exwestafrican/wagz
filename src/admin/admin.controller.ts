@@ -1,6 +1,21 @@
-import { Controller, Get, HttpStatus, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import FeatureFlagDto, { toFeatureFlagDto } from '@/admin/dto/feature-flag.dto';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+} from '@nestjs/swagger';
+import FeatureFlagDto, {
+  CreateFeatureFlagDto,
+  toFeatureFlagDto,
+} from '@/admin/dto/feature-flag.dto';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
@@ -33,5 +48,44 @@ export class AdminController {
       );
 
     return featureFlags.map((ff) => toFeatureFlagDto(ff));
+  }
+
+  @Post('/feature-flag')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a feature flag' })
+  @ApiBody({ type: CreateFeatureFlagDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Feature flag created',
+    type: FeatureFlagDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description: 'A feature flag with this key already exists',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or not an active Envoye workspace member',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async createFeatureFlag(
+    @User() requestUser: RequestUser,
+    @Body() body: CreateFeatureFlagDto,
+  ) {
+    const created =
+      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+        requestUser,
+        ENVOYE_WORKSPACE_CODE,
+        PERMISSIONS.CREATE_FEATURE_FLAG,
+        () =>
+          this.featureFlagManager.create(
+            body.key,
+            body.name,
+            body.description,
+            requestUser.email,
+          ),
+      );
+
+    return toFeatureFlagDto(created);
   }
 }
