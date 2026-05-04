@@ -46,7 +46,7 @@ describe('AdminController', () => {
     await app.close();
   });
 
-  describe('POST /admin/feature-flag', () => {
+  describe('Create', () => {
     const validBody = {
       key: 'new_feature_flag',
       name: 'New feature',
@@ -76,10 +76,10 @@ describe('AdminController', () => {
         status: 'DISABLED',
       });
 
-      const row = await prismaService.featureFlag.findFirstOrThrow({
+      const featureFlag = await prismaService.featureFlag.findFirstOrThrow({
         where: { key: validBody.key },
       });
-      expect(row.addedBy).toBe(requestUser.email);
+      expect(featureFlag.addedBy).toBe(requestUser.email);
     });
 
     it('returns 403 when user lacks create permission', async () => {
