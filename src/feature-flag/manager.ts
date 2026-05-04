@@ -31,7 +31,7 @@ export default class FeatureFlagManager {
     } catch (e) {
       if (existsInDbError(e)) {
         throw new ConflictException(
-          `Feature flag with key "${key}" already exists`,
+          `Feature flag with key already exists; key=${key}`,
         );
       }
       throw e;
