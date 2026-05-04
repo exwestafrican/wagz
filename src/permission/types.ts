@@ -37,6 +37,11 @@ export const PERMISSIONS = {
     'Allows user to trigger run for Backfill',
     'run_backfill_tasks',
   ),
+  VIEW_ALL_FEATURE_FLAGS: Permission.of(
+    'Can See All Created Feature Flags',
+    'Allows user to see all Feature Flags',
+    'view_feature_flags',
+  ),
 } as const;
 
 export const ROLES: Record<string, Role> = {
@@ -49,6 +54,7 @@ export const ROLES: Record<string, Role> = {
     //special permission
     PERMISSIONS.VIEW_BACKFILL_TASK,
     PERMISSIONS.RUN_BACKFILL_TASK,
+    PERMISSIONS.VIEW_ALL_FEATURE_FLAGS,
   ]),
   WorkspaceAdmin: Role.of('WorkspaceAdmin', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,

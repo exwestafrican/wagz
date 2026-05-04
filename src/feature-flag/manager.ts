@@ -176,4 +176,8 @@ export default class FeatureFlagManager {
 
     return [...new Set(featureFlags.map((ff) => ff.key))];
   }
+
+  async listAll() {
+    return this.prismaService.featureFlag.findMany();
+  }
 }
