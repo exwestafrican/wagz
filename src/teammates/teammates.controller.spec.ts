@@ -169,5 +169,27 @@ describe('TeammatesController', () => {
         .set('Accept', 'application/json')
         .expect(HttpStatus.CONFLICT);
     });
+
+    test.each([
+      ['90-...jky', 'starts with digit and has consecutive separators'],
+      ['laura smith', 'contains a space'],
+      ['laura@smith', 'contains @'],
+      ['1laura', 'starts with a digit'],
+      ['.laura', 'has a leading separator'],
+      ['laura.', 'has a trailing separator'],
+      ['laura..smith', 'has consecutive separators'],
+      ['_laura', 'has a leading separator'],
+      ['laura!', 'has a disallowed special character'],
+      ['a', 'is shorter than the minimum length'],
+    ])(
+      'should return 400 when the username %s is invalid (%s)',
+      async (username: string) => {
+        await request(getHttpServer(app))
+          .get(TeammatesEndpoints.CHECK_USERNAME)
+          .query({ workspaceCode: 'a1b2c3', username })
+          .set('Accept', 'application/json')
+          .expect(HttpStatus.BAD_REQUEST);
+      },
+    );
   });
 });

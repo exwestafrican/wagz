@@ -1,6 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsNotEmpty, IsString } from 'class-validator';
 import { Transform } from 'class-transformer';
+import {
+  IsValidUsername,
+  USERNAME_MAX_LENGTH,
+  USERNAME_MIN_LENGTH,
+  USERNAME_REGEX,
+} from '@/common/validators/is-valid-username';
 
 export default class AcceptWorkspaceInviteDto {
   @ApiProperty({
@@ -47,9 +53,10 @@ export default class AcceptWorkspaceInviteDto {
   @ApiProperty({
     description: 'Username of teammate',
     example: 'laura.smith',
+    minLength: USERNAME_MIN_LENGTH,
+    maxLength: USERNAME_MAX_LENGTH,
+    pattern: USERNAME_REGEX,
   })
-  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
-  @IsString()
-  @IsNotEmpty()
+  @IsValidUsername()
   username: string;
 }
