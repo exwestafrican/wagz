@@ -10,6 +10,7 @@ model ConversationParticipant {
   lastReadMsg     Message?     @relation(fields: [lastReadMessage], references: [id], onDelete: SetNull)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+  isOwner         Boolean      @default(false)
 
   @@index([workspaceCode, teammateId])
   @@index([workspaceCode, conversationId])
