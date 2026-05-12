@@ -11,7 +11,7 @@ model Conversation {
   workspace                Workspace                 @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
   status                   ConversationStatus        @default(OPEN)
   subject                  String?                   @db.VarChar(100)
-  customerInfo             String                    @db.VarChar(100)
+  customerInfo             String?                    @db.VarChar(100)
   lastMessage              Int?
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
