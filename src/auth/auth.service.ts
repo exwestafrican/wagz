@@ -33,12 +33,6 @@ export class AuthService {
     private readonly permissionService: PermissionService,
   ) {}
 
-  async sendMagicLinkOrThrow(
-    email: string,
-    workspaceCode: string,
-  ): Promise<void> {
-    await this.signInWithOtp(email, workspaceCode);
-  }
 
   private async signInWithOtp(
     email: string,
@@ -62,7 +56,7 @@ export class AuthService {
     try {
       const primaryWorkspace =
         await this.teammatesService.primaryWorkspace(email);
-      await this.sendMagicLinkOrThrow(email, primaryWorkspace.code);
+      await this.signInWithOtp(email, primaryWorkspace.code);
     } catch (e) {
       if (notInDbError(e as Error)) {
         throw new UnauthorizedException();
@@ -77,7 +71,7 @@ export class AuthService {
         RequestUser.of(email),
         ENVOYE_WORKSPACE_CODE,
         PERMISSIONS.ACCESS_ADMIN,
-        () => this.sendMagicLinkOrThrow(email, ENVOYE_WORKSPACE_CODE),
+        () => this.signInWithOtp(email, ENVOYE_WORKSPACE_CODE),
       );
     } catch (error) {
       if (
