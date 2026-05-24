@@ -24,6 +24,9 @@ import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { TeammateStatus } from '@/generated/prisma/client';
 import { ROLES } from '@/permission/types';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
+import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -57,6 +60,8 @@ describe('AuthController', () => {
         PrismaService,
         LinkService,
         TeammatesService,
+        PermissionService,
+        RoleService,
       ],
     }).compile();
 
@@ -66,6 +71,8 @@ describe('AuthController', () => {
   });
 
   afterEach(async () => {
+    await prismaService.teammate.deleteMany();
+    await prismaService.workspace.deleteMany();
     await prismaService.preVerification.deleteMany();
     await prismaService.companyProfile.deleteMany();
     await app.close();
@@ -144,6 +151,72 @@ describe('AuthController', () => {
       return request(getHttpServer(app))
         .post(AuthEndpoints.REQUEST_MAGIC_LINK)
         .send({ email: 'test@example.com' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+  });
+
+  describe('admin login', () => {
+    const adminEmail = 'admin@useenvoye.com';
+
+    it('should return 400 if the email is invalid', async () => {
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.ADMIN_LOGIN)
+        .send({ email: 'invalid-email' })
+        .set('Accept', 'application/json')
+        .expect(400);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['email']);
+    });
+
+    it('should return 200 when user is SuperAdmin in Envoye workspace', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: adminEmail,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.SuperAdmin.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.ADMIN_LOGIN)
+        .send({ email: adminEmail })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.OK);
+
+      expect(mockSupabaseClient.auth.signInWithOtp).toHaveBeenCalledWith({
+        email: adminEmail,
+        options: {
+          shouldCreateUser: false,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          emailRedirectTo: expect.stringMatching(/\/admin$/),
+        },
+      });
+    });
+
+    it('should return 401 when user lacks ACCESS_ADMIN in Envoye workspace', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: adminEmail,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.ADMIN_LOGIN)
+        .send({ email: adminEmail })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('should return 401 when email has no teammate in Envoye workspace', async () => {
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.ADMIN_LOGIN)
+        .send({ email: adminEmail })
         .set('Accept', 'application/json')
         .expect(HttpStatus.UNAUTHORIZED);
     });

@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   Logger,
   ServiceUnavailableException,
@@ -15,6 +16,10 @@ import { TeammatesService } from '@/teammates/teammates.service';
 import { LinkService } from '@/common/link-service';
 import { notInDbError } from '@/common/error-type';
 import { faker } from '@faker-js/faker';
+import { PermissionService } from '@/permission/permission.service';
+import RequestUser from '@/auth/domain/request-user';
+import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import { PERMISSIONS } from '@/permission/types';
 
 @Injectable()
 export class AuthService {
@@ -25,17 +30,28 @@ export class AuthService {
     private readonly prismaService: PrismaService,
     private readonly linkService: LinkService,
     private readonly teammatesService: TeammatesService,
+    private readonly permissionService: PermissionService,
   ) {}
 
   private async signInWithOtp(
     email: string,
     workspaceCode: string,
   ): Promise<void> {
+    await this.signInWithOtpRedirect(
+      email,
+      this.linkService.loadWorkspaceUrl(workspaceCode),
+    );
+  }
+
+  private async signInWithOtpRedirect(
+    email: string,
+    emailRedirectTo: string,
+  ): Promise<void> {
     const { error } = await this.supabaseClient.auth.signInWithOtp({
       email: email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: this.linkService.loadWorkspaceUrl(workspaceCode),
+        emailRedirectTo,
       },
     });
 
@@ -55,6 +71,23 @@ export class AuthService {
         throw new UnauthorizedException();
       }
       throw e;
+    }
+  }
+
+  async requestAdminMagicLinkOrThrow(email: string): Promise<void> {
+    try {
+      await this.permissionService.runIfPermitted(
+        RequestUser.of(email),
+        ENVOYE_WORKSPACE_CODE,
+        PERMISSIONS.ACCESS_ADMIN,
+        () =>
+          this.signInWithOtpRedirect(email, this.linkService.adminLoginUrl()),
+      );
+    } catch (error) {
+      if (error instanceof ForbiddenException || notInDbError(error as Error)) {
+        throw new UnauthorizedException();
+      }
+      throw error;
     }
   }
 
