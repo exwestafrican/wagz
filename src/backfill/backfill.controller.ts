@@ -20,6 +20,7 @@ import { PermissionService } from '@/permission/permission.service';
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { PERMISSIONS } from '@/permission/types';
+import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 
 @Controller('backfill')
 export class BackfillController {
@@ -37,15 +38,10 @@ export class BackfillController {
     type: Array<BackfillResponseDto>,
   })
   @UseGuards(SupabaseAuthGuard)
-  async list(
-    @User() requestUser: RequestUser,
-    @Query('workspaceCode') workspaceCode: string,
-  ): Promise<BackfillResponseDto[]> {
-    //Check if feature enabled for workspace
-    //feature available for workspace and admin has permission
-    return await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+  async list(@User() requestUser: RequestUser): Promise<BackfillResponseDto[]> {
+    return await this.permissionService.runIfPermitted(
       requestUser,
-      workspaceCode,
+      ENVOYE_WORKSPACE_CODE,
       PERMISSIONS.VIEW_BACKFILL_TASK,
       () => this.registry.all().map((r) => toBackfillResponseDto(r)),
     );
