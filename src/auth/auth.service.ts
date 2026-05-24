@@ -38,11 +38,21 @@ export class AuthService {
     email: string,
     workspaceCode: string,
   ): Promise<void> {
+    await this.signInWithOtpRedirect(
+      email,
+      this.linkService.loadWorkspaceUrl(workspaceCode),
+    );
+  }
+
+  private async signInWithOtpRedirect(
+    email: string,
+    emailRedirectTo: string,
+  ): Promise<void> {
     const { error } = await this.supabaseClient.auth.signInWithOtp({
       email: email,
       options: {
         shouldCreateUser: false,
-        emailRedirectTo: this.linkService.loadWorkspaceUrl(workspaceCode),
+        emailRedirectTo,
       },
     });
 
@@ -71,7 +81,7 @@ export class AuthService {
         RequestUser.of(email),
         ENVOYE_WORKSPACE_CODE,
         PERMISSIONS.ACCESS_ADMIN,
-        () => this.signInWithOtp(email, ENVOYE_WORKSPACE_CODE),
+        () => this.signInWithOtpRedirect(email, this.linkService.adminLoginUrl()),
       );
     } catch (error) {
       if (

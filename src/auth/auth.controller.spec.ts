@@ -186,7 +186,14 @@ describe('AuthController', () => {
         .set('Accept', 'application/json')
         .expect(HttpStatus.OK);
 
-      expect(mockSupabaseClient.auth.signInWithOtp).toHaveBeenCalled();
+      expect(mockSupabaseClient.auth.signInWithOtp).toHaveBeenCalledWith({
+        email: adminEmail,
+        options: {
+          shouldCreateUser: false,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          emailRedirectTo: expect.stringMatching(/\/admin$/),
+        },
+      });
     });
 
     it('should return 401 when user lacks ACCESS_ADMIN in Envoye workspace', async () => {

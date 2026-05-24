@@ -17,6 +17,10 @@ export class LinkService {
     return `${this.siteUrl}/setup/${preverificationId}/workspace`;
   }
 
+  adminLoginUrl(): string {
+    return `${this.siteUrl}/admin`;
+  }
+
   private get siteUrl(): string {
     return this.configService.get<string>('SITE_URL', '');
   }
