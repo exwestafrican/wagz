@@ -4,7 +4,6 @@ import {
   HttpStatus,
   Inject,
   Logger,
-  Query,
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
