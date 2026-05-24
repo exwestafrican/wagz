@@ -43,6 +43,7 @@ describe('BackfillController', () => {
   });
 
   afterEach(async () => {
+    await prismaService.workspace.deleteMany();
     await prismaService.preVerification.deleteMany();
     await prismaService.companyProfile.deleteMany();
     await app.close();
