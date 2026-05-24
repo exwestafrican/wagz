@@ -1,4 +1,5 @@
 import {
+  ForbiddenException,
   Injectable,
   Logger,
   ServiceUnavailableException,
@@ -15,6 +16,10 @@ import { TeammatesService } from '@/teammates/teammates.service';
 import { LinkService } from '@/common/link-service';
 import { notInDbError } from '@/common/error-type';
 import { faker } from '@faker-js/faker';
+import { PermissionService } from '@/permission/permission.service';
+import RequestUser from '@/auth/domain/request-user';
+import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import { PERMISSIONS } from '@/permission/types';
 
 @Injectable()
 export class AuthService {
@@ -25,7 +30,15 @@ export class AuthService {
     private readonly prismaService: PrismaService,
     private readonly linkService: LinkService,
     private readonly teammatesService: TeammatesService,
+    private readonly permissionService: PermissionService,
   ) {}
+
+  async sendMagicLinkOrThrow(
+    email: string,
+    workspaceCode: string,
+  ): Promise<void> {
+    await this.signInWithOtp(email, workspaceCode);
+  }
 
   private async signInWithOtp(
     email: string,
@@ -49,12 +62,31 @@ export class AuthService {
     try {
       const primaryWorkspace =
         await this.teammatesService.primaryWorkspace(email);
-      await this.signInWithOtp(email, primaryWorkspace.code);
+      await this.sendMagicLinkOrThrow(email, primaryWorkspace.code);
     } catch (e) {
       if (notInDbError(e as Error)) {
         throw new UnauthorizedException();
       }
       throw e;
+    }
+  }
+
+  async requestAdminMagicLinkOrThrow(email: string): Promise<void> {
+    try {
+      await this.permissionService.runIfPermitted(
+        RequestUser.of(email),
+        ENVOYE_WORKSPACE_CODE,
+        PERMISSIONS.ACCESS_ADMIN,
+        () => this.sendMagicLinkOrThrow(email, ENVOYE_WORKSPACE_CODE),
+      );
+    } catch (error) {
+      if (
+        error instanceof ForbiddenException ||
+        notInDbError(error as Error)
+      ) {
+        throw new UnauthorizedException();
+      }
+      throw error;
     }
   }
 
