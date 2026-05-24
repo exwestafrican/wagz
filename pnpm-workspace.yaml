@@ -1,2 +1,14 @@
+allowBuilds:
+  '@nestjs/core': false
+  '@prisma/engines': false
+  '@scarf/scarf': false
+  cpu-features: false
+  esbuild: false
+  prisma: false
+  protobufjs: false
+  sharp: false
+  ssh2: false
+  supabase: true
+  unrs-resolver: false
 onlyBuiltDependencies:
   - supabase

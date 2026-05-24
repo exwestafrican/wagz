@@ -5,6 +5,7 @@
   "author": "",
   "private": true,
   "license": "UNLICENSED",
+  "packageManager": "pnpm@11.3.0",
   "scripts": {
     "build": "nest build",
     "check:format": "prettier --check \"src/**/*.{ts,tsx}\" \"test/**/*.ts\"",
