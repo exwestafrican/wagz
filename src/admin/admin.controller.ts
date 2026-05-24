@@ -84,4 +84,19 @@ export class AdminController {
 
     return toFeatureFlagDto(created);
   }
+
+
+  @Post('/login')
+  @ApiOperation({ summary: 'Login as an admin' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Admin logged in',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid credentials',
+  })
+  login() {
+    return {}
+  }
 }
