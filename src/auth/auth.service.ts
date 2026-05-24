@@ -33,7 +33,6 @@ export class AuthService {
     private readonly permissionService: PermissionService,
   ) {}
 
-
   private async signInWithOtp(
     email: string,
     workspaceCode: string,
@@ -81,13 +80,11 @@ export class AuthService {
         RequestUser.of(email),
         ENVOYE_WORKSPACE_CODE,
         PERMISSIONS.ACCESS_ADMIN,
-        () => this.signInWithOtpRedirect(email, this.linkService.adminLoginUrl()),
+        () =>
+          this.signInWithOtpRedirect(email, this.linkService.adminLoginUrl()),
       );
     } catch (error) {
-      if (
-        error instanceof ForbiddenException ||
-        notInDbError(error as Error)
-      ) {
+      if (error instanceof ForbiddenException || notInDbError(error as Error)) {
         throw new UnauthorizedException();
       }
       throw error;

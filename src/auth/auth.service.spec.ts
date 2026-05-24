@@ -12,15 +12,10 @@ import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { PermissionService } from '@/permission/permission.service';
 import { RoleService } from '@/permission/role/role.service';
-import { ForbiddenException, UnauthorizedException } from '@nestjs/common';
-import RequestUser from '@/auth/domain/request-user';
-import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
-import { PERMISSIONS } from '@/permission/types';
 
 describe('AuthService', () => {
   let service: AuthService;
   let mockSupabaseClient: MockSupabaseClient;
-  let permissionService: PermissionService;
 
   beforeEach(async () => {
     mockSupabaseClient = createMockSupabaseClient();
@@ -42,7 +37,6 @@ describe('AuthService', () => {
     }).compile();
 
     service = module.get<AuthService>(AuthService);
-    permissionService = module.get<PermissionService>(PermissionService);
   });
 
   it('should be defined', () => {
