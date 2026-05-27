@@ -199,7 +199,7 @@ describe('FeatureFlagManager', () => {
       await expectFeatureDisabled(koboMart.code, featureFlag.key);
     });
 
-    it('sets PARTIAL without enabling until turnOnFF', async () => {
+    it('sets PARTIAL with no workspace added', async () => {
       const koboMart = await createWorkspace();
       const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
 
