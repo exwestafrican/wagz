@@ -11,6 +11,7 @@ import {
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import FeatureFlagDto, {
   CreateFeatureFlagDto,
+  DeleteFeatureFlagDto,
   UpdateFeatureFlagStatusDto,
   toFeatureFlagDto,
 } from '@/admin/dto/feature-flag.dto';
@@ -120,6 +121,42 @@ export class AdminController {
         );
 
       return toFeatureFlagDto(updated);
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
+  }
+
+  @Post('/feature-flag/delete')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'Delete a feature flag' })
+  @ApiBody({ type: DeleteFeatureFlagDto })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Feature flag deleted',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or not an active Envoye workspace member',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Feature flag not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async deleteFeatureFlag(
+    @User() requestUser: RequestUser,
+    @Body() body: DeleteFeatureFlagDto,
+  ): Promise<void> {
+    try {
+      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+        requestUser,
+        ENVOYE_WORKSPACE_CODE,
+        PERMISSIONS.MANAGE_FEATURE_FLAGS,
+        () => this.featureFlagManager.delete(body.key),
+      );
     } catch (error) {
       if (error instanceof NotFoundInDb) {
         throw new NotFoundException();

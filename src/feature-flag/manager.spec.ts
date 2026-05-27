@@ -13,6 +13,7 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import FeatureFlagManager from '@/feature-flag/manager';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
+import NotFoundInDb from '@/common/exceptions/not-found';
 
 describe('FeatureFlagManager', () => {
   let featureFlagManager: FeatureFlagManager;
@@ -226,6 +227,30 @@ describe('FeatureFlagManager', () => {
 
       expect(second.status).toBe(FeatureFlagStatus.PARTIAL);
       expect(second.id).toBe(first.id);
+    });
+  });
+
+  describe('delete', () => {
+    it('removes the feature flag from the database', async () => {
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+
+      const deleted = await featureFlagManager.delete(featureFlag.key);
+
+      expect(deleted.key).toBe(featureFlag.key);
+      await expect(
+        prismaService.featureFlag.findFirst({
+          where: { key: featureFlag.key },
+        }),
+      ).resolves.toBeNull();
+      await expect(featureFlagManager.listAll()).resolves.not.toContainEqual(
+        expect.objectContaining({ key: featureFlag.key }),
+      );
+    });
+
+    it('throws NotFoundInDb for unknown key', async () => {
+      await expect(
+        featureFlagManager.delete('nonexistent_flag'),
+      ).rejects.toBeInstanceOf(NotFoundInDb);
     });
   });
 });

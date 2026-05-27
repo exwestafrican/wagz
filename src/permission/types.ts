@@ -39,7 +39,7 @@ export const PERMISSIONS = {
   ),
   MANAGE_FEATURE_FLAGS: Permission.of(
     'Manage Feature Flags',
-    'Allows user to list, create, and update feature flag rollout status',
+    'Allows user to list, create, update, and delete feature flags',
     'manage_feature_flags',
   ),
   ACCESS_ADMIN: Permission.of(

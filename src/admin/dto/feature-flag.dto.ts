@@ -31,6 +31,15 @@ export class CreateFeatureFlagDto {
   description: string;
 }
 
+export class DeleteFeatureFlagDto {
+  @IsString()
+  @ApiProperty({
+    description: 'Key of the feature flag to delete',
+    example: 'can_use_whatsapp',
+  })
+  key: string;
+}
+
 export class UpdateFeatureFlagStatusDto {
   @IsString()
   @ApiProperty({

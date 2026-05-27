@@ -238,4 +238,18 @@ export default class FeatureFlagManager {
   async listAll() {
     return this.prismaService.featureFlag.findMany();
   }
+
+  async delete(key: string): Promise<FeatureFlag> {
+    try {
+      return await this.prismaService.featureFlag.delete({ where: { key } });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === PRISMA_CODES.NOT_FOUND
+      ) {
+        throw new NotFoundInDb(`Feature flag not found; key=${key}`);
+      }
+      throw error;
+    }
+  }
 }
