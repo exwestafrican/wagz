@@ -128,7 +128,7 @@ describe('FeatureFlagManager', () => {
     const zuriBakery = await createWorkspace();
     const featureFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
 
-    await featureFlagManager.turnOnFF(koboMart.code, featureFlag.key);
+    await featureFlagManager.enableFF(koboMart.code, featureFlag.key);
 
     await expectFeatureEnabled(koboMart.code, featureFlag.key);
     await expectFeatureDisabled(zuriBakery.code, featureFlag.key);
@@ -140,7 +140,7 @@ describe('FeatureFlagManager', () => {
     await featureFlagManager.turnOnFFGlobally(featureFlag.key);
 
     await expect(
-      featureFlagManager.turnOff(workspace.code, featureFlag.key),
+      featureFlagManager.disableFF(workspace.code, featureFlag.key),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
@@ -153,7 +153,7 @@ describe('FeatureFlagManager', () => {
     const disabledFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
 
     await featureFlagManager.turnOnFFGlobally(globalFlag.key);
-    await featureFlagManager.turnOnFF(koboMart.code, partialFlag.key);
+    await featureFlagManager.enableFF(koboMart.code, partialFlag.key);
 
     const koboMartFeatures = await featureFlagManager.enabledFFs(koboMart.code);
     expect(koboMartFeatures.length).toBe(2);
@@ -166,5 +166,66 @@ describe('FeatureFlagManager', () => {
 
     expect(koboMartFeatures).not.toContain(disabledFlag.key);
     expect(zuriBakeryFeatures).not.toContain(partialFlag.key);
+  });
+
+  describe('setStatus', () => {
+    it('sets GLOBAL and enables for every workspace', async () => {
+      const koboMart = await createWorkspace();
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+
+      const updated = await featureFlagManager.setStatus(
+        featureFlag.key,
+        FeatureFlagStatus.GLOBAL,
+      );
+
+      expect(updated.status).toBe(FeatureFlagStatus.GLOBAL);
+      await expectFeatureEnabled(koboMart.code, featureFlag.key);
+    });
+
+    it('sets DISABLED and disables for every workspace', async () => {
+      const koboMart = await createWorkspace();
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+
+      await featureFlagManager.setStatus(
+        featureFlag.key,
+        FeatureFlagStatus.GLOBAL,
+      );
+      const updated = await featureFlagManager.setStatus(
+        featureFlag.key,
+        FeatureFlagStatus.DISABLED,
+      );
+
+      expect(updated.status).toBe(FeatureFlagStatus.DISABLED);
+      await expectFeatureDisabled(koboMart.code, featureFlag.key);
+    });
+
+    it('sets PARTIAL without enabling until turnOnFF', async () => {
+      const koboMart = await createWorkspace();
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+
+      const updated = await featureFlagManager.setStatus(
+        featureFlag.key,
+        FeatureFlagStatus.PARTIAL,
+      );
+
+      expect(updated.status).toBe(FeatureFlagStatus.PARTIAL);
+      await expectFeatureDisabled(koboMart.code, featureFlag.key);
+    });
+
+    it('is idempotent when status unchanged', async () => {
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
+
+      const first = await featureFlagManager.setStatus(
+        featureFlag.key,
+        FeatureFlagStatus.PARTIAL,
+      );
+      const second = await featureFlagManager.setStatus(
+        featureFlag.key,
+        FeatureFlagStatus.PARTIAL,
+      );
+
+      expect(second.status).toBe(FeatureFlagStatus.PARTIAL);
+      expect(second.id).toBe(first.id);
+    });
   });
 });
