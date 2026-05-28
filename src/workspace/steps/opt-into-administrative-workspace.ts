@@ -10,7 +10,7 @@ export class OptIntoAdministrativeWorkspaceStep implements PostSetupStep {
   constructor(private readonly featureFlagManager: FeatureFlagManager) {}
 
   async execute(workspaceDetails: WorkspaceDetails): Promise<void> {
-    await this.featureFlagManager.turnOnFF(
+    await this.featureFlagManager.enableFF(
       workspaceDetails.code,
       FEATURE_ADMINISTRATIVE_WORKSPACE_KEY,
     );
@@ -20,7 +20,7 @@ export class OptIntoAdministrativeWorkspaceStep implements PostSetupStep {
   }
 
   async compensate(workspaceDetails: WorkspaceDetails): Promise<void> {
-    await this.featureFlagManager.turnOff(
+    await this.featureFlagManager.disableFF(
       workspaceDetails.code,
       FEATURE_ADMINISTRATIVE_WORKSPACE_KEY,
     );

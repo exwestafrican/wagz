@@ -18,6 +18,7 @@ import Factory, { PersistStrategy } from '@/factories/factory';
 import FeatureFlagManager from '@/feature-flag/manager';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import featureFlagFactory from '@/factories/feature-flag.factory';
+import { FeatureFlagStatus } from '@/generated/prisma/enums';
 
 describe('AdminController', () => {
   let requestUser: RequestUser;
@@ -138,6 +139,67 @@ describe('AdminController', () => {
         .set('Authorization', 'Bearer test-token')
         .send(validBody)
         .expect(HttpStatus.CONFLICT);
+    });
+  });
+
+  describe('Update status', () => {
+    async function setupSuperAdmin() {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.SuperAdmin.code],
+        }),
+      );
+    }
+
+    it('updates feature flag status for SuperAdmin', async () => {
+      await setupSuperAdmin();
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.DISABLED }),
+      );
+
+      const response = await request(getHttpServer(app))
+        .post('/admin/feature-flag/status')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: featureFlag.key, status: FeatureFlagStatus.GLOBAL })
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toMatchObject({
+        key: featureFlag.key,
+        status: FeatureFlagStatus.GLOBAL,
+      });
+    });
+
+    it('returns 403 when user lacks update permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build(),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/status')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: featureFlag.key, status: FeatureFlagStatus.GLOBAL })
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns 404 for unknown key', async () => {
+      await setupSuperAdmin();
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/status')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: 'nonexistent_flag', status: FeatureFlagStatus.GLOBAL })
+        .expect(HttpStatus.NOT_FOUND);
     });
   });
 });

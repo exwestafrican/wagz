@@ -57,6 +57,6 @@ export async function setupWorkspaceWithFeatures(
         status: FeatureFlagStatus.PARTIAL,
       }),
     );
-    await featureFlagManager.turnOnFF(workspaceCode, key);
+    await featureFlagManager.enableFF(workspaceCode, key);
   }
 }

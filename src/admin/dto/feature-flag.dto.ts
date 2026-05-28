@@ -1,6 +1,7 @@
-import { IsString, Matches } from 'class-validator';
+import { IsEnum, IsString, Matches } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { FeatureFlag } from '@/generated/prisma/client';
+import { FeatureFlagStatus } from '@/generated/prisma/enums';
 
 const FEATURE_FLAG_KEY_PATTERN = /^[a-z_]+$/;
 
@@ -28,6 +29,23 @@ export class CreateFeatureFlagDto {
     example: 'Enabling this feature allows connecting WhatsApp',
   })
   description: string;
+}
+
+export class UpdateFeatureFlagStatusDto {
+  @IsString()
+  @ApiProperty({
+    description: 'Key of an existing feature flag',
+    example: 'can_use_whatsapp',
+  })
+  key: string;
+
+  @IsEnum(FeatureFlagStatus)
+  @ApiProperty({
+    description: 'Rollout status',
+    enum: FeatureFlagStatus,
+    example: FeatureFlagStatus.PARTIAL,
+  })
+  status: FeatureFlagStatus;
 }
 
 export default class FeatureFlagDto {

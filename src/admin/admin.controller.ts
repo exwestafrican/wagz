@@ -4,12 +4,14 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import FeatureFlagDto, {
   CreateFeatureFlagDto,
+  UpdateFeatureFlagStatusDto,
   toFeatureFlagDto,
 } from '@/admin/dto/feature-flag.dto';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
@@ -19,6 +21,7 @@ import FeatureFlagManager from '@/feature-flag/manager';
 import { PermissionService } from '@/permission/permission.service';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { PERMISSIONS } from '@/permission/types';
+import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Controller('admin')
 export class AdminController {
@@ -39,7 +42,7 @@ export class AdminController {
       await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
         requestUser,
         ENVOYE_WORKSPACE_CODE,
-        PERMISSIONS.VIEW_ALL_FEATURE_FLAGS,
+        PERMISSIONS.MANAGE_FEATURE_FLAGS,
         () => this.featureFlagManager.listAll(),
       );
 
@@ -72,7 +75,7 @@ export class AdminController {
       await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
         requestUser,
         ENVOYE_WORKSPACE_CODE,
-        PERMISSIONS.CREATE_FEATURE_FLAG,
+        PERMISSIONS.MANAGE_FEATURE_FLAGS,
         () =>
           this.featureFlagManager.create(
             body.key,
@@ -83,5 +86,45 @@ export class AdminController {
       );
 
     return toFeatureFlagDto(created);
+  }
+
+  @Post('/feature-flag/status')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Update feature flag rollout status' })
+  @ApiBody({ type: UpdateFeatureFlagStatusDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Feature flag status updated',
+    type: FeatureFlagDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or not an active Envoye workspace member',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Feature flag not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async updateFeatureFlagStatus(
+    @User() requestUser: RequestUser,
+    @Body() body: UpdateFeatureFlagStatusDto,
+  ) {
+    try {
+      const updated =
+        await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+          requestUser,
+          ENVOYE_WORKSPACE_CODE,
+          PERMISSIONS.MANAGE_FEATURE_FLAGS,
+          () => this.featureFlagManager.setStatus(body.key, body.status),
+        );
+
+      return toFeatureFlagDto(updated);
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
   }
 }

@@ -37,15 +37,10 @@ export const PERMISSIONS = {
     'Allows user to trigger run for Backfill',
     'run_backfill_tasks',
   ),
-  VIEW_ALL_FEATURE_FLAGS: Permission.of(
-    'Can See All Created Feature Flags',
-    'Allows user to see all Feature Flags',
-    'view_feature_flags',
-  ),
-  CREATE_FEATURE_FLAG: Permission.of(
-    'Create Feature Flags',
-    'Allows user to create new Feature Flags',
-    'create_feature_flags',
+  MANAGE_FEATURE_FLAGS: Permission.of(
+    'Manage Feature Flags',
+    'Allows user to list, create, and update feature flag rollout status',
+    'manage_feature_flags',
   ),
   ACCESS_ADMIN: Permission.of(
     'Access Admin Panel',
@@ -64,8 +59,7 @@ export const ROLES: Record<string, Role> = {
     //special permission
     PERMISSIONS.VIEW_BACKFILL_TASK,
     PERMISSIONS.RUN_BACKFILL_TASK,
-    PERMISSIONS.VIEW_ALL_FEATURE_FLAGS,
-    PERMISSIONS.CREATE_FEATURE_FLAG,
+    PERMISSIONS.MANAGE_FEATURE_FLAGS,
     PERMISSIONS.ACCESS_ADMIN,
   ]),
   WorkspaceAdmin: Role.of('WorkspaceAdmin', [
