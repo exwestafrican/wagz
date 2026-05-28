@@ -253,4 +253,72 @@ describe('FeatureFlagManager', () => {
       ).rejects.toBeInstanceOf(NotFoundInDb);
     });
   });
+
+  describe('enableFFForApps', () => {
+    it('enables the flag for each app when status is PARTIAL', async () => {
+      const koboMart = await createWorkspace();
+      const zuriBakery = await createWorkspace();
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
+
+      await featureFlagManager.enableFFForApps(featureFlag.key, [
+        koboMart.code,
+        zuriBakery.code,
+      ]);
+
+      await expectFeatureEnabled(koboMart.code, featureFlag.key);
+      await expectFeatureEnabled(zuriBakery.code, featureFlag.key);
+    });
+
+    it('is idempotent when apps are already enabled', async () => {
+      const workspace = await createWorkspace();
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
+
+      await featureFlagManager.enableFFForApps(featureFlag.key, [
+        workspace.code,
+      ]);
+      await featureFlagManager.enableFFForApps(featureFlag.key, [
+        workspace.code,
+      ]);
+
+      await expectFeatureEnabled(workspace.code, featureFlag.key);
+      const persistedFeatureFlag =
+        await prismaService.featureFlag.findFirstOrThrow({
+          where: { key: featureFlag.key },
+        });
+      const enabledWorkspaceFeatures =
+        await prismaService.workspaceFeature.findMany({
+          where: {
+            featureFlagId: persistedFeatureFlag.id,
+            workspaceCode: workspace.code,
+          },
+        });
+      expect(enabledWorkspaceFeatures).toHaveLength(1);
+    });
+
+    it('throws NotFoundInDb for unknown feature key', async () => {
+      const workspace = await createWorkspace();
+
+      await expect(
+        featureFlagManager.enableFFForApps('nonexistent_flag', [
+          workspace.code,
+        ]),
+      ).rejects.toBeInstanceOf(NotFoundInDb);
+    });
+
+    it('skips unknown app codes and enables valid ones', async () => {
+      const zurich = await createWorkspace();
+      const fabLabs = await createWorkspace();
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
+
+      await featureFlagManager.enableFFForApps(featureFlag.key, [
+        zurich.code,
+        '000000',
+        fabLabs.code,
+      ]);
+
+      await expectFeatureEnabled(zurich.code, featureFlag.key);
+      await expectFeatureEnabled(fabLabs.code, featureFlag.key);
+
+    });
+  });
 });

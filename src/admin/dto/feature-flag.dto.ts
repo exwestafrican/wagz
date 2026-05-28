@@ -1,4 +1,10 @@
-import { IsEnum, IsString, Matches } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsString,
+  Matches,
+  ArrayNotEmpty,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { FeatureFlag } from '@/generated/prisma/client';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
@@ -55,6 +61,26 @@ export class UpdateFeatureFlagStatusDto {
     example: FeatureFlagStatus.PARTIAL,
   })
   status: FeatureFlagStatus;
+}
+
+export class EnableFeatureForAppsDto {
+  @IsString()
+  @ApiProperty({
+    description: 'Key of an existing feature flag in PARTIAL status',
+    example: 'can_use_whatsapp',
+  })
+  key: string;
+
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  @ApiProperty({
+    description: 'App (workspace) codes to enable the feature for',
+    example: ['ab34c67', 'e8r4z7'],
+    type: [String],
+    minItems: 1,
+  })
+  appCodes: string[];
 }
 
 export default class FeatureFlagDto {

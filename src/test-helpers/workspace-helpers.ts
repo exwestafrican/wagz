@@ -6,6 +6,23 @@ import { INestApplication } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import FeatureFlagManager from '@/feature-flag/manager';
 import featureFlagFactory from '@/factories/feature-flag.factory';
+import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import { ROLES } from '@/permission/types';
+
+export async function setupSuperAdmin(
+  factory: PersistStrategy,
+  email: string,
+  workspaceCode: string = ENVOYE_WORKSPACE_CODE,
+) {
+  return setupWorkspaceWithTeammate(
+    factory,
+    teammateFactory.build({
+      email,
+      workspaceCode,
+      groups: [ROLES.SuperAdmin.code],
+    }),
+  );
+}
 
 export async function setupWorkspaceWithTeammateRole(
   factory: PersistStrategy,
