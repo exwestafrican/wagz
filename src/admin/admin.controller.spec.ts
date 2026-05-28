@@ -202,4 +202,66 @@ describe('AdminController', () => {
         .expect(HttpStatus.NOT_FOUND);
     });
   });
+
+  describe('Delete', () => {
+    async function setupSuperAdmin() {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.SuperAdmin.code],
+        }),
+      );
+    }
+
+    it('deletes a feature flag for SuperAdmin', async () => {
+      await setupSuperAdmin();
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build(),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/delete')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: featureFlag.key })
+        .expect(HttpStatus.NO_CONTENT);
+
+      await expect(
+        prismaService.featureFlag.findFirst({
+          where: { key: featureFlag.key },
+        }),
+      ).resolves.toBeNull();
+    });
+
+    it('returns 403 when user lacks delete permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build(),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/delete')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: featureFlag.key })
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns 404 for unknown key', async () => {
+      await setupSuperAdmin();
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/delete')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: 'nonexistent_flag' })
+        .expect(HttpStatus.NOT_FOUND);
+    });
+  });
 });
