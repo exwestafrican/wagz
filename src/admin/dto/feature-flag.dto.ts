@@ -48,14 +48,7 @@ export class DeleteFeatureFlagDto {
   key: string;
 }
 
-export class UpdateFeatureFlagStatusDto {
-  @IsString()
-  @ApiProperty({
-    description: 'Key of an existing feature flag',
-    example: 'can_use_whatsapp',
-  })
-  key: string;
-
+export class PatchFeatureFlagStatusDto {
   @IsEnum(FeatureFlagStatus)
   @ApiProperty({
     description: 'Rollout status',
