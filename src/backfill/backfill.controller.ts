@@ -1,21 +1,30 @@
 import {
   Controller,
   Get,
+  HttpCode,
   HttpStatus,
   Inject,
   Logger,
+  NotFoundException,
+  Param,
+  Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import type BackfillTask from '@/backfill/task';
 import BackfillResponseDto, {
   toBackfillResponseDto,
 } from '@/backfill/dto/backfill-response.dto';
+import BackfillRunResponseDto, {
+  BackfillRunStatus,
+} from '@/backfill/dto/backfill-run-response.dto';
 import {
   BACKFILL_REGISTRY,
   type Registry,
 } from '@/backfill/backfill-registry.provider';
 import { PermissionService } from '@/permission/permission.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { PERMISSIONS } from '@/permission/types';
@@ -27,6 +36,7 @@ export class BackfillController {
   constructor(
     @Inject(BACKFILL_REGISTRY) private readonly registry: Registry,
     private readonly permissionService: PermissionService,
+    private readonly prismaService: PrismaService,
   ) {}
 
   @Get('tasks')
@@ -44,5 +54,78 @@ export class BackfillController {
       PERMISSIONS.VIEW_BACKFILL_TASK,
       () => this.registry.all().map((r) => toBackfillResponseDto(r)),
     );
+  }
+
+  @Post('tasks/:jobId/run')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Run a backfill job against all workspaces' })
+  @ApiParam({ name: 'jobId', example: 'normalize_usernames' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Run summary',
+    type: BackfillRunResponseDto,
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async run(
+    @User() requestUser: RequestUser,
+    @Param('jobId') jobId: string,
+  ): Promise<BackfillRunResponseDto> {
+    return await this.permissionService.runIfPermitted(
+      requestUser,
+      ENVOYE_WORKSPACE_CODE,
+      PERMISSIONS.RUN_BACKFILL_TASK,
+      async () => {
+        let task: BackfillTask;
+        try {
+          task = this.registry.get(jobId, this.prismaService);
+        } catch {
+          throw new NotFoundException(`Unknown backfill job: ${jobId}`);
+        }
+
+        const workspaces = await this.prismaService.workspace.findMany({
+          orderBy: { code: 'asc' },
+        });
+
+        const failedWorkspaceCodes: string[] = [];
+        for (const workspace of workspaces) {
+          try {
+            await task.run(workspace);
+          } catch (error) {
+            failedWorkspaceCodes.push(workspace.code);
+            this.logger.error(
+              `Backfill job failed; jobId=${jobId} workspaceCode=${workspace.code}`,
+              error instanceof Error ? error.stack : error,
+            );
+          }
+        }
+
+        const workspacesProcessed = workspaces.length;
+        const workspacesFailed = failedWorkspaceCodes.length;
+        const workspacesSucceeded = workspacesProcessed - workspacesFailed;
+
+        if (workspacesFailed > 0) {
+          this.logger.error(
+            `Backfill job completed with failures; jobId=${jobId} failedWorkspaceCodes=[${failedWorkspaceCodes.join(', ')}]`,
+          );
+        }
+        return {
+          jobId,
+          status: this.toStatus(workspacesProcessed, workspacesFailed),
+          workspacesProcessed,
+          workspacesSucceeded,
+          workspacesFailed,
+        };
+      },
+    );
+  }
+
+  private toStatus(
+    workspacesProcessed: number,
+    workspacesFailed: number,
+  ): BackfillRunStatus {
+    if (workspacesFailed === 0) return BackfillRunStatus.SUCCESS;
+    if (workspacesFailed === workspacesProcessed)
+      return BackfillRunStatus.FAILURE;
+    return BackfillRunStatus.PARTIAL;
   }
 }
