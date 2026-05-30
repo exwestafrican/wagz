@@ -1,9 +1,17 @@
-import { IsEnum, IsString, Matches } from 'class-validator';
+import {
+  IsArray,
+  IsEnum,
+  IsString,
+  Matches,
+  ArrayMinSize,
+  ArrayMaxSize,
+} from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { FeatureFlag } from '@/generated/prisma/client';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 
 const FEATURE_FLAG_KEY_PATTERN = /^[a-z_]+$/;
+const MAX_APP_CODES_PER_ENABLE_REQUEST = 500;
 
 export class CreateFeatureFlagDto {
   @IsString()
@@ -55,6 +63,30 @@ export class UpdateFeatureFlagStatusDto {
     example: FeatureFlagStatus.PARTIAL,
   })
   status: FeatureFlagStatus;
+}
+
+export class EnableFeatureForAppsDto {
+  @IsString()
+  @ApiProperty({
+    description: 'Key of an existing feature flag in PARTIAL status',
+    example: 'can_use_whatsapp',
+  })
+  key: string;
+
+  @IsArray()
+  @ArrayMinSize(1)
+  @ArrayMaxSize(MAX_APP_CODES_PER_ENABLE_REQUEST, {
+    message: `At most ${MAX_APP_CODES_PER_ENABLE_REQUEST} app codes are allowed per request`,
+  })
+  @IsString({ each: true })
+  @ApiProperty({
+    description: 'App (workspace) codes to enable the feature for',
+    example: ['ab34c67', 'e8r4z7'],
+    type: [String],
+    minItems: 1,
+    maxItems: MAX_APP_CODES_PER_ENABLE_REQUEST,
+  })
+  appCodes: string[];
 }
 
 export default class FeatureFlagDto {
