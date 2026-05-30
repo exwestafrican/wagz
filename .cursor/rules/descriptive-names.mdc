@@ -1,0 +1,25 @@
+---
+description: Use descriptive variable names in tests and application code; avoid generic placeholders.
+globs: **/*.{ts,tsx,spec.ts}
+alwaysApply: true
+---
+
+# Descriptive names
+
+Prefer names that describe what a value represents, not its shape or position.
+
+**Avoid**
+
+- Generic containers: `rows`, `items`, `data`, `result`, `temp`
+- Positional names: `workspace1`, `workspace2`, `userA`
+- Single-letter callbacks: `.map((r) => ...)`, `.filter((x) => ...)`
+
+**Prefer**
+
+- Domain-specific names: `enabledWorkspaceFeatures`, `koboMart`, `persistedFeatureFlag`
+- Names that match the type or role: `createdTeammate`, `unknownAppCodes`
+
+**Tests**
+
+- Name workspaces and entities like production concepts (e.g. `koboMart`, `zuriBakery`), not `workspace1`.
+- Name query results after what was fetched (e.g. `enabledWorkspaceFeatures`, not `rows`).
