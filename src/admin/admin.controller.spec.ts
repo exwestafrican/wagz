@@ -133,9 +133,9 @@ describe('AdminController', () => {
       );
 
       const response = await request(getHttpServer(app))
-        .post('/admin/feature-flag/status')
+        .patch(`/admin/feature-flag/${featureFlag.key}/status`)
         .set('Authorization', 'Bearer test-token')
-        .send({ key: featureFlag.key, status: FeatureFlagStatus.GLOBAL })
+        .send({ status: FeatureFlagStatus.GLOBAL })
         .expect(HttpStatus.OK);
 
       expect(response.body).toMatchObject({
@@ -158,9 +158,9 @@ describe('AdminController', () => {
       );
 
       await request(getHttpServer(app))
-        .post('/admin/feature-flag/status')
+        .patch(`/admin/feature-flag/${featureFlag.key}/status`)
         .set('Authorization', 'Bearer test-token')
-        .send({ key: featureFlag.key, status: FeatureFlagStatus.GLOBAL })
+        .send({ status: FeatureFlagStatus.GLOBAL })
         .expect(HttpStatus.FORBIDDEN);
     });
 
@@ -168,9 +168,9 @@ describe('AdminController', () => {
       await setupSuperAdmin(factory, requestUser.email);
 
       await request(getHttpServer(app))
-        .post('/admin/feature-flag/status')
+        .patch('/admin/feature-flag/nonexistent_flag/status')
         .set('Authorization', 'Bearer test-token')
-        .send({ key: 'nonexistent_flag', status: FeatureFlagStatus.GLOBAL })
+        .send({ status: FeatureFlagStatus.GLOBAL })
         .expect(HttpStatus.NOT_FOUND);
     });
   });

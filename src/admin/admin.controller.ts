@@ -5,15 +5,17 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import FeatureFlagDto, {
   CreateFeatureFlagDto,
   DeleteFeatureFlagDto,
   EnableFeatureForAppsDto,
-  UpdateFeatureFlagStatusDto,
+  PatchFeatureFlagStatusDto,
   toFeatureFlagDto,
 } from '@/admin/dto/feature-flag.dto';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
@@ -90,10 +92,15 @@ export class AdminController {
     return toFeatureFlagDto(created);
   }
 
-  @Post('/feature-flag/status')
+  @Patch('/feature-flag/:key/status')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Update feature flag rollout status' })
-  @ApiBody({ type: UpdateFeatureFlagStatusDto })
+  @ApiParam({
+    name: 'key',
+    description: 'Key of an existing feature flag',
+    example: 'can_use_whatsapp',
+  })
+  @ApiBody({ type: PatchFeatureFlagStatusDto })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Feature flag status updated',
@@ -110,7 +117,8 @@ export class AdminController {
   @UseGuards(SupabaseAuthGuard)
   async updateFeatureFlagStatus(
     @User() requestUser: RequestUser,
-    @Body() body: UpdateFeatureFlagStatusDto,
+    @Param('key') key: string,
+    @Body() body: PatchFeatureFlagStatusDto,
   ) {
     try {
       const updated =
@@ -118,7 +126,7 @@ export class AdminController {
           requestUser,
           ENVOYE_WORKSPACE_CODE,
           PERMISSIONS.MANAGE_FEATURE_FLAGS,
-          () => this.featureFlagManager.setStatus(body.key, body.status),
+          () => this.featureFlagManager.setStatus(key, body.status),
         );
 
       return toFeatureFlagDto(updated);
