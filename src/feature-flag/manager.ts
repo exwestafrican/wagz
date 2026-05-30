@@ -3,16 +3,18 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
-import { FeatureFlag, Prisma } from '@/generated/prisma/client';
+import { FeatureFlag } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import { UnExpectedStatusException } from '@/feature-flag/exceptions/unexpected-status.exception';
-import { existsInDbError } from '@/common/error-type';
+import { existsInDbError, notInDbError } from '@/common/error-type';
 import NotFoundInDb from '@/common/exceptions/not-found';
-import PRISMA_CODES from '@/prisma/consts';
+import { ConcurrentLimit } from '@/common/concurrent-runner';
 
 @Injectable()
 export default class FeatureFlagManager {
+  private static readonly ENABLE_FF_FOR_APPS_CONCURRENCY = 4;
+
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(
@@ -99,6 +101,31 @@ export default class FeatureFlagManager {
     }
   }
 
+  async enableFFForApps(key: string, appCodes: string[]): Promise<void> {
+    const workspaces = await this.prismaService.workspace.findMany({
+      where: { code: { in: appCodes } },
+      select: { code: true },
+    });
+
+    const limit = ConcurrentLimit(
+      FeatureFlagManager.ENABLE_FF_FOR_APPS_CONCURRENCY,
+      workspaces.length,
+    );
+
+    const tasks = workspaces.map((workspace) =>
+      limit.run(() => this.enableFF(workspace.code, key)),
+    );
+
+    try {
+      await Promise.all(tasks);
+    } catch (error) {
+      if (notInDbError(error)) {
+        throw new NotFoundInDb(`Feature flag not found; key=${key}`);
+      }
+      throw error;
+    }
+  }
+
   async turnOnFFGlobally(key: string): Promise<FeatureFlag> {
     // TODO(activity-log): record admin action (who, what, key) when activity logging exists.
     const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow({
@@ -161,10 +188,7 @@ export default class FeatureFlagManager {
           );
       }
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === PRISMA_CODES.NOT_FOUND
-      ) {
+      if (notInDbError(error)) {
         throw new NotFoundInDb(`Feature flag not found; key=${key}`);
       }
       throw error;
@@ -243,10 +267,7 @@ export default class FeatureFlagManager {
     try {
       return await this.prismaService.featureFlag.delete({ where: { key } });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === PRISMA_CODES.NOT_FOUND
-      ) {
+      if (notInDbError(error)) {
         throw new NotFoundInDb(`Feature flag not found; key=${key}`);
       }
       throw error;

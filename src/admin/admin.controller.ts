@@ -12,6 +12,7 @@ import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import FeatureFlagDto, {
   CreateFeatureFlagDto,
   DeleteFeatureFlagDto,
+  EnableFeatureForAppsDto,
   UpdateFeatureFlagStatusDto,
   toFeatureFlagDto,
 } from '@/admin/dto/feature-flag.dto';
@@ -156,6 +157,46 @@ export class AdminController {
         ENVOYE_WORKSPACE_CODE,
         PERMISSIONS.MANAGE_FEATURE_FLAGS,
         () => this.featureFlagManager.delete(body.key),
+      );
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
+  }
+
+  @Post('/feature-flag/enable-apps')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Enable a feature flag for apps' })
+  @ApiBody({ type: EnableFeatureForAppsDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Feature enabled for apps',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_REQUEST,
+    description: 'Flag not PARTIAL or unknown app code(s)',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or not an active Envoye workspace member',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Feature flag not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async enableFeatureForApps(
+    @User() requestUser: RequestUser,
+    @Body() body: EnableFeatureForAppsDto,
+  ): Promise<void> {
+    try {
+      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+        requestUser,
+        ENVOYE_WORKSPACE_CODE,
+        PERMISSIONS.MANAGE_FEATURE_FLAGS,
+        () => this.featureFlagManager.enableFFForApps(body.key, body.appCodes),
       );
     } catch (error) {
       if (error instanceof NotFoundInDb) {
