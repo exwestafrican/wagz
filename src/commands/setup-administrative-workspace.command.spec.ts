@@ -27,6 +27,7 @@ import { AuthService } from '@/auth/auth.service';
 import PasswordGenerator from '@/auth/services/password.generator';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { TestEmailClient } from '@/messaging/email/test-email-client';
+import { PermissionService } from '@/permission/permission.service';
 
 describe('SetupAdministrativeWorkspaceCommand', () => {
   let app: INestApplication;
@@ -48,12 +49,15 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
 
     featureFlagManager = new FeatureFlagManager(prismaService);
     const teammateService = new TeammatesService(prismaService);
+    const roleService = new RoleService();
+    const permissionService = new PermissionService(prismaService, roleService);
     const authService = new AuthService(
       mockSupabaseClient as unknown as SupabaseClient,
       new PasswordGenerator(),
       prismaService,
       jest.fn() as unknown as LinkService,
       teammateService,
+      permissionService,
     );
 
     const workspaceManager = new WorkspaceManager(
