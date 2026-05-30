@@ -1,17 +1,11 @@
 import { Logger } from '@nestjs/common';
 import { Command, CommandRunner, Help, Option } from 'nest-commander';
 import { PrismaService } from '@/prisma/prisma.service';
-import { existsInDbError } from '@/common/error-type';
-import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import { AuthService } from '@/auth/auth.service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { CreateSuperAdminStep } from '@/workspace/steps/create-super-admin';
-import {
-  ENVOYE_WORKSPACE_CODE,
-  FEATURE_ADMINISTRATIVE_WORKSPACE_KEY,
-} from '@/feature-flag/const';
+import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import FeatureFlagManager from '@/feature-flag/manager';
-import { OptIntoAdministrativeWorkspaceStep } from '@/workspace/steps/opt-into-administrative-workspace';
 
 interface Options {
   email: string;
@@ -39,8 +33,6 @@ export class SetupAdministrativeWorkspaceCommand extends CommandRunner {
   async run(_inputs: string[], options: Options) {
     const email = options.email;
 
-    await this.createAdministrativeWorkspaceFeatureFlag(email);
-
     const preverification =
       await this.authService.signupAutoVerifiedForWorkspace(email);
 
@@ -53,10 +45,7 @@ export class SetupAdministrativeWorkspaceCommand extends CommandRunner {
     await this.workspaceManager.runPostWorkspaceCreationSteps(
       workspaceDetails,
       preverification,
-      [
-        new CreateSuperAdminStep(this.prismaService),
-        new OptIntoAdministrativeWorkspaceStep(this.featureFlagManager),
-      ],
+      [new CreateSuperAdminStep(this.prismaService)],
     );
 
     this.logger.log(`Successfully created ${workspaceDetails.name}`);
@@ -82,24 +71,5 @@ export class SetupAdministrativeWorkspaceCommand extends CommandRunner {
       '  DATABASE_URL, SUPABASE_URL, SUPABASE_KEY (service-role), SITE_URL',
       '',
     ].join('\n');
-  }
-
-  private async createAdministrativeWorkspaceFeatureFlag(addedBy: string) {
-    try {
-      await this.prismaService.featureFlag.create({
-        data: {
-          key: FEATURE_ADMINISTRATIVE_WORKSPACE_KEY,
-          name: 'Administrative workspace',
-          description: 'Enables administrative workspace behavior',
-          status: FeatureFlagStatus.PARTIAL,
-          addedBy,
-        },
-      });
-    } catch (e) {
-      if (existsInDbError(e)) {
-        return;
-      }
-      throw e;
-    }
   }
 }
