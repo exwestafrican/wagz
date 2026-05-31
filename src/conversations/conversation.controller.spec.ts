@@ -60,7 +60,6 @@ describe('ConversationsController', () => {
       .post(ConversationEndpoints.CREATE_CONVERSATION)
       .send({
         workspaceCode: workspace.code,
-        customerInfo: 'john@acme.com',//remove this once the schema can accept nullable customerInfo
         subject: 'Billing issue',
         recipientTeammateId: recipient.id,
       })
@@ -76,7 +75,6 @@ describe('ConversationsController', () => {
     });
     expect(conversation).toMatchObject({
       workspaceCode: workspace.code,
-      customerInfo: 'john@acme.com',
       subject: 'Billing issue',
     });
 
