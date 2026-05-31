@@ -33,6 +33,7 @@ import { LinkService } from '@/common/link-service';
 @Injectable()
 export class WorkspaceManager {
   private static readonly INVITE_CONCURRENCY = 3;
+  private static readonly LIST_APPS_LIMIT = 100;
   logger = new Logger(WorkspaceManager.name);
 
   constructor(
@@ -110,6 +111,13 @@ export class WorkspaceManager {
       status: workspace.status,
       name: workspace.name,
     };
+  }
+
+  async listApps(): Promise<PrismaWorkspace[]> {
+    return this.prismaService.workspace.findMany({
+      take: WorkspaceManager.LIST_APPS_LIMIT,
+      orderBy: { id: 'asc' },
+    });
   }
 
   async inviteTeammateIfEligible(

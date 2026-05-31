@@ -28,6 +28,7 @@ import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { LinkService } from '@/common/link-service';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
+import CompanyProfileFactory from '@/factories/company-profile.factory';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -491,6 +492,21 @@ describe('WorkspaceService', () => {
           },
         }),
       ).toBe(2);
+    });
+  });
+
+  describe('listApps', () => {
+    it('returns up to 100 workspaces ordered by id', async () => {
+      const companyProfile = await factory.persist('companyProfile', () =>
+        CompanyProfileFactory.build(),
+      );
+      await prismaService.workspace.createMany({
+        data: workspaceFactory.buildList(200, { ownedById: companyProfile.id }),
+      });
+
+      const listedWorkspaces = await service.listApps();
+
+      expect(listedWorkspaces).toHaveLength(100);
     });
   });
 });
