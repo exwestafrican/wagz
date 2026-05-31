@@ -35,4 +35,8 @@ describe('LinkService', () => {
       'https://app.usewaggz.com/setup/prever-1/workspace',
     );
   });
+
+  it('builds admin login url', () => {
+    expect(service.adminLoginUrl()).toBe('https://app.usewaggz.com/admin');
+  });
 });

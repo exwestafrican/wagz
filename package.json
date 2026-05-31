@@ -8,6 +8,7 @@
   "scripts": {
     "build": "nest build",
     "check:format": "prettier --check \"src/**/*.{ts,tsx}\" \"test/**/*.ts\"",
+    "check:types": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"test/**/*.ts\"",
     "format:schema": "pnpx prisma format",
     "generate:client": "pnpx prisma generate",

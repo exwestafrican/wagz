@@ -10,7 +10,10 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { PermissionService } from '@/permission/permission.service';
 import { RoleService } from '@/permission/role/role.service';
-import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import {
+  setupSuperAdmin,
+  setupWorkspaceWithTeammate,
+} from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import { ROLES } from '@/permission/types';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -18,6 +21,14 @@ import Factory, { PersistStrategy } from '@/factories/factory';
 import FeatureFlagManager from '@/feature-flag/manager';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import featureFlagFactory from '@/factories/feature-flag.factory';
+import workspaceFactory from '@/factories/workspace.factory';
+import { FeatureFlagStatus } from '@/generated/prisma/enums';
+import { WorkspaceManager } from '@/workspace/workspace-manager.service';
+import { LinkService } from '@/common/link-service';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import { EMAIL_CLIENT } from '@/messaging/email/email-client';
+import { AuthService } from '@/auth/auth.service';
+import { mockAuthService } from '@/test-helpers/mocks';
 
 describe('AdminController', () => {
   let requestUser: RequestUser;
@@ -29,7 +40,16 @@ describe('AdminController', () => {
     requestUser = RequestUser.of('admin@useEnvoye.co');
     const module: TestingModule = await TestControllerModuleWithAuthUser({
       controllers: [AdminController],
-      providers: [FeatureFlagManager, PermissionService, RoleService],
+      providers: [
+        FeatureFlagManager,
+        PermissionService,
+        RoleService,
+        WorkspaceManager,
+        LinkService,
+        WorkspaceInviteService,
+        { provide: EMAIL_CLIENT, useValue: { send: jest.fn() } },
+        { provide: AuthService, useValue: mockAuthService },
+      ],
     }).with(requestUser);
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
@@ -54,14 +74,7 @@ describe('AdminController', () => {
     };
 
     it('creates a feature flag for SuperAdmin', async () => {
-      await setupWorkspaceWithTeammate(
-        factory,
-        teammateFactory.build({
-          email: requestUser.email,
-          workspaceCode: ENVOYE_WORKSPACE_CODE,
-          groups: [ROLES.SuperAdmin.code],
-        }),
-      );
+      await setupSuperAdmin(factory, requestUser.email);
 
       const response = await request(getHttpServer(app))
         .post('/admin/feature-flag')
@@ -100,14 +113,7 @@ describe('AdminController', () => {
     });
 
     it('returns 400 for invalid key format', async () => {
-      await setupWorkspaceWithTeammate(
-        factory,
-        teammateFactory.build({
-          email: requestUser.email,
-          workspaceCode: ENVOYE_WORKSPACE_CODE,
-          groups: [ROLES.SuperAdmin.code],
-        }),
-      );
+      await setupSuperAdmin(factory, requestUser.email);
 
       await request(getHttpServer(app))
         .post('/admin/feature-flag')
@@ -120,14 +126,7 @@ describe('AdminController', () => {
     });
 
     it('returns 409 when key already exists', async () => {
-      await setupWorkspaceWithTeammate(
-        factory,
-        teammateFactory.build({
-          email: requestUser.email,
-          workspaceCode: ENVOYE_WORKSPACE_CODE,
-          groups: [ROLES.SuperAdmin.code],
-        }),
-      );
+      await setupSuperAdmin(factory, requestUser.email);
 
       await factory.persist('featureFlag', () =>
         featureFlagFactory.build({ key: validBody.key }),
@@ -138,6 +137,409 @@ describe('AdminController', () => {
         .set('Authorization', 'Bearer test-token')
         .send(validBody)
         .expect(HttpStatus.CONFLICT);
+    });
+  });
+
+  describe('Update status', () => {
+    it('updates feature flag status for SuperAdmin', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.DISABLED }),
+      );
+
+      const response = await request(getHttpServer(app))
+        .patch(`/admin/feature-flag/${featureFlag.key}/status`)
+        .set('Authorization', 'Bearer test-token')
+        .send({ status: FeatureFlagStatus.GLOBAL })
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toMatchObject({
+        key: featureFlag.key,
+        status: FeatureFlagStatus.GLOBAL,
+      });
+    });
+
+    it('returns 403 when user lacks update permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build(),
+      );
+
+      await request(getHttpServer(app))
+        .patch(`/admin/feature-flag/${featureFlag.key}/status`)
+        .set('Authorization', 'Bearer test-token')
+        .send({ status: FeatureFlagStatus.GLOBAL })
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns 404 for unknown key', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+
+      await request(getHttpServer(app))
+        .patch('/admin/feature-flag/nonexistent_flag/status')
+        .set('Authorization', 'Bearer test-token')
+        .send({ status: FeatureFlagStatus.GLOBAL })
+        .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('Delete', () => {
+    it('deletes a feature flag for SuperAdmin', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build(),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/delete')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: featureFlag.key })
+        .expect(HttpStatus.NO_CONTENT);
+
+      await expect(
+        prismaService.featureFlag.findFirst({
+          where: { key: featureFlag.key },
+        }),
+      ).resolves.toBeNull();
+    });
+
+    it('returns 403 when user lacks delete permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build(),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/delete')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: featureFlag.key })
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns 404 for unknown key', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/delete')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: 'nonexistent_flag' })
+        .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('Enable apps', () => {
+    it('enables feature for apps for SuperAdmin', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
+      );
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Zuri Bakery' }),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/enable-apps')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          key: featureFlag.key,
+          appCodes: [koboMart.code, zuriBakery.code],
+        })
+        .expect(HttpStatus.OK);
+
+      const persistedFlag = await prismaService.featureFlag.findFirstOrThrow({
+        where: { key: featureFlag.key },
+      });
+      const enabledWorkspaceFeatures =
+        await prismaService.workspaceFeature.findMany({
+          where: { featureFlagId: persistedFlag.id },
+        });
+      expect(enabledWorkspaceFeatures).toHaveLength(2);
+      expect(
+        enabledWorkspaceFeatures
+          .map((workspaceFeature) => workspaceFeature.workspaceCode)
+          .sort(),
+      ).toEqual([koboMart.code, zuriBakery.code].sort());
+    });
+
+    it('returns 403 when user lacks permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/enable-apps')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: featureFlag.key, appCodes: ['ab34c67'] })
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns 404 for unknown feature key', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/enable-apps')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: 'nonexistent_flag', appCodes: [koboMart.code] })
+        .expect(HttpStatus.NOT_FOUND);
+    });
+
+    it('returns 200 when app codes are not found', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/enable-apps')
+        .set('Authorization', 'Bearer test-token')
+        .send({ key: featureFlag.key, appCodes: ['000000'] })
+        .expect(HttpStatus.OK);
+    });
+  });
+
+  describe('Get apps with feature enabled', () => {
+    it('returns apps for SuperAdmin', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
+      );
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Zuri Bakery' }),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/enable-apps')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          key: featureFlag.key,
+          appCodes: [koboMart.code, zuriBakery.code],
+        })
+        .expect(HttpStatus.OK);
+
+      const response = await request(getHttpServer(app))
+        .get('/admin/feature-flag/apps')
+        .query({ featureKey: featureFlag.key })
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toHaveLength(2);
+      expect(response.body).toEqual(
+        expect.arrayContaining([
+          {
+            appId: koboMart.id,
+            appCode: koboMart.code,
+            name: 'Kobo Mart',
+            status: koboMart.status,
+          },
+          {
+            appId: zuriBakery.id,
+            appCode: zuriBakery.code,
+            name: 'Zuri Bakery',
+            status: zuriBakery.status,
+          },
+        ]),
+      );
+    });
+
+    it('returns 403 when user lacks permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
+      );
+
+      await request(getHttpServer(app))
+        .get('/admin/feature-flag/apps')
+        .query({ featureKey: featureFlag.key })
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns 404 for unknown feature key', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+
+      await request(getHttpServer(app))
+        .get('/admin/feature-flag/apps')
+        .query({ featureKey: 'nonexistent_flag' })
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('List app enrollment', () => {
+    it('returns all apps with hasFeature for SuperAdmin', async () => {
+      const { workspace: envoye } = await setupSuperAdmin(
+        factory,
+        requestUser.email,
+      );
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
+      );
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Zuri Bakery' }),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/enable-apps')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          key: featureFlag.key,
+          appCodes: [koboMart.code],
+        })
+        .expect(HttpStatus.OK);
+
+      const response = await request(getHttpServer(app))
+        .get('/admin/feature-flag/apps/enrollment')
+        .query({ featureKey: featureFlag.key })
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toHaveLength(3);
+      expect(response.body).toEqual(
+        expect.arrayContaining([
+          {
+            appId: koboMart.id,
+            appCode: koboMart.code,
+            name: 'Kobo Mart',
+            status: koboMart.status,
+            hasFeature: true,
+          },
+          {
+            appId: zuriBakery.id,
+            appCode: zuriBakery.code,
+            name: 'Zuri Bakery',
+            status: zuriBakery.status,
+            hasFeature: false,
+          },
+          {
+            appId: envoye.id,
+            appCode: envoye.code,
+            name: envoye.name,
+            status: envoye.status,
+            hasFeature: false,
+          },
+        ]),
+      );
+    });
+
+    it('returns 403 when user lacks permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
+      );
+
+      await request(getHttpServer(app))
+        .get('/admin/feature-flag/apps/enrollment')
+        .query({ featureKey: featureFlag.key })
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns 404 for unknown feature key', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+
+      await request(getHttpServer(app))
+        .get('/admin/feature-flag/apps/enrollment')
+        .query({ featureKey: 'nonexistent_flag' })
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('List apps', () => {
+    it('returns apps for SuperAdmin', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Zuri Bakery' }),
+      );
+
+      const response = await request(getHttpServer(app))
+        .get('/admin/apps')
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toEqual(
+        expect.arrayContaining([
+          {
+            appId: koboMart.id,
+            appCode: koboMart.code,
+            name: 'Kobo Mart',
+            status: koboMart.status,
+          },
+          {
+            appId: zuriBakery.id,
+            appCode: zuriBakery.code,
+            name: 'Zuri Bakery',
+            status: zuriBakery.status,
+          },
+        ]),
+      );
+    });
+
+    it('returns 403 when user lacks permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .get('/admin/apps')
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.FORBIDDEN);
     });
   });
 });
