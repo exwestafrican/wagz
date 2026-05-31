@@ -25,6 +25,7 @@ export const URIPaths = {
   VERIFY_INVITE: '/workspace/verify-invite',
   ACCEPT_INVITE: '/workspace/accept-invite',
   LIST_TASKS: '/backfill/tasks',
+  RUN_TASK: '/backfill/tasks/:jobId/run',
 };
 
 export const TeammatesEndpoints = {

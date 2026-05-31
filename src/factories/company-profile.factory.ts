@@ -1,6 +1,7 @@
 import { CompanyProfile } from '@/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 import { Factory } from 'fishery';
+import { PrismaService } from '@/prisma/prisma.service';
 
 const companyProfileFactory = Factory.define<CompanyProfile>(({ sequence }) => {
   return {
@@ -16,3 +17,10 @@ const companyProfileFactory = Factory.define<CompanyProfile>(({ sequence }) => {
 });
 
 export default companyProfileFactory;
+
+export async function persistCompanyProfile(
+  prismaService: PrismaService,
+  companyProfile: CompanyProfile,
+) {
+  await prismaService.companyProfile.create({ data: companyProfile });
+}

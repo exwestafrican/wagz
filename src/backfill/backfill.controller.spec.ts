@@ -18,6 +18,7 @@ import teammateFactory from '@/factories/teammate.factory';
 import { ROLES } from '@/permission/types';
 import { PrismaService } from '@/prisma/prisma.service';
 import Factory, { PersistStrategy } from '@/factories/factory';
+import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 
 describe('BackfillController', () => {
   let requestUser: RequestUser;
@@ -42,6 +43,7 @@ describe('BackfillController', () => {
   });
 
   afterEach(async () => {
+    await prismaService.workspace.deleteMany();
     await prismaService.preVerification.deleteMany();
     await prismaService.companyProfile.deleteMany();
     await app.close();
@@ -49,10 +51,11 @@ describe('BackfillController', () => {
 
   describe('list', () => {
     it('should return a list of backfill jobs for super admin', async () => {
-      const { workspace } = await setupWorkspaceWithTeammate(
+      await setupWorkspaceWithTeammate(
         factory,
         teammateFactory.build({
           email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
           groups: [ROLES.SuperAdmin.code],
         }),
       );
@@ -60,7 +63,6 @@ describe('BackfillController', () => {
         .get(URIPaths.LIST_TASKS)
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .query({ workspaceCode: workspace.code })
         .send()
         .expect(HttpStatus.OK);
       const body = response.body as BackfillResponseDto[];
@@ -68,10 +70,11 @@ describe('BackfillController', () => {
     });
 
     it('should return 403 for when user is not super admin', async () => {
-      const { workspace } = await setupWorkspaceWithTeammate(
+      await setupWorkspaceWithTeammate(
         factory,
         teammateFactory.build({
           email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
           groups: [ROLES.WorkspaceAdmin.code],
         }),
       );
@@ -80,9 +83,64 @@ describe('BackfillController', () => {
         .get(URIPaths.LIST_TASKS)
         .set('Accept', 'application/json')
         .set('Authorization', 'Bearer test-token')
-        .query({ workspaceCode: workspace.code })
         .send()
         .expect(HttpStatus.FORBIDDEN);
+    });
+  });
+
+  describe('run', () => {
+    const runPath = (jobId: string) =>
+      URIPaths.RUN_TASK.replace(':jobId', jobId);
+
+    it('should run a backfill job for super admin and return a success summary', async () => {
+      const { workspace } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          username: 'sam.smith',
+          normalizedUsername: 'sam.smith',
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.SuperAdmin.code],
+        }),
+      );
+
+      const response = await request(getHttpServer(app))
+        .post(runPath('normalize_usernames'))
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send()
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toMatchObject({
+        jobId: 'normalize_usernames',
+        status: 'success',
+        workspacesProcessed: 1,
+        workspacesSucceeded: 1,
+        workspacesFailed: 0,
+      });
+
+      const teammate = await prismaService.teammate.findFirstOrThrow({
+        where: { workspaceCode: workspace.code, email: requestUser.email },
+      });
+      expect(teammate.normalizedUsername).toBe('samsmith');
+    });
+
+    it('should return 404 for an unknown job', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.SuperAdmin.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .post(runPath('does_not_exist'))
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send()
+        .expect(HttpStatus.NOT_FOUND);
     });
   });
 });

@@ -39,6 +39,22 @@ export class AuthController {
     return this.authService.requestMagicLinkOrThrow(magicLinkAuthDto.email);
   }
 
+  @Post('admin/login')
+  @ApiOperation({ summary: 'Login as an admin' })
+  @ApiBody({ type: MagicLinkAuthDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Admin magic link sent',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid credentials',
+  })
+  @HttpCode(HttpStatus.OK)
+  requestAdminMagicLink(@Body() dto: MagicLinkAuthDto): Promise<void> {
+    return this.authService.requestAdminMagicLinkOrThrow(dto.email);
+  }
+
   @Post('signup/email-only')
   @ApiOperation({ summary: 'Allow user to sign up' })
   @ApiBody({ type: SignupEmailDto })
