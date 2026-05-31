@@ -405,7 +405,10 @@ describe('AdminController', () => {
 
   describe('List app enrollment', () => {
     it('returns all apps with hasFeature for SuperAdmin', async () => {
-      await setupSuperAdmin(factory, requestUser.email);
+      const { workspace: envoye } = await setupSuperAdmin(
+        factory,
+        requestUser.email,
+      );
       const featureFlag = await factory.persist('featureFlag', () =>
         featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
       );
@@ -431,7 +434,7 @@ describe('AdminController', () => {
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.OK);
 
-      expect(response.body).toHaveLength(2);
+      expect(response.body).toHaveLength(3);
       expect(response.body).toEqual(
         expect.arrayContaining([
           {
@@ -446,6 +449,13 @@ describe('AdminController', () => {
             appCode: zuriBakery.code,
             name: 'Zuri Bakery',
             status: zuriBakery.status,
+            hasFeature: false,
+          },
+          {
+            appId: envoye.id,
+            appCode: envoye.code,
+            name: envoye.name,
+            status: envoye.status,
             hasFeature: false,
           },
         ]),
