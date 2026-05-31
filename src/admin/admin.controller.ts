@@ -20,12 +20,14 @@ import {
 } from '@nestjs/swagger';
 import FeatureFlagDto, {
   AppDto,
+  AppEnrollmentDto,
   CreateFeatureFlagDto,
   DeleteFeatureFlagDto,
   EnableFeatureForAppsDto,
   GetFeatureEnabledAppsQueryDto,
   PatchFeatureFlagStatusDto,
   toAppDto,
+  toAppEnrollmentDto,
   toFeatureFlagDto,
 } from '@/admin/dto/feature-flag.dto';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
@@ -217,6 +219,51 @@ export class AdminController {
         ENVOYE_WORKSPACE_CODE,
         PERMISSIONS.MANAGE_FEATURE_FLAGS,
         () => this.featureFlagManager.enableFFForApps(body.key, body.appCodes),
+      );
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
+  }
+
+  @Get('/feature-flag/apps/enrollment')
+  @ApiOperation({ summary: 'List all apps with feature enrollment status' })
+  @ApiQuery({
+    name: 'featureKey',
+    description: 'Key of the feature flag',
+    example: 'can_use_whatsapp',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'All apps (up to 100) with hasFeature',
+    type: [AppEnrollmentDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or not an active Envoye workspace member',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Feature flag not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async listAppEnrollment(
+    @User() requestUser: RequestUser,
+    @Query() query: GetFeatureEnabledAppsQueryDto,
+  ): Promise<AppEnrollmentDto[]> {
+    try {
+      const appEnrollment =
+        await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+          requestUser,
+          ENVOYE_WORKSPACE_CODE,
+          PERMISSIONS.MANAGE_FEATURE_FLAGS,
+          () => this.featureFlagManager.listAppEnrollment(query.featureKey),
+        );
+
+      return appEnrollment.map(({ workspace, hasFeature }) =>
+        toAppEnrollmentDto(workspace, hasFeature),
       );
     } catch (error) {
       if (error instanceof NotFoundInDb) {

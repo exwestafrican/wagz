@@ -1,5 +1,6 @@
 import {
   IsArray,
+  IsBoolean,
   IsEnum,
   IsNumber,
   IsString,
@@ -129,6 +130,25 @@ export function toAppDto(workspace: Workspace): AppDto {
     appCode: workspace.code,
     name: workspace.name,
     status: workspace.status,
+  };
+}
+
+export class AppEnrollmentDto extends AppDto {
+  @IsBoolean()
+  @ApiProperty({
+    description: 'Whether the feature is enabled for this app',
+    example: true,
+  })
+  hasFeature: boolean;
+}
+
+export function toAppEnrollmentDto(
+  workspace: Workspace,
+  hasFeature: boolean,
+): AppEnrollmentDto {
+  return {
+    ...toAppDto(workspace),
+    hasFeature,
   };
 }
 
