@@ -360,11 +360,13 @@ describe('AdminController', () => {
             appId: koboMart.id,
             appCode: koboMart.code,
             name: 'Kobo Mart',
+            status: koboMart.status,
           },
           {
             appId: zuriBakery.id,
             appCode: zuriBakery.code,
             name: 'Zuri Bakery',
+            status: zuriBakery.status,
           },
         ]),
       );
@@ -422,11 +424,13 @@ describe('AdminController', () => {
             appId: koboMart.id,
             appCode: koboMart.code,
             name: 'Kobo Mart',
+            status: koboMart.status,
           },
           {
             appId: zuriBakery.id,
             appCode: zuriBakery.code,
             name: 'Zuri Bakery',
+            status: zuriBakery.status,
           },
         ]),
       );

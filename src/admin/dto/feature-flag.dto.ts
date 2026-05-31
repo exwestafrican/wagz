@@ -9,7 +9,7 @@ import {
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { FeatureFlag, Workspace } from '@/generated/prisma/client';
-import { FeatureFlagStatus } from '@/generated/prisma/enums';
+import { FeatureFlagStatus, WorkspaceStatus } from '@/generated/prisma/enums';
 
 const FEATURE_FLAG_KEY_PATTERN = /^[a-z_]+$/;
 const MAX_APP_CODES_PER_ENABLE_REQUEST = 500;
@@ -113,6 +113,14 @@ export class AppDto {
     example: 'Kobo Mart',
   })
   name: string;
+
+  @IsEnum(WorkspaceStatus)
+  @ApiProperty({
+    description: 'Workspace status',
+    enum: WorkspaceStatus,
+    example: WorkspaceStatus.ACTIVE,
+  })
+  status: WorkspaceStatus;
 }
 
 export function toAppDto(workspace: Workspace): AppDto {
@@ -120,6 +128,7 @@ export function toAppDto(workspace: Workspace): AppDto {
     appId: workspace.id,
     appCode: workspace.code,
     name: workspace.name,
+    status: workspace.status,
   };
 }
 
