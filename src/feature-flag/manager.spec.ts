@@ -14,6 +14,7 @@ import Factory, { PersistStrategy } from '@/factories/factory';
 import FeatureFlagManager from '@/feature-flag/manager';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import CompanyProfileFactory from '@/factories/company-profile.factory';
 
 describe('FeatureFlagManager', () => {
   let featureFlagManager: FeatureFlagManager;
@@ -358,14 +359,14 @@ describe('FeatureFlagManager', () => {
     });
 
     it('returns up to 100 apps for GLOBAL flag', async () => {
+      const companyProfile = await factory.persist('companyProfile', () =>
+        CompanyProfileFactory.build(),
+      );
+      await prismaService.workspace.createMany({
+        data: workspaceFactory.buildList(200, { ownedById: companyProfile.id }),
+      });
       const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
       await featureFlagManager.turnOnFFGlobally(featureFlag.key);
-
-      for (let index = 0; index < 101; index++) {
-        await factory.persist('workspace', () =>
-          workspaceFactory.build({ name: `Workspace ${index}` }),
-        );
-      }
 
       const enabledWorkspaces = await featureFlagManager.appsWithFeatureEnabled(
         featureFlag.key,

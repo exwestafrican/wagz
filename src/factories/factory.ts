@@ -1,4 +1,5 @@
 import {
+  CompanyProfile,
   FeatureFlag,
   PreVerification,
   Teammate,
@@ -11,6 +12,7 @@ import { persistWorkspaceStrategy } from '@/factories/workspace.factory';
 import { persistTeammate } from '@/factories/teammate.factory';
 import { persistWorkspaceInvite } from '@/factories/workspace-invite.factory';
 import { persistFeatureFlag } from '@/factories/feature-flag.factory';
+import { persistCompanyProfile } from '@/factories/company-profile.factory';
 
 export interface PersistStrategy {
   persist: <T>(strategy: string, buildObject: () => T) => Promise<T>;
@@ -42,6 +44,10 @@ function createPersistStrategy(prismaService: PrismaService): PersistStrategy {
         }
         case 'featureFlag': {
           await persistFeatureFlag(prismaService, obj as FeatureFlag);
+          return obj;
+        }
+        case 'companyProfile': {
+          await persistCompanyProfile(prismaService, obj as CompanyProfile);
           return obj;
         }
         default: {
