@@ -30,6 +30,7 @@ export class ConversationsService {
             workspaceCode: dto.workspaceCode,
             conversationId: conversation.id,
             teammateId: sender.id,
+            //add is owner field for sender once the schema is updated
           },
           {
             workspaceCode: dto.workspaceCode,
