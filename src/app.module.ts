@@ -16,6 +16,7 @@ import { CommonModule } from '@/common/common.module';
 import { BackfillModule } from './backfill/backfill.module';
 import { CommandsModule } from '@/commands/commands.module';
 import { AdminModule } from './admin/admin.module';
+import { ConversationsModule } from './conversations/conversations.module';
 
 @Module({
   imports: [
@@ -36,6 +37,7 @@ import { AdminModule } from './admin/admin.module';
     BackfillModule,
     CommandsModule,
     AdminModule,
+    ConversationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
