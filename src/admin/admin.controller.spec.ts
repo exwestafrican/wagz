@@ -309,4 +309,80 @@ describe('AdminController', () => {
         .expect(HttpStatus.OK);
     });
   });
+
+  describe('Get apps with feature enabled', () => {
+    it('returns apps for SuperAdmin', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
+      );
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Zuri Bakery' }),
+      );
+
+      await request(getHttpServer(app))
+        .post('/admin/feature-flag/enable-apps')
+        .set('Authorization', 'Bearer test-token')
+        .send({
+          key: featureFlag.key,
+          appCodes: [koboMart.code, zuriBakery.code],
+        })
+        .expect(HttpStatus.OK);
+
+      const response = await request(getHttpServer(app))
+        .get('/admin/feature-flag/apps')
+        .query({ featureKey: featureFlag.key })
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toHaveLength(2);
+      expect(response.body).toEqual(
+        expect.arrayContaining([
+          {
+            appId: koboMart.id,
+            appCode: koboMart.code,
+            name: 'Kobo Mart',
+          },
+          {
+            appId: zuriBakery.id,
+            appCode: zuriBakery.code,
+            name: 'Zuri Bakery',
+          },
+        ]),
+      );
+    });
+
+    it('returns 403 when user lacks permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      const featureFlag = await factory.persist('featureFlag', () =>
+        featureFlagFactory.build({ status: FeatureFlagStatus.PARTIAL }),
+      );
+
+      await request(getHttpServer(app))
+        .get('/admin/feature-flag/apps')
+        .query({ featureKey: featureFlag.key })
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.FORBIDDEN);
+    });
+
+    it('returns 404 for unknown feature key', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+
+      await request(getHttpServer(app))
+        .get('/admin/feature-flag/apps')
+        .query({ featureKey: 'nonexistent_flag' })
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.NOT_FOUND);
+    });
+  });
 });

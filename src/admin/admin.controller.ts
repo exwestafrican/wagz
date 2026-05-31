@@ -8,14 +8,24 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+} from '@nestjs/swagger';
 import FeatureFlagDto, {
+  AppDto,
   CreateFeatureFlagDto,
   DeleteFeatureFlagDto,
   EnableFeatureForAppsDto,
+  GetFeatureEnabledAppsQueryDto,
   PatchFeatureFlagStatusDto,
+  toAppDto,
   toFeatureFlagDto,
 } from '@/admin/dto/feature-flag.dto';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
@@ -206,6 +216,50 @@ export class AdminController {
         PERMISSIONS.MANAGE_FEATURE_FLAGS,
         () => this.featureFlagManager.enableFFForApps(body.key, body.appCodes),
       );
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
+  }
+
+  @Get('/feature-flag/apps')
+  @ApiOperation({ summary: 'List apps where a feature flag is enabled' })
+  @ApiQuery({
+    name: 'featureKey',
+    description: 'Key of the feature flag',
+    example: 'can_use_whatsapp',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Apps with the feature enabled (up to 100)',
+    type: [AppDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or not an active Envoye workspace member',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Feature flag not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async getAppsWithFeatureEnabled(
+    @User() requestUser: RequestUser,
+    @Query() query: GetFeatureEnabledAppsQueryDto,
+  ): Promise<AppDto[]> {
+    try {
+      const workspacesWithFeatureEnabled =
+        await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+          requestUser,
+          ENVOYE_WORKSPACE_CODE,
+          PERMISSIONS.MANAGE_FEATURE_FLAGS,
+          () =>
+            this.featureFlagManager.appsWithFeatureEnabled(query.featureKey),
+        );
+
+      return workspacesWithFeatureEnabled.map(toAppDto);
     } catch (error) {
       if (error instanceof NotFoundInDb) {
         throw new NotFoundException();

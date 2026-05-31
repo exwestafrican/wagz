@@ -3,7 +3,7 @@ import {
   ConflictException,
   Injectable,
 } from '@nestjs/common';
-import { FeatureFlag } from '@/generated/prisma/client';
+import { FeatureFlag, Workspace } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import { UnExpectedStatusException } from '@/feature-flag/exceptions/unexpected-status.exception';
@@ -14,6 +14,7 @@ import { ConcurrentLimit } from '@/common/concurrent-runner';
 @Injectable()
 export default class FeatureFlagManager {
   private static readonly ENABLE_FF_FOR_APPS_CONCURRENCY = 4;
+  private static readonly APPS_WITH_FEATURE_ENABLED_LIMIT = 100;
 
   constructor(private readonly prismaService: PrismaService) {}
 
@@ -260,7 +261,52 @@ export default class FeatureFlagManager {
   }
 
   async listAll() {
-    return this.prismaService.featureFlag.findMany();
+    return this.prismaService.featureFlag.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+  }
+
+  async appsWithFeatureEnabled(key: string): Promise<Workspace[]> {
+    try {
+      const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow(
+        {
+          where: { key },
+        },
+      );
+
+      switch (featureFlag.status) {
+        case FeatureFlagStatus.DISABLED:
+          return [];
+        case FeatureFlagStatus.GLOBAL:
+          return this.prismaService.workspace.findMany({
+            take: FeatureFlagManager.APPS_WITH_FEATURE_ENABLED_LIMIT,
+            orderBy: { id: 'asc' },
+          });
+        case FeatureFlagStatus.PARTIAL:
+          return this.prismaService.workspace.findMany({
+            where: {
+              workspaceFeatures: {
+                some: { featureFlagId: featureFlag.id },
+              },
+            },
+            take: FeatureFlagManager.APPS_WITH_FEATURE_ENABLED_LIMIT,
+            orderBy: { id: 'asc' },
+          });
+        default:
+          throw new UnExpectedStatusException(
+            `Unexpected feature flag status for key "${key}": ${String(
+              featureFlag.status,
+            )}`,
+          );
+      }
+    } catch (error) {
+      if (notInDbError(error)) {
+        throw new NotFoundInDb(`Feature flag not found; key=${key}`);
+      }
+      throw error;
+    }
   }
 
   async delete(key: string): Promise<FeatureFlag> {

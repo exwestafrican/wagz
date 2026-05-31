@@ -1,13 +1,14 @@
 import {
   IsArray,
   IsEnum,
+  IsNumber,
   IsString,
   Matches,
   ArrayMinSize,
   ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { FeatureFlag } from '@/generated/prisma/client';
+import { FeatureFlag, Workspace } from '@/generated/prisma/client';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 
 const FEATURE_FLAG_KEY_PATTERN = /^[a-z_]+$/;
@@ -80,6 +81,46 @@ export class EnableFeatureForAppsDto {
     maxItems: MAX_APP_CODES_PER_ENABLE_REQUEST,
   })
   appCodes: string[];
+}
+
+export class GetFeatureEnabledAppsQueryDto {
+  @IsString()
+  @ApiProperty({
+    description: 'Key of the feature flag to list enabled apps for',
+    example: 'can_use_whatsapp',
+  })
+  featureKey: string;
+}
+
+export class AppDto {
+  @IsNumber()
+  @ApiProperty({
+    description: 'App (workspace) id',
+    example: 42,
+  })
+  appId: number;
+
+  @IsString()
+  @ApiProperty({
+    description: 'App (workspace) code',
+    example: 'ab34c67',
+  })
+  appCode: string;
+
+  @IsString()
+  @ApiProperty({
+    description: 'App name',
+    example: 'Kobo Mart',
+  })
+  name: string;
+}
+
+export function toAppDto(workspace: Workspace): AppDto {
+  return {
+    appId: workspace.id,
+    appCode: workspace.code,
+    name: workspace.name,
+  };
 }
 
 export default class FeatureFlagDto {
