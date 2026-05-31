@@ -318,7 +318,76 @@ describe('FeatureFlagManager', () => {
 
       await expectFeatureEnabled(zurich.code, featureFlag.key);
       await expectFeatureEnabled(fabLabs.code, featureFlag.key);
+    });
+  });
 
+  describe('appsWithFeatureEnabled', () => {
+    it('returns enrolled apps for PARTIAL flag', async () => {
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Zuri Bakery' }),
+      );
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
+
+      await featureFlagManager.enableFFForApps(featureFlag.key, [
+        koboMart.code,
+        zuriBakery.code,
+      ]);
+
+      const enabledWorkspaces = await featureFlagManager.appsWithFeatureEnabled(
+        featureFlag.key,
+      );
+
+      expect(enabledWorkspaces).toHaveLength(2);
+      expect(enabledWorkspaces).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            id: koboMart.id,
+            code: koboMart.code,
+            name: 'Kobo Mart',
+          }),
+          expect.objectContaining({
+            id: zuriBakery.id,
+            code: zuriBakery.code,
+            name: 'Zuri Bakery',
+          }),
+        ]),
+      );
+    });
+
+    it('returns up to 100 apps for GLOBAL flag', async () => {
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+      await featureFlagManager.turnOnFFGlobally(featureFlag.key);
+
+      for (let index = 0; index < 101; index++) {
+        await factory.persist('workspace', () =>
+          workspaceFactory.build({ name: `Workspace ${index}` }),
+        );
+      }
+
+      const enabledWorkspaces = await featureFlagManager.appsWithFeatureEnabled(
+        featureFlag.key,
+      );
+
+      expect(enabledWorkspaces).toHaveLength(100);
+    });
+
+    it('returns empty array for DISABLED flag', async () => {
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+
+      const enabledWorkspaces = await featureFlagManager.appsWithFeatureEnabled(
+        featureFlag.key,
+      );
+
+      expect(enabledWorkspaces).toEqual([]);
+    });
+
+    it('throws NotFoundInDb for unknown key', async () => {
+      await expect(
+        featureFlagManager.appsWithFeatureEnabled('nonexistent_flag'),
+      ).rejects.toBeInstanceOf(NotFoundInDb);
     });
   });
 });
