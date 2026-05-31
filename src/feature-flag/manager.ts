@@ -268,6 +268,67 @@ export default class FeatureFlagManager {
     });
   }
 
+  async listAppEnrollment(
+    key: string,
+  ): Promise<{ workspace: Workspace; hasFeature: boolean }[]> {
+    try {
+      const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow(
+        {
+          where: { key },
+        },
+      );
+
+      const workspaces = await this.prismaService.workspace.findMany({
+        take: FeatureFlagManager.APPS_WITH_FEATURE_ENABLED_LIMIT,
+        orderBy: { id: 'asc' },
+      });
+
+      switch (featureFlag.status) {
+        case FeatureFlagStatus.DISABLED:
+          return workspaces.map((workspace) => ({
+            workspace,
+            hasFeature: false,
+          }));
+        case FeatureFlagStatus.GLOBAL:
+          return workspaces.map((workspace) => ({
+            workspace,
+            hasFeature: true,
+          }));
+        case FeatureFlagStatus.PARTIAL: {
+          const enrolledWorkspaceCodes = new Set(
+            (
+              await this.prismaService.workspaceFeature.findMany({
+                where: {
+                  featureFlagId: featureFlag.id,
+                  workspaceCode: {
+                    in: workspaces.map((workspace) => workspace.code),
+                  },
+                },
+                select: { workspaceCode: true },
+              })
+            ).map((workspaceFeature) => workspaceFeature.workspaceCode),
+          );
+
+          return workspaces.map((workspace) => ({
+            workspace,
+            hasFeature: enrolledWorkspaceCodes.has(workspace.code),
+          }));
+        }
+        default:
+          throw new UnExpectedStatusException(
+            `Unexpected feature flag status for key "${key}": ${String(
+              featureFlag.status,
+            )}`,
+          );
+      }
+    } catch (error) {
+      if (notInDbError(error)) {
+        throw new NotFoundInDb(`Feature flag not found; key=${key}`);
+      }
+      throw error;
+    }
+  }
+
   async appsWithFeatureEnabled(key: string): Promise<Workspace[]> {
     try {
       const featureFlag = await this.prismaService.featureFlag.findFirstOrThrow(

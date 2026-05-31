@@ -391,4 +391,103 @@ describe('FeatureFlagManager', () => {
       ).rejects.toBeInstanceOf(NotFoundInDb);
     });
   });
+
+  describe('listAppEnrollment', () => {
+    it('returns all apps with mixed hasFeature for PARTIAL flag', async () => {
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Zuri Bakery' }),
+      );
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.PARTIAL);
+
+      await featureFlagManager.enableFFForApps(featureFlag.key, [
+        koboMart.code,
+      ]);
+
+      const appEnrollment = await featureFlagManager.listAppEnrollment(
+        featureFlag.key,
+      );
+
+      expect(appEnrollment).toHaveLength(2);
+      expect(appEnrollment).toEqual(
+        expect.arrayContaining([
+          {
+            workspace: koboMart,
+            hasFeature: true,
+          },
+          {
+            workspace: zuriBakery,
+            hasFeature: false,
+          },
+        ]),
+      );
+    });
+
+    it('returns all apps with hasFeature true for GLOBAL flag', async () => {
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Zuri Bakery' }),
+      );
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+      await featureFlagManager.turnOnFFGlobally(featureFlag.key);
+
+      const appEnrollment = await featureFlagManager.listAppEnrollment(
+        featureFlag.key,
+      );
+
+      expect(appEnrollment).toHaveLength(2);
+      expect(appEnrollment).toEqual(
+        expect.arrayContaining([
+          {
+            workspace: koboMart,
+            hasFeature: true,
+          },
+          {
+            workspace: zuriBakery,
+            hasFeature: true,
+          },
+        ]),
+      );
+    });
+
+    it('returns all apps with hasFeature false for DISABLED flag', async () => {
+      await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+
+      const appEnrollment = await featureFlagManager.listAppEnrollment(
+        featureFlag.key,
+      );
+
+      expect(appEnrollment).toHaveLength(1);
+      expect(appEnrollment[0].hasFeature).toBe(false);
+    });
+
+    it('returns up to 100 apps', async () => {
+      const companyProfile = await factory.persist('companyProfile', () =>
+        CompanyProfileFactory.build(),
+      );
+      await prismaService.workspace.createMany({
+        data: workspaceFactory.buildList(200, { ownedById: companyProfile.id }),
+      });
+      const featureFlag = await createFeatureFlag(FeatureFlagStatus.DISABLED);
+
+      const appEnrollment = await featureFlagManager.listAppEnrollment(
+        featureFlag.key,
+      );
+
+      expect(appEnrollment).toHaveLength(100);
+    });
+
+    it('throws NotFoundInDb for unknown key', async () => {
+      await expect(
+        featureFlagManager.listAppEnrollment('nonexistent_flag'),
+      ).rejects.toBeInstanceOf(NotFoundInDb);
+    });
+  });
 });
