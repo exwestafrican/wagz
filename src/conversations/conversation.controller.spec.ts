@@ -1,54 +1,104 @@
-import { createMockSupabaseClient, MockSupabaseClient } from "@/auth/test-utils/supabase.mock";
-import { PrismaService } from "@/prisma/prisma.service";
-import { createTestApp, TestControllerModuleWithAuthUser } from "@/test-helpers/test-app";
-import { INestApplication } from "@nestjs/common";
-import { ConversationsController } from "./conversations.controller";
-import { Test, TestingModule } from "@nestjs/testing";
-import { ConfigModule } from "@nestjs/config";
-import RequestUser from "@/auth/domain/request-user";
-import { ConversationsService } from "./conversations.service";
-import { Server } from "http";
+import { ConversationsController } from './conversations.controller';
+import RequestUser from '@/auth/domain/request-user';
+import { HttpStatus, INestApplication } from '@nestjs/common';
+import { PrismaService } from '@/prisma/prisma.service';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import {
+  createTestApp,
+  TestControllerModuleWithAuthUser,
+} from '@/test-helpers/test-app';
+import { ConversationsService } from './conversations.service';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
 import request from 'supertest';
-import { ConversationEndpoints } from "@/common/const";
-import ValidationErrorResponseDto from "@/common/dto/validation-error.dto";
+import getHttpServer from '@/test-helpers/get-http-server';
+import { ConversationEndpoints } from '@/common/const';
+import { ConversationResponseDto } from './dto/conversation-response.dto';
+import { Teammate, Workspace } from '@/generated/prisma/client';
 
-describe('AuthController', () => { 
-    let app: INestApplication;
-    let mockSupabaseClient: MockSupabaseClient;
-    let prismaService: PrismaService;
-     let requestUser: RequestUser;
+describe('ConversationsController', () => {
+  let requestUser: RequestUser;
+  let app: INestApplication;
+  let prismaService: PrismaService;
+  let factory: PersistStrategy;
 
-    beforeEach(async () => {
-        mockSupabaseClient = createMockSupabaseClient();
-        requestUser = RequestUser.of('laura@useEnvoye.com');
-        const module = await TestControllerModuleWithAuthUser({
-            controllers: [ConversationsController],
-            providers: [ConversationsService],
-        }).with(requestUser);
-        app = await createTestApp(module);
-        prismaService = app.get<PrismaService>(PrismaService);
-        
+  let workspace: Workspace;
+  let sender: Teammate;
+  let recipient: Teammate;
+
+  beforeEach(async () => {
+    requestUser = RequestUser.of('laura@useEnvoye.com');
+    const module = await TestControllerModuleWithAuthUser({
+      controllers: [ConversationsController],
+      providers: [ConversationsService],
+    }).with(requestUser);
+    app = await createTestApp(module);
+    prismaService = app.get<PrismaService>(PrismaService);
+    factory = Factory.createStrategy(prismaService);
+
+    const setup = await setupWorkspaceWithTeammate(
+      factory,
+      teammateFactory.build({ email: requestUser.email }),
+    );
+    workspace = setup.workspace;
+    sender = setup.teammate;
+    recipient = await factory.persist('teammate', () =>
+      teammateFactory.build({ workspaceCode: workspace.code }),
+    );
+  });
+
+  afterEach(async () => {
+    await prismaService.conversationParticipant.deleteMany();
+    await prismaService.conversation.deleteMany();
+    await prismaService.teammate.deleteMany();
+    await prismaService.workspace.deleteMany();
+    await app.close();
+  });
+
+  it('should create a conversation with sender and recipient participants', async () => {
+    const response = await request(getHttpServer(app))
+      .post(ConversationEndpoints.CREATE_CONVERSATION)
+      .send({
+        workspaceCode: workspace.code,
+        customerInfo: 'john@acme.com',
+        subject: 'Billing issue',
+        recipientTeammateId: recipient.id,
+      })
+      .set('Accept', 'application/json')
+      .set('Authorization', 'Bearer test-token')
+      .expect(HttpStatus.CREATED);
+
+    const body = response.body as ConversationResponseDto;
+    expect(body.id).toEqual(expect.any(Number));
+
+    const conversation = await prismaService.conversation.findUnique({
+      where: { id: body.id },
+    });
+    expect(conversation).toMatchObject({
+      workspaceCode: workspace.code,
+      customerInfo: 'john@acme.com',
+      subject: 'Billing issue',
     });
 
-    function getHttpServer(app: INestApplication): Server {
-        return app.getHttpServer() as unknown as Server;
-    }
-
-    it('should return 200 if the recepient is valid', async () => {
-        //need to create a workspace and recepient teammate before making the request
-        const response = await request(getHttpServer(app))
-        .post(ConversationEndpoints.CREATE_CONVERSATION)
-        .send({
-            "workspaceCode": "12er56",
-            "customerInfo": "john@acme.com",
-            "subject": "Billing issue",
-            "recipientTeammateId": 5
-        })
-        .set('Accept', 'application/json')
-        .expect(400);
-
-        const body = response.body as ValidationErrorResponseDto;
-        expect(body.property).toMatchObject(['email']);
+    const participants = await prismaService.conversationParticipant.findMany({
+      where: { conversationId: body.id },
     });
+    expect(participants).toHaveLength(2);
+    expect(participants.map((participant) => participant.teammateId)).toEqual(
+      expect.arrayContaining([sender.id, recipient.id]),
+    );
+  });
 
+  it('should return 401 when there is no auth token', async () => {
+    await request(getHttpServer(app))
+      .post(ConversationEndpoints.CREATE_CONVERSATION)
+      .send({
+        workspaceCode: workspace.code,
+        customerInfo: 'john@acme.com',
+        subject: 'Billing issue',
+        recipientTeammateId: recipient.id,
+      })
+      .set('Accept', 'application/json')
+      .expect(HttpStatus.UNAUTHORIZED);
+  });
 });

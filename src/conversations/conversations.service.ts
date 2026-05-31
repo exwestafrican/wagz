@@ -42,34 +42,4 @@ export class ConversationsService {
       return conversation;
     });
   }
-
-  async createConversationSelf(
-    dto: CreateConversationDto,
-    senderEmail: string,
-  ): Promise<Conversation> {
-    const sender = await this.prisma.teammate.findFirstOrThrow({
-      where: { workspaceCode: dto.workspaceCode, email: senderEmail },
-    });
-
-    return this.prisma.$transaction(async (tx) => {
-      const conversation = await tx.conversation.create({
-        data: {
-          workspaceCode: dto.workspaceCode,//removed the customerInfo since this is a self conversation and the teammate is the customer
-          subject: dto.subject,
-        },
-      });
-
-      await tx.conversationParticipant.createMany({
-        data: [
-          {
-            workspaceCode: dto.workspaceCode,
-            conversationId: conversation.id,
-            teammateId: sender.id,
-          },
-        ],
-      });
-
-      return conversation;
-    });
-  }
 }
