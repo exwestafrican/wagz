@@ -23,6 +23,12 @@ import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import featureFlagFactory from '@/factories/feature-flag.factory';
 import workspaceFactory from '@/factories/workspace.factory';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
+import { WorkspaceManager } from '@/workspace/workspace-manager.service';
+import { LinkService } from '@/common/link-service';
+import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
+import { EMAIL_CLIENT } from '@/messaging/email/email-client';
+import { AuthService } from '@/auth/auth.service';
+import { mockAuthService } from '@/test-helpers/mocks';
 
 describe('AdminController', () => {
   let requestUser: RequestUser;
@@ -34,7 +40,16 @@ describe('AdminController', () => {
     requestUser = RequestUser.of('admin@useEnvoye.co');
     const module: TestingModule = await TestControllerModuleWithAuthUser({
       controllers: [AdminController],
-      providers: [FeatureFlagManager, PermissionService, RoleService],
+      providers: [
+        FeatureFlagManager,
+        PermissionService,
+        RoleService,
+        WorkspaceManager,
+        LinkService,
+        WorkspaceInviteService,
+        { provide: EMAIL_CLIENT, useValue: { send: jest.fn() } },
+        { provide: AuthService, useValue: mockAuthService },
+      ],
     }).with(requestUser);
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
@@ -383,6 +398,54 @@ describe('AdminController', () => {
         .query({ featureKey: 'nonexistent_flag' })
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.NOT_FOUND);
+    });
+  });
+
+  describe('List apps', () => {
+    it('returns apps for SuperAdmin', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const koboMart = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Kobo Mart' }),
+      );
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build({ name: 'Zuri Bakery' }),
+      );
+
+      const response = await request(getHttpServer(app))
+        .get('/admin/apps')
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.OK);
+
+      expect(response.body).toEqual(
+        expect.arrayContaining([
+          {
+            appId: koboMart.id,
+            appCode: koboMart.code,
+            name: 'Kobo Mart',
+          },
+          {
+            appId: zuriBakery.id,
+            appCode: zuriBakery.code,
+            name: 'Zuri Bakery',
+          },
+        ]),
+      );
+    });
+
+    it('returns 403 when user lacks permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .get('/admin/apps')
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.FORBIDDEN);
     });
   });
 });

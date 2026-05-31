@@ -47,6 +47,11 @@ export const PERMISSIONS = {
     'Allows user to log in to the admin panel',
     'access_admin',
   ),
+  WORKSPACE: Permission.of(
+    'Manage Workspaces',
+    'Allows user to list workspaces in the admin panel',
+    'workspace',
+  ),
 } as const;
 
 export const ROLES: Record<string, Role> = {
@@ -61,6 +66,7 @@ export const ROLES: Record<string, Role> = {
     PERMISSIONS.RUN_BACKFILL_TASK,
     PERMISSIONS.MANAGE_FEATURE_FLAGS,
     PERMISSIONS.ACCESS_ADMIN,
+    PERMISSIONS.WORKSPACE,
   ]),
   WorkspaceAdmin: Role.of('WorkspaceAdmin', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,

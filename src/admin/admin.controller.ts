@@ -36,12 +36,14 @@ import { PermissionService } from '@/permission/permission.service';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { PERMISSIONS } from '@/permission/types';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 
 @Controller('admin')
 export class AdminController {
   constructor(
     private readonly featureFlagManager: FeatureFlagManager,
     private readonly permissionService: PermissionService,
+    private readonly workspaceManager: WorkspaceManager,
   ) {}
   @Get('/feature-flag')
   @ApiOperation({ summary: 'Get all features' })
@@ -266,5 +268,29 @@ export class AdminController {
       }
       throw error;
     }
+  }
+
+  @Get('/apps')
+  @ApiOperation({ summary: 'List all apps' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'All apps (up to 100)',
+    type: [AppDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or not an active Envoye workspace member',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async listApps(@User() requestUser: RequestUser): Promise<AppDto[]> {
+    const workspaces =
+      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+        requestUser,
+        ENVOYE_WORKSPACE_CODE,
+        PERMISSIONS.WORKSPACE,
+        () => this.workspaceManager.listApps(),
+      );
+
+    return workspaces.map(toAppDto);
   }
 }
