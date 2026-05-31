@@ -334,7 +334,7 @@ describe('AdminController', () => {
 
       const response = await request(getHttpServer(app))
         .get('/admin/feature-flag/apps')
-        .query({ featureFlag: featureFlag.key })
+        .query({ featureKey: featureFlag.key })
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.OK);
 
@@ -370,7 +370,7 @@ describe('AdminController', () => {
 
       await request(getHttpServer(app))
         .get('/admin/feature-flag/apps')
-        .query({ featureFlag: featureFlag.key })
+        .query({ featureKey: featureFlag.key })
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.FORBIDDEN);
     });
@@ -380,7 +380,7 @@ describe('AdminController', () => {
 
       await request(getHttpServer(app))
         .get('/admin/feature-flag/apps')
-        .query({ featureFlag: 'nonexistent_flag' })
+        .query({ featureKey: 'nonexistent_flag' })
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.NOT_FOUND);
     });

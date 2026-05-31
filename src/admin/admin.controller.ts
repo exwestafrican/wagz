@@ -227,7 +227,7 @@ export class AdminController {
   @Get('/feature-flag/apps')
   @ApiOperation({ summary: 'List apps where a feature flag is enabled' })
   @ApiQuery({
-    name: 'featureFlag',
+    name: 'featureKey',
     description: 'Key of the feature flag',
     example: 'can_use_whatsapp',
   })
@@ -256,7 +256,7 @@ export class AdminController {
           ENVOYE_WORKSPACE_CODE,
           PERMISSIONS.MANAGE_FEATURE_FLAGS,
           () =>
-            this.featureFlagManager.appsWithFeatureEnabled(query.featureFlag),
+            this.featureFlagManager.appsWithFeatureEnabled(query.featureKey),
         );
 
       return workspacesWithFeatureEnabled.map(toAppDto);

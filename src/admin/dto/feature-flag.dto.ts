@@ -89,7 +89,7 @@ export class GetFeatureEnabledAppsQueryDto {
     description: 'Key of the feature flag to list enabled apps for',
     example: 'can_use_whatsapp',
   })
-  featureFlag: string;
+  featureKey: string;
 }
 
 export class AppDto {
