@@ -34,3 +34,10 @@ export const TeammatesEndpoints = {
   CHECK_USERNAME: '/teammates/check-username',
   RANDOM: '',
 };
+
+export const ConversationEndpoints = {
+  CREATE_CONVERSATION: '/conversations',
+  /** Route builder — call with a conversation id, e.g. SEND_MESSAGE(5). */
+  SEND_MESSAGE: (conversationId: number) =>
+    `/conversations/${conversationId}/messages`,
+};
