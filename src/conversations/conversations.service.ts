@@ -18,9 +18,7 @@ export class ConversationsService {
     return this.prisma.$transaction(async (tx) => {
       const conversation = await tx.conversation.create({
         data: {
-          workspaceCode: dto.workspaceCode,
-          customerInfo: dto.customerInfo,
-          subject: dto.subject,
+          workspaceCode: dto.workspaceCode
         },
       });
 
@@ -30,12 +28,13 @@ export class ConversationsService {
             workspaceCode: dto.workspaceCode,
             conversationId: conversation.id,
             teammateId: sender.id,
+            isOwner: true
           },
           {
             workspaceCode: dto.workspaceCode,
             conversationId: conversation.id,
             teammateId: dto.recipientTeammateId,
-          },
+          }
         ],
       });
 
