@@ -22,6 +22,7 @@ import { faker } from '@faker-js/faker';
 import { LinkService } from '@/common/link-service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { RoleService } from '@/permission/role/role.service';
+import { ConversationsService } from '@/conversations/conversations.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { AuthService } from '@/auth/auth.service';
 import PasswordGenerator from '@/auth/services/password.generator';
@@ -66,6 +67,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
       jest.fn() as unknown as LinkService,
       new RoleService(),
       new WorkspaceInviteService(prismaService, authService),
+      new ConversationsService(prismaService),
     );
 
     command = new SetupAdministrativeWorkspaceCommand(

@@ -41,4 +41,28 @@ export class ConversationsService {
       return conversation;
     });
   }
+
+  async createSelfConversation(
+    workspaceCode: string,
+    teammateId: number,
+  ): Promise<Conversation> {
+    return this.prisma.$transaction(async (tx) => {
+      const conversation = await tx.conversation.create({
+        data: {
+          workspaceCode,
+        },
+      });
+
+      await tx.conversationParticipant.create({
+        data: {
+          workspaceCode,
+          conversationId: conversation.id,
+          teammateId,
+          isOwner: true,
+        },
+      });
+
+      return conversation;
+    });
+  }
 }
