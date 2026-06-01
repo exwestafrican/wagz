@@ -298,6 +298,27 @@ describe('WorkspaceService', () => {
         ).rejects.toThrow('Database error');
 
         await assertRollbackHappened(preVerificationDetails);
+        expect(await prismaService.conversation.count()).toBe(0);
+      });
+
+      it('keeps the conversation from a successful setup when a later setup fails', async () => {
+        await service.setup(
+          preVerificationDetails.email,
+          preVerificationDetails.id,
+        );
+
+        const failingDetails = await factory.persist('preverification', () =>
+          preVerificationFactory.build(),
+        );
+        jest
+          .spyOn(conversationsService, 'createSelfConversation')
+          .mockRejectedValue(new Error('Database error'));
+
+        await expect(
+          service.setup(failingDetails.email, failingDetails.id),
+        ).rejects.toThrow('Database error');
+
+        expect(await prismaService.conversation.count()).toBe(1);
       });
     });
   });
