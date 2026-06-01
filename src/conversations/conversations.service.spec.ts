@@ -24,8 +24,9 @@ describe('ConversationsService', () => {
       providers: [ConversationsService],
     }).compile();
     app = await createTestApp(module);
-    service = app.get<ConversationsService>(ConversationsService);
     prismaService = app.get<PrismaService>(PrismaService);
+    service = new ConversationsService(prismaService);
+
     factory = Factory.createStrategy(prismaService);
 
     const setup = await setupWorkspaceWithTeammate(

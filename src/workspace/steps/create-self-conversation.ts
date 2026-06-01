@@ -6,7 +6,6 @@ import { ConversationsService } from '@/conversations/conversations.service';
 
 export class CreateSelfConversationStep implements PostSetupStep {
   logger = new Logger(CreateSelfConversationStep.name);
-  private createdConversationId?: number;
 
   constructor(
     private readonly conversationsService: ConversationsService,
@@ -25,7 +24,6 @@ export class CreateSelfConversationStep implements PostSetupStep {
       workspaceDetails.code,
       admin.id,
     );
-    this.createdConversationId = conversation.id;
 
     this.logger.log(
       `Successfully created self-conversation for admin; workspaceCode=${workspaceDetails.code} conversationId=${conversation.id}`,
@@ -33,14 +31,11 @@ export class CreateSelfConversationStep implements PostSetupStep {
   }
 
   async compensate(workspaceDetails: WorkspaceDetails): Promise<void> {
-    if (this.createdConversationId === undefined) {
-      return;
-    }
     this.logger.warn(
-      `Removing self-conversation as compensating action; workspaceCode=${workspaceDetails.code} conversationId=${this.createdConversationId}`,
+      `Removing self-conversation as compensating action; workspaceCode=${workspaceDetails.code}`,
     );
-    await this.prismaService.conversation.delete({
-      where: { id: this.createdConversationId },
+    await this.prismaService.conversation.deleteMany({
+      where: { workspaceCode: workspaceDetails.code },
     });
   }
 }

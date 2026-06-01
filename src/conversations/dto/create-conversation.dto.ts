@@ -7,18 +7,6 @@ export class CreateConversationDto {
   @IsNotEmpty()
   workspaceCode: string;
 
-  @ApiProperty({ description: 'Customer info', example: 'john@acme.com' })
-  @IsString()
-  @IsNotEmpty()
-  @MaxLength(100)
-  customerInfo: string;
-
-  @ApiProperty({ description: 'Subject', example: 'Billing issue', required: false })
-  @IsString()
-  @IsOptional()
-  @MaxLength(100)
-  subject?: string;
-
   @ApiProperty({ description: 'Teammate ID of the recipient', example: 5 })
   @IsInt()
   @IsNotEmpty()

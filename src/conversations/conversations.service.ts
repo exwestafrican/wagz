@@ -15,54 +15,50 @@ export class ConversationsService {
       where: { workspaceCode: dto.workspaceCode, email: senderEmail },
     });
 
-    return this.prisma.$transaction(async (tx) => {
-      const conversation = await tx.conversation.create({
-        data: {
-          workspaceCode: dto.workspaceCode
-        },
-      });
-
-      await tx.conversationParticipant.createMany({
-        data: [
-          {
-            workspaceCode: dto.workspaceCode,
-            conversationId: conversation.id,
-            teammateId: sender.id,
-            isOwner: true
-          },
-          {
-            workspaceCode: dto.workspaceCode,
-            conversationId: conversation.id,
-            teammateId: dto.recipientTeammateId,
-          }
-        ],
-      });
-
-      return conversation;
+    const conversation = await this.prisma.conversation.create({
+      data: {
+        workspaceCode: dto.workspaceCode
+      },
     });
+
+    await this.prisma.conversationParticipant.createMany({
+      data: [
+        {
+          workspaceCode: dto.workspaceCode,
+          conversationId: conversation.id,
+          teammateId: sender.id,
+          isOwner: true
+        },
+        {
+          workspaceCode: dto.workspaceCode,
+          conversationId: conversation.id,
+          teammateId: dto.recipientTeammateId,
+        }
+      ],
+    });
+
+    return conversation;
   }
 
   async createSelfConversation(
     workspaceCode: string,
     teammateId: number,
   ): Promise<Conversation> {
-    return this.prisma.$transaction(async (tx) => {
-      const conversation = await tx.conversation.create({
-        data: {
-          workspaceCode,
-        },
-      });
-
-      await tx.conversationParticipant.create({
-        data: {
-          workspaceCode,
-          conversationId: conversation.id,
-          teammateId,
-          isOwner: true,
-        },
-      });
-
-      return conversation;
+    const conversation = await this.prisma.conversation.create({
+      data: {
+        workspaceCode,
+      },
     });
+
+    await this.prisma.conversationParticipant.create({
+      data: {
+        workspaceCode,
+        conversationId: conversation.id,
+        teammateId,
+        isOwner: true,
+      },
+    });
+
+    return conversation;
   }
 }
