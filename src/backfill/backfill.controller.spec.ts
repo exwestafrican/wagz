@@ -19,15 +19,20 @@ import { ROLES } from '@/permission/types';
 import { PrismaService } from '@/prisma/prisma.service';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import { EMAIL_CLIENT, EmailClient } from '@/messaging/email/email-client';
 
 describe('BackfillController', () => {
   let requestUser: RequestUser;
   let app: INestApplication;
   let prismaService: PrismaService;
   let factory: PersistStrategy;
+  let sendMock: jest.MockedFunction<EmailClient['send']>;
 
   beforeEach(async () => {
     requestUser = RequestUser.of('sam@useEnvoye.co');
+    // The global MessagingModule is not part of the test module graph, so
+    // EMAIL_CLIENT must be provided explicitly. The mock doubles as a spy.
+    sendMock = jest.fn().mockResolvedValue(undefined);
     const module: TestingModule = await TestControllerModuleWithAuthUser({
       controllers: [BackfillController],
       providers: [
@@ -35,6 +40,7 @@ describe('BackfillController', () => {
         PermissionService,
         RoleService,
         PrismaService,
+        { provide: EMAIL_CLIENT, useValue: { send: sendMock } },
       ],
     }).with(requestUser);
     app = await createTestApp(module);
@@ -123,6 +129,32 @@ describe('BackfillController', () => {
         where: { workspaceCode: workspace.code, email: requestUser.email },
       });
       expect(teammate.normalizedUsername).toBe('samsmith');
+
+      expect(sendMock).toHaveBeenCalledTimes(1);
+      const mail = sendMock.mock.calls[0][0];
+      expect(mail.to.email).toBe(requestUser.email);
+      expect(mail.subject).toContain('success');
+    });
+
+    it('should still return 200 when the completion email fails to send', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.SuperAdmin.code],
+        }),
+      );
+      sendMock.mockRejectedValueOnce(new Error('smtp unavailable'));
+
+      await request(getHttpServer(app))
+        .post(runPath('normalize_usernames'))
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send()
+        .expect(HttpStatus.OK);
+
+      expect(sendMock).toHaveBeenCalledTimes(1);
     });
 
     it('should return 404 for an unknown job', async () => {
