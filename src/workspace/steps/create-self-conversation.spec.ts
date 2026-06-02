@@ -8,7 +8,6 @@ import { CreateSelfConversationStep } from '@/workspace/steps/create-self-conver
 import { ConversationsService } from '@/conversations/conversations.service';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PointOfContact } from '@/workspace/domain/point-of-contact';
-import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import { setupWorkspaceWithMultipleTeammates } from '@/test-helpers/workspace-helpers';
 import { resetDb } from '@/test-helpers/rest-db';
 import Factory, { PersistStrategy } from '@/factories/factory';

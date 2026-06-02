@@ -8,8 +8,7 @@ import FeatureFlagManager from '@/feature-flag/manager';
 import featureFlagFactory from '@/factories/feature-flag.factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { ROLES } from '@/permission/types';
-import { repeat, repeatFn } from '@/common/utils';
-import { ConcurrentLimit } from '@/common/concurrent-runner';
+import { repeatFn } from '@/common/utils';
 
 export async function setupSuperAdmin(
   factory: PersistStrategy,
