@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { TeammateStatus } from '@/generated/prisma/enums';
-import { Teammate } from '@/generated/prisma/client';
+import { ConversationParticipant, Teammate } from '@/generated/prisma/client';
 
 @Injectable()
 export class TeammatesService {
@@ -60,5 +60,66 @@ export class TeammatesService {
       select: { id: true },
     });
     return !!exists;
+  }
+
+  private conversationMetaData(
+    conversationId: number,
+    owner: ConversationParticipant,
+    otherParticipant: ConversationParticipant,
+  ) {
+    return {
+      id: conversationId,
+      authorId: owner.teammateId,
+      recipientId: otherParticipant.teammateId,
+    };
+  }
+// create conversation method
+  // send conversation method sendText(conversationId, message)
+  async directMessages(code: string, email: string, limit = 7) {
+    const teammate = await this.prismaService.teammate.findUniqueOrThrow({
+      where: {
+        workspaceCode_email: { workspaceCode: code, email },
+      },
+    });
+
+    const conversations = await this.prismaService.conversation.findMany({
+      where: {
+        conversationParticipants: {
+          some: {
+            teammateId: teammate.id,
+            workspaceCode: code,
+          },
+        },
+      },
+      include: {
+        conversationParticipants: true,
+      },
+      orderBy: {
+        updatedAt: 'desc', //TODO: this is temporary and we should be depending on lastMessageAt
+      },
+      take: limit,
+    });
+
+    return conversations
+      .filter(
+        (conversation) => conversation.conversationParticipants.length <= 2,
+      )
+      .map((conversation) => {
+        const [firstParticipant, secondParticipant] =
+          conversation.conversationParticipants;
+        if (firstParticipant.isOwner) {
+          return this.conversationMetaData(
+            conversation.id,
+            firstParticipant,
+            secondParticipant,
+          );
+        } else {
+          return this.conversationMetaData(
+            conversation.id,
+            secondParticipant,
+            firstParticipant,
+          );
+        }
+      });
   }
 }
