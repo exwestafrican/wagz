@@ -137,7 +137,7 @@ export class BackfillController {
         React.createElement(BackfillCompleteTemplate, { ...summary }),
       );
       await this.emailClient.send({
-        from: { email: 'admin@envoye.co', name: 'Admin' },
+        from: { email: 'admin@envoye.com', name: 'Admin' },
         to: { email: toEmail, name: '' },
         subject: `Backfill ${summary.jobId} completed: ${summary.status}`,
         html,
