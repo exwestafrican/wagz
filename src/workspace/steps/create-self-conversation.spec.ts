@@ -9,43 +9,27 @@ import { ConversationsService } from '@/conversations/conversations.service';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
-import { CompanyProfile, PreVerification, Workspace } from '@/generated/prisma/client';
+import { setupWorkspaceWithMultipleTeammates } from '@/test-helpers/workspace-helpers';
+import { resetDb } from '@/test-helpers/rest-db';
+import Factory, { PersistStrategy } from '@/factories/factory';
 
 describe('CreateSelfConversationStep', () => {
   let step: CreateSelfConversationStep;
   let app: INestApplication;
   let prismaService: PrismaService;
   let conversationsService: ConversationsService;
+  let factory: PersistStrategy;
 
-  async function miniWorkspaceWithAdmin(
-    details: PreVerification,
-  ): Promise<WorkspaceDetails> {
-    const companyProfile: CompanyProfile =
-      await prismaService.companyProfile.create({
-        data: {
-          companyName: details.companyName,
-          pointOfContactEmail: details.email,
-          phoneCountryCode: details.phoneCountryCode,
-          phoneNumber: details.phoneNumber,
-        },
-      });
-    const workspace: Workspace = await prismaService.workspace.create({
-      data: {
-        name: companyProfile.companyName,
-        ownedById: companyProfile.id,
-        code: 'a3b9c2',
-      },
-    });
-    await prismaService.teammate.create({
-      data: {
-        email: details.email,
-        firstName: details.firstName,
-        lastName: details.lastName,
-        username: `${details.firstName.toLowerCase()}.${details.lastName.toLowerCase()}`,
-        workspaceCode: workspace.code,
-      },
-    });
-    return WorkspaceDetails.from(workspace, PointOfContact.from(details));
+  async function miniWorkspaceWithAdmin(): Promise<WorkspaceDetails> {
+    const { workspace, teammates } = await setupWorkspaceWithMultipleTeammates(
+      factory,
+      1,
+    );
+    const [owner] = teammates;
+    return WorkspaceDetails.from(
+      workspace,
+      new PointOfContact(owner.firstName, owner.lastName, owner.email),
+    );
   }
 
   beforeEach(async () => {
@@ -55,22 +39,18 @@ describe('CreateSelfConversationStep', () => {
     }).compile();
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
+    factory = Factory.createStrategy(prismaService);
     conversationsService = app.get<ConversationsService>(ConversationsService);
     step = new CreateSelfConversationStep(conversationsService, prismaService);
   });
 
   afterEach(async () => {
-    await prismaService.conversation.deleteMany();
-    await prismaService.teammate.deleteMany();
-    await prismaService.workspace.deleteMany();
-    await prismaService.companyProfile.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 
   it('creates a self-conversation for the admin and rolls it back', async () => {
-    const workspaceDetails = await miniWorkspaceWithAdmin(
-      preVerificationFactory.build(),
-    );
+    const workspaceDetails = await miniWorkspaceWithAdmin();
 
     await step.execute(workspaceDetails);
 
@@ -96,9 +76,33 @@ describe('CreateSelfConversationStep', () => {
   });
 
   it('compensate is a no-op when execute did not run', async () => {
-    const workspaceDetails = await miniWorkspaceWithAdmin(
-      preVerificationFactory.build(),
-    );
+    const workspaceDetails = await miniWorkspaceWithAdmin();
     await expect(step.compensate(workspaceDetails)).resolves.not.toThrow();
+  });
+
+  it('only removes conversation for current workspace', async () => {
+    const { workspace, teammates } = await setupWorkspaceWithMultipleTeammates(
+      factory,
+      2,
+    );
+    const [laura, tumise] = teammates;
+    await conversationsService.createConversation(
+      workspace.code,
+      tumise.id,
+      laura.email,
+    );
+
+    const workspaceDetails = await miniWorkspaceWithAdmin();
+
+    await step.execute(workspaceDetails);
+    await step.compensate(workspaceDetails);
+
+    expect(
+      await prismaService.conversation.count({
+        where: { workspaceCode: workspaceDetails.code },
+      }),
+    ).toBe(0);
+
+    expect(await prismaService.conversation.count()).toBe(1);
   });
 });

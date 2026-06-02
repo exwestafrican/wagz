@@ -31,11 +31,12 @@ export class CreateSelfConversationStep implements PostSetupStep {
   }
 
   async compensate(workspaceDetails: WorkspaceDetails): Promise<void> {
-    this.logger.warn(
-      `Removing self-conversation as compensating action; workspaceCode=${workspaceDetails.code}`,
-    );
     await this.prismaService.conversation.deleteMany({
       where: { workspaceCode: workspaceDetails.code },
     });
+
+    this.logger.warn(
+      `Removing self-conversation as compensating action; workspaceCode=${workspaceDetails.code}`,
+    );
   }
 }
