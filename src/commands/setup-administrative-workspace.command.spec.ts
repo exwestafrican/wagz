@@ -52,6 +52,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     const teammateService = new TeammatesService(prismaService);
     const roleService = new RoleService();
     const permissionService = new PermissionService(prismaService, roleService);
+    const conversationsService = new ConversationsService(prismaService);
     const authService = new AuthService(
       mockSupabaseClient as unknown as SupabaseClient,
       new PasswordGenerator(),
@@ -75,6 +76,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
       authService,
       workspaceManager,
       featureFlagManager,
+      conversationsService,
     );
   });
 
