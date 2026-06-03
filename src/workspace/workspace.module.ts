@@ -8,9 +8,16 @@ import { MessagingModule } from '@/messaging/messaging.module';
 import { LinkService } from '@/common/link-service';
 import { AuthModule } from '@/auth/auth.module';
 import { DebounceServiceProvider } from '@/common/debounce.service';
+import { ConversationsModule } from '@/conversations/conversations.module';
 
 @Module({
-  imports: [PermissionModule, PrismaModule, MessagingModule, AuthModule],
+  imports: [
+    PermissionModule,
+    PrismaModule,
+    MessagingModule,
+    AuthModule,
+    ConversationsModule,
+  ],
   providers: [
     WorkspaceManager,
     LinkService,

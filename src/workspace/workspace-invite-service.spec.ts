@@ -23,6 +23,7 @@ import { AuthService } from '@/auth/auth.service';
 import { Teammate, Workspace } from '@/generated/prisma/client';
 import { mockAuthService } from '@/test-helpers/mocks';
 import { LinkService } from '@/common/link-service';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 describe('WorkspaceInviteService', () => {
   let app: INestApplication;
@@ -56,6 +57,7 @@ describe('WorkspaceInviteService', () => {
         RoleService,
         WorkspaceInviteService,
         LinkService,
+        ConversationsService,
         {
           provide: AuthService,
           useValue: mockAuthService as unknown as AuthService,

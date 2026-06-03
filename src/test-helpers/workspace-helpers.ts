@@ -8,6 +8,7 @@ import FeatureFlagManager from '@/feature-flag/manager';
 import featureFlagFactory from '@/factories/feature-flag.factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { ROLES } from '@/permission/types';
+import { repeatFn } from '@/common/utils';
 
 export async function setupSuperAdmin(
   factory: PersistStrategy,
@@ -51,6 +52,33 @@ export async function setupWorkspaceWithTeammate(
   );
   const createdTeammate = await factory.persist('teammate', () => teammate);
   return { workspace: workspace, teammate: createdTeammate };
+}
+
+async function addTeammateToWorkspace(
+  factory: PersistStrategy,
+  workspaceCode: string,
+) {
+  return await factory.persist('teammate', () =>
+    teammateFactory.build({ workspaceCode: workspaceCode }),
+  );
+}
+
+export async function setupWorkspaceWithMultipleTeammates(
+  factory: PersistStrategy,
+  numberOfTeammates: number,
+) {
+  const workspace = await factory.persist('workspace', () =>
+    workspaceFactory.build(),
+  );
+
+  const tasks = repeatFn(
+    numberOfTeammates,
+    async () => await addTeammateToWorkspace(factory, workspace.code),
+  );
+
+  const teammates = await Promise.all(tasks.map((task) => task()));
+
+  return { workspace, teammates };
 }
 
 export async function setupWorkspaceWithFeatures(

@@ -36,6 +36,7 @@ import { mockAuthService } from '@/test-helpers/mocks';
 import { LinkService } from '@/common/link-service';
 import DebounceService, { DEBOUNCE_SERVICE } from '@/common/debounce.service';
 import { Time } from '@/common/utils';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -56,6 +57,7 @@ describe('WorkspaceController', () => {
         RoleService,
         PermissionService,
         WorkspaceInviteService,
+        ConversationsService,
         {
           provide: DEBOUNCE_SERVICE,
           useClass: DebounceService,
