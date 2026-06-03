@@ -19,7 +19,7 @@ import BackfillResponseDto, {
   toBackfillResponseDto,
 } from '@/backfill/dto/backfill-response.dto';
 import BackfillRunResponseDto, {
-  BackfillRunStatus,
+  toBackfillRunResponseDto,
 } from '@/backfill/dto/backfill-run-response.dto';
 import {
   BACKFILL_REGISTRY,
@@ -33,6 +33,10 @@ import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { PERMISSIONS } from '@/permission/types';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import buildJobRunSummary, { JobRunSummary } from '@/backfill/utils';
+import { TeammatesService } from '@/teammates/teammates.service';
+import { Teammate } from '@/generated/prisma/client';
+import { fullName } from '@/teammates/utils/full-name';
 
 @Controller('backfill')
 export class BackfillController {
@@ -41,6 +45,7 @@ export class BackfillController {
     @Inject(BACKFILL_REGISTRY) private readonly registry: Registry,
     private readonly permissionService: PermissionService,
     private readonly prismaService: PrismaService,
+    private readonly teammateService: TeammatesService,
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
   ) {}
 
@@ -88,7 +93,7 @@ export class BackfillController {
         }
 
         const workspaces = await this.prismaService.workspace.findMany({
-          orderBy: { code: 'asc' },
+          orderBy: { id: 'asc' },
         });
 
         const failedWorkspaceCodes: string[] = [];
@@ -99,64 +104,52 @@ export class BackfillController {
             failedWorkspaceCodes.push(workspace.code);
             this.logger.error(
               `Backfill job failed; jobId=${jobId} workspaceCode=${workspace.code}`,
-              error instanceof Error ? error.stack : error,
+              error,
             );
           }
         }
 
-        const workspacesProcessed = workspaces.length;
-        const workspacesFailed = failedWorkspaceCodes.length;
-        const workspacesSucceeded = workspacesProcessed - workspacesFailed;
+        const jobSummary = buildJobRunSummary(
+          jobId,
+          workspaces,
+          failedWorkspaceCodes.length,
+        );
 
-        if (workspacesFailed > 0) {
+        if (jobSummary.failed > 0) {
           this.logger.error(
             `Backfill job completed with failures; jobId=${jobId} failedWorkspaceCodes=[${failedWorkspaceCodes.join(', ')}]`,
           );
         }
-        const summary: BackfillRunResponseDto = {
-          jobId,
-          status: this.toStatus(workspacesProcessed, workspacesFailed),
-          workspacesProcessed,
-          workspacesSucceeded,
-          workspacesFailed,
-        };
 
-        await this.sendCompletionEmail(requestUser.email, summary);
-
-        return summary;
+        const teammate = await this.teammateService.getMyTeammateProfile(
+          ENVOYE_WORKSPACE_CODE,
+          requestUser.email,
+        );
+        await this.sendCompletionEmail(teammate, jobSummary);
+        return toBackfillRunResponseDto(jobSummary);
       },
     );
   }
 
   private async sendCompletionEmail(
-    toEmail: string,
-    summary: BackfillRunResponseDto,
+    teammate: Teammate,
+    jobSummary: JobRunSummary,
   ): Promise<void> {
     try {
       const html = await render(
-        React.createElement(BackfillCompleteTemplate, { ...summary }),
+        React.createElement(BackfillCompleteTemplate, jobSummary),
       );
       await this.emailClient.send({
         from: { email: 'admin@envoye.com', name: 'Admin' },
-        to: { email: toEmail, name: '' },
-        subject: `Backfill ${summary.jobId} completed: ${summary.status}`,
+        to: { email: teammate.email, name: fullName(teammate) },
+        subject: `[${jobSummary.jobId}] Backfill Run Summary`,
         html,
       });
     } catch (error) {
       this.logger.error(
-        `Failed to send backfill completion email; jobId=${summary.jobId} to=${toEmail}`,
-        error instanceof Error ? error.stack : error,
+        `Failed to send backfill completion email; jobId=${jobSummary.jobId} to=${teammate.id}`,
+        error,
       );
     }
-  }
-
-  private toStatus(
-    workspacesProcessed: number,
-    workspacesFailed: number,
-  ): BackfillRunStatus {
-    if (workspacesFailed === 0) return BackfillRunStatus.SUCCESS;
-    if (workspacesFailed === workspacesProcessed)
-      return BackfillRunStatus.FAILURE;
-    return BackfillRunStatus.PARTIAL;
   }
 }
