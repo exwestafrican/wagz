@@ -25,6 +25,7 @@ import workspaceFactory from '@/factories/workspace.factory';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { LinkService } from '@/common/link-service';
+import { ConversationsService } from '@/conversations/conversations.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { EMAIL_CLIENT } from '@/messaging/email/email-client';
 import { AuthService } from '@/auth/auth.service';
@@ -47,6 +48,7 @@ describe('AdminController', () => {
         WorkspaceManager,
         LinkService,
         WorkspaceInviteService,
+        ConversationsService,
         { provide: EMAIL_CLIENT, useValue: { send: jest.fn() } },
         { provide: AuthService, useValue: mockAuthService },
       ],

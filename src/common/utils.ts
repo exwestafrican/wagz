@@ -54,3 +54,16 @@ export function sentenceCase(value: string): string {
   if (!trimmed) return trimmed;
   return trimmed[0].toUpperCase() + trimmed.slice(1).toLowerCase();
 }
+
+export function repeat(n: number, fn: () => void): void {
+  for (let i = 0; i < n; i++) {
+    fn();
+  }
+}
+
+export function repeatFn<T>(
+  n: number,
+  fn: () => Promise<T>,
+): (() => Promise<T>)[] {
+  return Array.from({ length: n }, () => fn);
+}

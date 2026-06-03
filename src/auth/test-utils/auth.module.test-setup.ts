@@ -4,6 +4,7 @@ import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { LinkService } from '@/common/link-service';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 export function createMockEmailClient(): EmailClient {
   return {
@@ -23,5 +24,6 @@ export function useWorkspaceManagerFactory(
     linkService,
     new RoleService(),
     workspaceInviteService,
+    new ConversationsService(prismaService),
   );
 }
