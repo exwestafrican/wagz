@@ -68,7 +68,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
       jest.fn() as unknown as LinkService,
       new RoleService(),
       new WorkspaceInviteService(prismaService, authService),
-      new ConversationsService(prismaService),
+      conversationsService,
     );
 
     command = new SetupAdministrativeWorkspaceCommand(

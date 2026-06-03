@@ -63,8 +63,7 @@ describe('WorkspaceService', () => {
     workspaceInviteService = app.get<WorkspaceInviteService>(
       WorkspaceInviteService,
     );
-    conversationsService =
-      app.get<ConversationsService>(ConversationsService);
+    conversationsService = app.get<ConversationsService>(ConversationsService);
     factory = Factory.createStrategy(prismaService);
     preVerificationDetails = await factory.persist('preverification', () =>
       preVerificationFactory.build(),

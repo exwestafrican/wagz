@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { CreateConversationDto } from './dto/create-conversation.dto';
 import { Conversation } from '@/generated/prisma/client';
 
 @Injectable()
@@ -8,32 +7,33 @@ export class ConversationsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async createConversation(
-    dto: CreateConversationDto,
+    workspaceCode: string,
+    recipientTeammateId: number,
     senderEmail: string,
   ): Promise<Conversation> {
     const sender = await this.prisma.teammate.findFirstOrThrow({
-      where: { workspaceCode: dto.workspaceCode, email: senderEmail },
+      where: { workspaceCode: workspaceCode, email: senderEmail },
     });
 
     const conversation = await this.prisma.conversation.create({
       data: {
-        workspaceCode: dto.workspaceCode
+        workspaceCode: workspaceCode,
       },
     });
 
     await this.prisma.conversationParticipant.createMany({
       data: [
         {
-          workspaceCode: dto.workspaceCode,
+          workspaceCode: workspaceCode,
           conversationId: conversation.id,
           teammateId: sender.id,
-          isOwner: true
+          isOwner: true,
         },
         {
-          workspaceCode: dto.workspaceCode,
+          workspaceCode: workspaceCode,
           conversationId: conversation.id,
-          teammateId: dto.recipientTeammateId,
-        }
+          teammateId: recipientTeammateId,
+        },
       ],
     });
 
