@@ -118,9 +118,7 @@ describe('BackfillController', () => {
       expect(response.body).toMatchObject({
         jobId: 'normalize_usernames',
         status: 'success',
-        workspacesProcessed: 1,
-        workspacesSucceeded: 1,
-        workspacesFailed: 0,
+        result: { processed: 1, success: 1, failed: 0 },
       });
 
       const teammate = await prismaService.teammate.findFirstOrThrow({

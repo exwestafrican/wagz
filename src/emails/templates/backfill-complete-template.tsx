@@ -8,22 +8,22 @@ import {
   Preview,
 } from '@react-email/components';
 import React from 'react';
-import { BackfillRunStatus } from '@/backfill/dto/backfill-run-response.dto';
+import { BackfillRunStatus } from '../../backfill/backfill-run-status';
 
-interface BackfillCompleteTemplateProps {
+export interface BackfillCompleteTemplateProps {
   jobId: string;
   status: BackfillRunStatus;
-  workspacesProcessed: number;
-  workspacesSucceeded: number;
-  workspacesFailed: number;
+  processed: number;
+  success: number;
+  failed: number;
 }
 
 export const BackfillCompleteTemplate = ({
   jobId,
   status,
-  workspacesProcessed,
-  workspacesSucceeded,
-  workspacesFailed,
+  processed,
+  success,
+  failed,
 }: BackfillCompleteTemplateProps): React.ReactElement => {
   return (
     <Html>
@@ -32,7 +32,7 @@ export const BackfillCompleteTemplate = ({
           presets: [pixelBasedPreset],
         }}
       >
-        <Body className="bg-white px-[24px]">
+        <Body className="bg-white px-[24px] font-sans">
           <Preview>{`Backfill ${jobId} completed: ${status}`}</Preview>
           <Text className="text-[24px] text-black leading-[24px] font-semibold">
             Backfill job completed
@@ -49,13 +49,13 @@ export const BackfillCompleteTemplate = ({
               <strong>Status:</strong> {status}
             </Text>
             <Text className="m-0 text-[16px] text-black leading-[24px]">
-              <strong>Workspaces processed:</strong> {workspacesProcessed}
+              <strong>Workspaces processed:</strong> {processed}
             </Text>
             <Text className="m-0 text-[16px] text-black leading-[24px]">
-              <strong>Workspaces succeeded:</strong> {workspacesSucceeded}
+              <strong>Workspaces succeeded:</strong> {success}
             </Text>
             <Text className="m-0 text-[16px] text-black leading-[24px]">
-              <strong>Workspaces failed:</strong> {workspacesFailed}
+              <strong>Workspaces failed:</strong> {failed}
             </Text>
           </Section>
         </Body>
@@ -67,9 +67,9 @@ export const BackfillCompleteTemplate = ({
 BackfillCompleteTemplate.PreviewProps = {
   jobId: 'normalize_usernames',
   status: BackfillRunStatus.PARTIAL,
-  workspacesProcessed: 12,
-  workspacesSucceeded: 11,
-  workspacesFailed: 1,
-};
+  processed: 12,
+  success: 11,
+  failed: 1,
+} satisfies BackfillCompleteTemplateProps;
 
 export default BackfillCompleteTemplate;
