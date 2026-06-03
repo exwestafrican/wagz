@@ -29,6 +29,7 @@ import { LinkService } from '@/common/link-service';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
 import CompanyProfileFactory from '@/factories/company-profile.factory';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -38,6 +39,7 @@ describe('WorkspaceService', () => {
   let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
   let workspaceInviteService: WorkspaceInviteService;
+  let conversationsService: ConversationsService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -47,6 +49,7 @@ describe('WorkspaceService', () => {
         LinkService,
         RoleService,
         WorkspaceInviteService,
+        ConversationsService,
         {
           provide: AuthService,
           useValue: mockAuthService as unknown as AuthService,
@@ -60,6 +63,7 @@ describe('WorkspaceService', () => {
     workspaceInviteService = app.get<WorkspaceInviteService>(
       WorkspaceInviteService,
     );
+    conversationsService = app.get<ConversationsService>(ConversationsService);
     factory = Factory.createStrategy(prismaService);
     preVerificationDetails = await factory.persist('preverification', () =>
       preVerificationFactory.build(),
@@ -67,6 +71,7 @@ describe('WorkspaceService', () => {
   });
 
   afterEach(async () => {
+    await prismaService.conversation.deleteMany();
     await prismaService.preVerification.deleteMany();
     await prismaService.companyProfile.deleteMany();
     await prismaService.workspace.deleteMany();
@@ -258,6 +263,61 @@ describe('WorkspaceService', () => {
         ).rejects.toThrow('Database error');
 
         await assertRollbackHappened(preVerificationDetails);
+      });
+    });
+
+    describe('SelfConversation', () => {
+      it('creates a self-conversation for the new admin', async () => {
+        await service.setup(
+          preVerificationDetails.email,
+          preVerificationDetails.id,
+        );
+
+        const admin = await prismaService.teammate.findFirstOrThrow({
+          where: { email: preVerificationDetails.email },
+        });
+        const participants =
+          await prismaService.conversationParticipant.findMany({
+            where: { teammateId: admin.id },
+          });
+        expect(participants).toHaveLength(1);
+        expect(participants[0].isOwner).toBe(true);
+      });
+
+      it('rolls everything back when self-conversation creation fails', async () => {
+        jest
+          .spyOn(conversationsService, 'createSelfConversation')
+          .mockRejectedValue(new Error('Database error'));
+
+        await expect(
+          service.setup(
+            preVerificationDetails.email,
+            preVerificationDetails.id,
+          ),
+        ).rejects.toThrow('Database error');
+
+        await assertRollbackHappened(preVerificationDetails);
+        expect(await prismaService.conversation.count()).toBe(0);
+      });
+
+      it('keeps the conversation from a successful setup when a later setup fails', async () => {
+        await service.setup(
+          preVerificationDetails.email,
+          preVerificationDetails.id,
+        );
+
+        const failingDetails = await factory.persist('preverification', () =>
+          preVerificationFactory.build(),
+        );
+        jest
+          .spyOn(conversationsService, 'createSelfConversation')
+          .mockRejectedValue(new Error('Database error'));
+
+        await expect(
+          service.setup(failingDetails.email, failingDetails.id),
+        ).rejects.toThrow('Database error');
+
+        expect(await prismaService.conversation.count()).toBe(1);
       });
     });
   });

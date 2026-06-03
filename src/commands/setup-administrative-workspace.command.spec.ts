@@ -22,6 +22,7 @@ import { faker } from '@faker-js/faker';
 import { LinkService } from '@/common/link-service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { RoleService } from '@/permission/role/role.service';
+import { ConversationsService } from '@/conversations/conversations.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { AuthService } from '@/auth/auth.service';
 import PasswordGenerator from '@/auth/services/password.generator';
@@ -51,6 +52,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     const teammateService = new TeammatesService(prismaService);
     const roleService = new RoleService();
     const permissionService = new PermissionService(prismaService, roleService);
+    const conversationsService = new ConversationsService(prismaService);
     const authService = new AuthService(
       mockSupabaseClient as unknown as SupabaseClient,
       new PasswordGenerator(),
@@ -66,6 +68,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
       jest.fn() as unknown as LinkService,
       new RoleService(),
       new WorkspaceInviteService(prismaService, authService),
+      conversationsService,
     );
 
     command = new SetupAdministrativeWorkspaceCommand(
@@ -73,6 +76,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
       authService,
       workspaceManager,
       featureFlagManager,
+      conversationsService,
     );
   });
 
