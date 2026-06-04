@@ -61,4 +61,24 @@ export class ConversationsService {
 
     return conversation;
   }
+
+  async createConversationForTeammates(
+    workspaceCode: string,
+    teammateIds: number[],
+    requesterTeammateEmail: string,
+  ): Promise<void> {
+    if (teammateIds.length === 0) {
+      return;
+    }
+    //didnt wrap it in a transaction as if it fails dont think its critical. 
+    await Promise.all(
+      teammateIds.map((teammateId) =>
+        this.createConversation(
+          workspaceCode,
+          teammateId,
+          requesterTeammateEmail,
+        ),
+      ),
+    );
+  }
 }

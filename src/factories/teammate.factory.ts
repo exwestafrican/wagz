@@ -35,6 +35,16 @@ export async function persistTeammate(
   teammate: Teammate,
 ) {
   await prismaService.teammate.create({ data: teammate });
+  // The factory inserts an explicit `id`, which does NOT advance Postgres'
+  // autoincrement sequence. Callers that create teammates without an id (e.g.
+  // the invite-acceptance service) would then reuse a sequence value that
+  // collides with an explicitly-inserted id. Keep the sequence ahead of any
+  // explicit id we just inserted.
+  await prismaService.$executeRaw`
+    SELECT setval(
+      pg_get_serial_sequence('teammate', 'id'),
+      (SELECT MAX(id) FROM teammate)
+    )`;
 }
 
 export default teammateFactory;

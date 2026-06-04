@@ -12,7 +12,7 @@ import {
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
 import { INestApplication } from '@nestjs/common';
 import { InviteStatus } from '@/generated/prisma/enums';
-import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import { setupWorkspaceWithMultipleTeammates, setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
@@ -216,6 +216,65 @@ describe('WorkspaceInviteService', () => {
       });
       expect(invite.status).toBe(InviteStatus.ACCEPTED);
       expect(invite.acceptedAt).toBeTruthy();
+    });
+
+    it('throws InvalidInviteCode when invite does not exist', async () => {
+      await expect(
+        workspaceInviteService.tryAcceptInviteAndRequestMagicLink(
+          '9Jk076',
+          'nope00',
+          {
+            email: 'laura@useenvoye.co',
+            firstName: 'Laura',
+            lastName: 'Smith',
+            username: 'laura.smith',
+          },
+        ),
+      ).rejects.toThrow(InvalidInviteCode);
+    });
+
+    it('Creates conversation with self when invite is accepted', async () => {
+      //this is currentlly causing a Postgres sequence desync between the test factories and the service.
+      const { workspace, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 4);
+
+      await inviteTeammate(
+        teammates[0],
+        'new.teammate@useenvoye.co',
+        workspace,
+      );
+      await workspaceInviteService.tryAcceptInviteAndRequestMagicLink(
+        workspace.code,
+        'ap7ol0',
+        {
+          email: 'new.teammate@useenvoye.co',
+          firstName: 'New',
+          lastName: 'Teammate',
+          username: 'new.teammate',
+        },
+      );
+      // // Assert conversation with self is created
+      // const allParticipants =
+      //   await prismaService.conversationParticipant.findMany({});
+      // const allTeammates = await prismaService.teammate.findMany({
+      //   select: { id: true, email: true, workspaceCode: true },
+      // });
+      // // eslint-disable-next-line no-console
+      // console.log('DEBUG participants', JSON.stringify(allParticipants));
+      // // eslint-disable-next-line no-console
+      // console.log('DEBUG teammates', JSON.stringify(allTeammates));
+      const conversationsForNewTeammate =
+        await prismaService.conversationParticipant.findMany({
+          where: {
+            workspaceCode: workspace.code,
+            teammate: {
+              email: 'new.teammate@useenvoye.co',
+            },
+          },
+        });
+      expect(conversationsForNewTeammate).toHaveLength(1);
+      expect(conversationsForNewTeammate[0].isOwner).toBe(true);
+      expect(conversationsForNewTeammate[0].workspaceCode).toBe(workspace.code);
     });
 
     it('throws InvalidInviteCode when invite does not exist', async () => {

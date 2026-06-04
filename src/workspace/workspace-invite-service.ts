@@ -5,6 +5,7 @@ import { isEmpty } from '@/common/utils';
 import { InviteStatus } from '@/generated/prisma/enums';
 import { AuthService } from '@/auth/auth.service';
 import { WorkspaceInvite } from '@/generated/prisma/client';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 export interface TeammateDetails {
   firstName: string;
@@ -21,11 +22,13 @@ export interface DecodedResult {
 
 @Injectable()
 export class WorkspaceInviteService {
+  private static readonly MAX_TEAMMATES_FOR_CONVERSATION_INITIALISATION = 4;
   logger = new Logger(WorkspaceInviteService.name);
 
   constructor(
     private readonly prismaService: PrismaService,
     private readonly authService: AuthService,
+    private readonly conversationsService: ConversationsService
   ) {}
 
   encodeInvite(
@@ -122,7 +125,58 @@ export class WorkspaceInviteService {
         invite.workspaceCode,
       );
     });
+    await this.initialiseConversation(workspaceCode, teammateDetails.email);
     return invite;
+  }
+
+  private async initialiseConversation(
+    workspaceCode: string,
+    teammateEmail: string,
+  ): Promise<void> {
+    await this.createSelfConversationForTeammate(workspaceCode, teammateEmail);
+    await this.createConversationForTeammates(workspaceCode, teammateEmail);
+  }
+
+  private async createConversationForTeammates( workspaceCode: string, teammateEmail: string): Promise<void> {
+    const teammates = await this.prismaService.teammate.findMany({
+      where: { workspaceCode: workspaceCode },
+      take: 4,
+      orderBy: { id: 'asc' }
+    });
+
+    if (teammates.length === 0) {
+      this.logger.warn(
+        `No teammates found in workspace to create conversation for; workspaceCode=${workspaceCode}`,
+      );
+      return;
+    }
+
+    const teammateIds = teammates.map((t) => t.id);
+    await this.conversationsService.createConversationForTeammates(
+      workspaceCode,
+      teammateIds,
+      teammateEmail
+    );
+    this.logger.log(
+      `Successfully created conversation for teammates; workspaceCode=${workspaceCode} teammateIds=${teammateIds.join(',')}`,
+    );
+  }
+
+  private async createSelfConversationForTeammate(
+    workspaceCode: string,
+    teammateEmail: string,
+  ): Promise<void> {
+    const teammate = await this.prismaService.teammate.findFirstOrThrow({
+      where: {
+        workspaceCode: workspaceCode,
+        email: teammateEmail,
+      },
+    });
+
+    await this.conversationsService.createSelfConversation(
+      workspaceCode,
+      teammate.id,
+    );
   }
 
   private decodedValue(inviteCode: string): string {
