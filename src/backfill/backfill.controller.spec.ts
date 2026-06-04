@@ -20,6 +20,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { EMAIL_CLIENT, EmailClient } from '@/messaging/email/email-client';
+import { TeammatesService } from '@/teammates/teammates.service';
 
 describe('BackfillController', () => {
   let requestUser: RequestUser;
@@ -38,6 +39,7 @@ describe('BackfillController', () => {
         PermissionService,
         RoleService,
         PrismaService,
+        TeammatesService,
         { provide: EMAIL_CLIENT, useValue: { send: sendMock } },
       ],
     }).with(requestUser);
