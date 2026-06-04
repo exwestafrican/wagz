@@ -121,6 +121,7 @@ $ pnpm install
 $ pnpx supabase start
 $ make setup-prisma
 $ make setup-ssl
+$ pnpx prisma migrate deploy
 $ pnpm start:container-dev
 $ docker exec -it  envoye-nest-app  node dist/src/cli.js setup --email <yourEmail>
 ```
