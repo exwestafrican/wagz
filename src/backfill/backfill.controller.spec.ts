@@ -19,15 +19,18 @@ import { ROLES } from '@/permission/types';
 import { PrismaService } from '@/prisma/prisma.service';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import { EMAIL_CLIENT, EmailClient } from '@/messaging/email/email-client';
 
 describe('BackfillController', () => {
   let requestUser: RequestUser;
   let app: INestApplication;
   let prismaService: PrismaService;
   let factory: PersistStrategy;
+  let sendMock: jest.MockedFunction<EmailClient['send']>;
 
   beforeEach(async () => {
     requestUser = RequestUser.of('sam@useEnvoye.co');
+    sendMock = jest.fn().mockResolvedValue(undefined);
     const module: TestingModule = await TestControllerModuleWithAuthUser({
       controllers: [BackfillController],
       providers: [
@@ -35,6 +38,7 @@ describe('BackfillController', () => {
         PermissionService,
         RoleService,
         PrismaService,
+        { provide: EMAIL_CLIENT, useValue: { send: sendMock } },
       ],
     }).with(requestUser);
     app = await createTestApp(module);
@@ -114,15 +118,36 @@ describe('BackfillController', () => {
       expect(response.body).toMatchObject({
         jobId: 'normalize_usernames',
         status: 'success',
-        workspacesProcessed: 1,
-        workspacesSucceeded: 1,
-        workspacesFailed: 0,
+        result: { processed: 1, success: 1, failed: 0 },
       });
 
       const teammate = await prismaService.teammate.findFirstOrThrow({
         where: { workspaceCode: workspace.code, email: requestUser.email },
       });
       expect(teammate.normalizedUsername).toBe('samsmith');
+
+      expect(sendMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('should still return 200 when the completion email fails to send', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.SuperAdmin.code],
+        }),
+      );
+      sendMock.mockRejectedValueOnce(new Error('smtp unavailable'));
+
+      await request(getHttpServer(app))
+        .post(runPath('normalize_usernames'))
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send()
+        .expect(HttpStatus.OK);
+
+      expect(sendMock).toHaveBeenCalledTimes(1);
     });
 
     it('should return 404 for an unknown job', async () => {
