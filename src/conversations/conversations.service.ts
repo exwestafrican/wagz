@@ -6,15 +6,11 @@ import { Conversation } from '@/generated/prisma/client';
 export class ConversationsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async createConversation(
-    workspaceCode: string,
+  async createDirectMessage(
+    senderId: number,
     recipientTeammateId: number,
-    senderEmail: string,
-  ): Promise<Conversation> {
-    const sender = await this.prisma.teammate.findFirstOrThrow({
-      where: { workspaceCode: workspaceCode, email: senderEmail },
-    });
-
+    workspaceCode: string,
+  ) {
     const conversation = await this.prisma.conversation.create({
       data: {
         workspaceCode: workspaceCode,
@@ -26,7 +22,7 @@ export class ConversationsService {
         {
           workspaceCode: workspaceCode,
           conversationId: conversation.id,
-          teammateId: sender.id,
+          teammateId: senderId,
           isOwner: true,
         },
         {

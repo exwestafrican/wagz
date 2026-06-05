@@ -85,10 +85,10 @@ describe('CreateSelfConversationStep', () => {
       2,
     );
     const [laura, tumise] = teammates;
-    await conversationsService.createConversation(
-      workspace.code,
+    await conversationsService.createDirectMessage(
+      laura.id,
       tumise.id,
-      laura.email,
+      workspace.code,
     );
 
     const workspaceDetails = await miniWorkspaceWithAdmin();
