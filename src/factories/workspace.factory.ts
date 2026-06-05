@@ -34,7 +34,7 @@ const workspaceFactory = WorkspaceFactory.define(({ sequence }) => {
     id: sequence,
     name: faker.company.name(),
     status: WorkspaceStatus.ACTIVE,
-    ownedById: faker.number.int({ min: 10, max: 100 }),
+    ownedById: sequence,
     code: sixCharHumanFriendlyCode(),
     hasActivePlan: true,
     createdAt: faker.date.past(),
@@ -49,6 +49,7 @@ export async function persistWorkspaceStrategy(
 ) {
   const companyProfile = companyProfileFactory.build({
     companyName: workspace.name,
+    id: workspace.ownedById,
     domain: `${workspace.name.toLowerCase()}.co`,
   });
   await prismaService.companyProfile.create({ data: companyProfile });
