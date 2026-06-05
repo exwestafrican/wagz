@@ -63,16 +63,16 @@ describe('ConversationsService', () => {
     });
   });
 
-  describe('createConversation', () => {
+  describe('createDirectMessage', () => {
     it('creates a conversation with two participants', async () => {
       const { workspace, teammates } =
         await setupWorkspaceWithMultipleTeammates(factory, 4);
 
       const [dan, marvin] = teammates.slice(2);
-      const conversation = await service.createConversation(
-        workspace.code,
+      const conversation = await service.createDirectMessage(
+        dan.id,
         marvin.id,
-        dan.email,
+        workspace.code,
       );
 
       const participants = await prismaService.conversationParticipant.findMany(

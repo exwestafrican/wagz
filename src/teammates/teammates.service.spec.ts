@@ -12,6 +12,7 @@ import RequestUser from '@/auth/domain/request-user';
 import { TeammateStatus } from '@/generated/prisma/enums';
 import { Teammate, Workspace } from '@/generated/prisma/client';
 import { resetDb } from '@/test-helpers/rest-db';
+import { TeammatesNotInSameWorkspace } from '@/common/exceptions/teammates-not-in-same-workspace';
 
 describe('TeammatesService', () => {
   let requestUser: RequestUser;
@@ -205,6 +206,61 @@ describe('TeammatesService', () => {
       );
 
       expect(result).toBe(false);
+    });
+  });
+
+  describe('runIfTeammatesInSameWorkspace', () => {
+    it('runs the action when teammates share a workspace', async () => {
+      const { workspace, teammate: anchorTeammate } =
+        await setupWorkspaceWithTeammate(
+          factory,
+          teammateFactory.build({ email: requestUser.email }),
+        );
+      const recipientTeammate = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          workspaceCode: workspace.code,
+          status: TeammateStatus.ACTIVE,
+        }),
+      );
+
+      const result = await service.runIfTeammatesInSameWorkspace(
+        anchorTeammate.id,
+        [recipientTeammate.id],
+        (anchorTeammateId, teammateIds, workspaceCode) => {
+          expect(anchorTeammateId).toBe(anchorTeammate.id);
+          expect(teammateIds).toEqual([recipientTeammate.id]);
+          expect(workspaceCode).toBe(workspace.code);
+          return Promise.resolve({ ok: true });
+        },
+      );
+
+      expect(result).toEqual({ ok: true });
+    });
+
+    it('throws TeammatesNotInSameWorkspace when teammates span multiple workspaces', async () => {
+      const { teammate: anchorTeammate } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({ email: requestUser.email }),
+      );
+      const teammateInOtherWorkspace = teammateFactory.build();
+      await factory.persist('workspace', () =>
+        workspaceFactory.build({
+          code: teammateInOtherWorkspace.workspaceCode,
+          ownedById: 2,
+        }),
+      );
+      const recipientTeammate = await factory.persist(
+        'teammate',
+        () => teammateInOtherWorkspace,
+      );
+
+      await expect(
+        service.runIfTeammatesInSameWorkspace(
+          anchorTeammate.id,
+          [recipientTeammate.id],
+          () => Promise.resolve('should not run'),
+        ),
+      ).rejects.toThrow(TeammatesNotInSameWorkspace);
     });
   });
 });
