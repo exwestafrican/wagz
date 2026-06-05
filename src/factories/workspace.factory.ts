@@ -49,7 +49,9 @@ export async function persistWorkspaceStrategy(
   prismaService: PrismaService,
   workspace: Workspace,
 ) {
-  const preverification = await prismaService.preVerification.create({ data: preVerificationFactory.build() })
+  const preverification = await prismaService.preVerification.create({
+    data: preVerificationFactory.build(),
+  });
   const companyProfile = companyProfileFactory.build({
     companyName: workspace.name,
     id: workspace.ownedById,
