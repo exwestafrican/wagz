@@ -30,6 +30,7 @@ import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { EMAIL_CLIENT } from '@/messaging/email/email-client';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('AdminController', () => {
   let requestUser: RequestUser;
@@ -59,12 +60,7 @@ describe('AdminController', () => {
   });
 
   afterEach(async () => {
-    await prismaService.workspaceFeature.deleteMany();
-    await prismaService.teammate.deleteMany();
-    await prismaService.featureFlag.deleteMany();
-    await prismaService.workspace.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-    await prismaService.preVerification.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 

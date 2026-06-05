@@ -12,6 +12,7 @@ import {
 } from '@/test-helpers/workspace-helpers';
 import { ConversationsService } from './conversations.service';
 import { ConversationStatus } from '@/generated/prisma/client';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('ConversationsService', () => {
   let service: ConversationsService;
@@ -32,9 +33,7 @@ describe('ConversationsService', () => {
   });
 
   afterEach(async () => {
-    await prismaService.conversation.deleteMany();
-    await prismaService.teammate.deleteMany();
-    await prismaService.workspace.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 

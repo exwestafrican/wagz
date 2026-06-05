@@ -30,6 +30,7 @@ import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
 import CompanyProfileFactory from '@/factories/company-profile.factory';
 import { ConversationsService } from '@/conversations/conversations.service';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -71,13 +72,7 @@ describe('WorkspaceService', () => {
   });
 
   afterEach(async () => {
-    await prismaService.conversation.deleteMany();
-    await prismaService.preVerification.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-    await prismaService.workspace.deleteMany();
-  });
-
-  afterAll(async () => {
+    await resetDb(prismaService);
     await app.close();
   });
 

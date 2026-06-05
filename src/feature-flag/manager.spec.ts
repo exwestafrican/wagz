@@ -15,6 +15,7 @@ import FeatureFlagManager from '@/feature-flag/manager';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import CompanyProfileFactory from '@/factories/company-profile.factory';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('FeatureFlagManager', () => {
   let featureFlagManager: FeatureFlagManager;
@@ -56,11 +57,7 @@ describe('FeatureFlagManager', () => {
   });
 
   afterEach(async () => {
-    await prismaService.preVerification.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-    await prismaService.workspaceFeature.deleteMany();
-    await prismaService.featureFlag.deleteMany();
-
+    await resetDb(prismaService);
     await app.close();
   });
 

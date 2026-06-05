@@ -11,6 +11,7 @@ import { PERMISSIONS, ROLES } from './types';
 import { RoleService } from './role/role.service';
 import { Permission } from './domain/permission';
 import { setupWorkspaceWithTeammateRole } from '@/test-helpers/workspace-helpers';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('PermissionService', () => {
   let service: PermissionService;
@@ -32,11 +33,7 @@ describe('PermissionService', () => {
   });
 
   afterEach(async () => {
-    await prismaService.workspace.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-  });
-
-  afterAll(async () => {
+    await resetDb(prismaService);
     await app.close();
   });
 

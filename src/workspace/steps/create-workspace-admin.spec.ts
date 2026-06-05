@@ -13,6 +13,7 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('CreateWorkspaceAdminStep', () => {
   let step: CreateWorkspaceAdminStep;
@@ -53,6 +54,7 @@ describe('CreateWorkspaceAdminStep', () => {
   });
 
   afterEach(async () => {
+    await resetDb(prismaService);
     await app.close();
   });
 
