@@ -49,7 +49,6 @@ export async function persistWorkspaceStrategy(
 ) {
   const companyProfile = companyProfileFactory.build({
     companyName: workspace.name,
-    id: workspace.ownedById,
     domain: `${workspace.name.toLowerCase()}.co`,
   });
   await prismaService.companyProfile.create({ data: companyProfile });
