@@ -11,6 +11,7 @@ const companyProfileFactory = Factory.define<CompanyProfile>(({ sequence }) => {
     pointOfContactEmail: faker.internet.email(),
     phoneCountryCode: '+234',
     phoneNumber: '8169098834',
+    preVerificationId: faker.string.uuid(),
     createdAt: faker.date.past(),
     updatedAt: faker.date.recent(),
   };

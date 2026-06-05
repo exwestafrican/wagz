@@ -552,8 +552,11 @@ describe('WorkspaceService', () => {
 
   describe('listApps', () => {
     it('returns up to 100 workspaces ordered by id', async () => {
+      const preverification = await factory.persist('preverification', () =>
+        preVerificationFactory.build(),
+      );
       const companyProfile = await factory.persist('companyProfile', () =>
-        CompanyProfileFactory.build(),
+        CompanyProfileFactory.build({ preVerificationId: preverification.id }),
       );
       await prismaService.workspace.createMany({
         data: workspaceFactory.buildList(200, { ownedById: companyProfile.id }),
