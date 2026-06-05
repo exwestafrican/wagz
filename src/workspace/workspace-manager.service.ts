@@ -198,6 +198,7 @@ export class WorkspaceManager {
           pointOfContactEmail: preVerification.email,
           phoneCountryCode: preVerification.phoneCountryCode,
           phoneNumber: preVerification.phoneNumber,
+          preVerificationId: preVerification.id,
         },
       });
       const pointOfContact = PointOfContact.from(preVerification);
