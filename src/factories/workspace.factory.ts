@@ -9,7 +9,6 @@ import {
   ENVOYE_WORKSPACE_ID,
 } from '@/feature-flag/const';
 import preVerificationFactory from './preverification.factory';
-import { w } from 'node_modules/@faker-js/faker/dist/airline-CLphikKp.cjs';
 
 class WorkspaceFactory extends Factory<Workspace> {
   envoyeWorkspace() {
