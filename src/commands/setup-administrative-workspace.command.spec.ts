@@ -29,6 +29,7 @@ import PasswordGenerator from '@/auth/services/password.generator';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { TestEmailClient } from '@/messaging/email/test-email-client';
 import { PermissionService } from '@/permission/permission.service';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('SetupAdministrativeWorkspaceCommand', () => {
   let app: INestApplication;
@@ -81,10 +82,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
   });
 
   afterEach(async () => {
-    await prismaService.preVerification.deleteMany();
-    await prismaService.workspace.deleteMany();
-    await prismaService.workspaceFeature.deleteMany();
-    await prismaService.featureFlag.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 
@@ -125,12 +123,11 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     const factory = Factory.createStrategy(prismaService);
 
     const sowetoWorkspace = await factory.persist('workspace', () =>
-      workspaceFactory.build({ id: 6, code: 'other0' }),
+      workspaceFactory.build({ code: 'other0' }),
     );
 
     const teammate = await factory.persist('teammate', () =>
       teammateFactory.build({
-        id: 6,
         workspaceCode: 'other0',
         groups: [ROLES.WorkspaceAdmin.code],
       }),
