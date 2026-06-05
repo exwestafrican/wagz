@@ -11,6 +11,7 @@ import teammateFactory from '@/factories/teammate.factory';
 import RequestUser from '@/auth/domain/request-user';
 import { TeammateStatus } from '@/generated/prisma/enums';
 import { Teammate, Workspace } from '@/generated/prisma/client';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('TeammatesService', () => {
   let requestUser: RequestUser;
@@ -32,11 +33,7 @@ describe('TeammatesService', () => {
   });
 
   afterEach(async () => {
-    await prismaService.workspace.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-  });
-
-  afterAll(async () => {
+    await resetDb(prismaService);
     await app.close();
   });
 

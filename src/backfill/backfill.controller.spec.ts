@@ -21,6 +21,7 @@ import Factory, { PersistStrategy } from '@/factories/factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { EMAIL_CLIENT, EmailClient } from '@/messaging/email/email-client';
 import { TeammatesService } from '@/teammates/teammates.service';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('BackfillController', () => {
   let requestUser: RequestUser;
@@ -49,9 +50,7 @@ describe('BackfillController', () => {
   });
 
   afterEach(async () => {
-    await prismaService.workspace.deleteMany();
-    await prismaService.preVerification.deleteMany();
-    await prismaService.companyProfile.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 

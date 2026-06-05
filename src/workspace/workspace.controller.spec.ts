@@ -37,6 +37,7 @@ import { LinkService } from '@/common/link-service';
 import DebounceService, { DEBOUNCE_SERVICE } from '@/common/debounce.service';
 import { Time } from '@/common/utils';
 import { ConversationsService } from '@/conversations/conversations.service';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -75,9 +76,7 @@ describe('WorkspaceController', () => {
   });
 
   afterEach(async () => {
-    await prismaService.preVerification.deleteMany();
-    await prismaService.workspace.deleteMany();
-    await prismaService.companyProfile.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 

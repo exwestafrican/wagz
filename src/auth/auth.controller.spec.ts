@@ -27,6 +27,7 @@ import { ROLES } from '@/permission/types';
 import { PermissionService } from '@/permission/permission.service';
 import { RoleService } from '@/permission/role/role.service';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -71,10 +72,7 @@ describe('AuthController', () => {
   });
 
   afterEach(async () => {
-    await prismaService.teammate.deleteMany();
-    await prismaService.workspace.deleteMany();
-    await prismaService.preVerification.deleteMany();
-    await prismaService.companyProfile.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 
