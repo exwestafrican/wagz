@@ -8,6 +8,8 @@ import {
   ENVOYE_WORKSPACE_CODE,
   ENVOYE_WORKSPACE_ID,
 } from '@/feature-flag/const';
+import preVerificationFactory from './preverification.factory';
+import { w } from 'node_modules/@faker-js/faker/dist/airline-CLphikKp.cjs';
 
 class WorkspaceFactory extends Factory<Workspace> {
   envoyeWorkspace() {
@@ -47,9 +49,11 @@ export async function persistWorkspaceStrategy(
   prismaService: PrismaService,
   workspace: Workspace,
 ) {
+  const preverification = await prismaService.preVerification.create({ data: preVerificationFactory.build() })
   const companyProfile = companyProfileFactory.build({
     companyName: workspace.name,
     id: workspace.ownedById,
+    preVerificationId: preverification.id,
     domain: `${workspace.name.toLowerCase()}.co`,
   });
   await prismaService.companyProfile.create({ data: companyProfile });
