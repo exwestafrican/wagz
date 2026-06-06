@@ -1,0 +1,48 @@
+---
+description: NestJS spec setup — bootstrap Prisma via module, construct services and controllers with new.
+globs: **/*.spec.ts
+alwaysApply: false
+---
+
+# NestJS spec setup
+
+Follow [`setup-administrative-workspace.command.spec.ts`](src/commands/setup-administrative-workspace.command.spec.ts) and [`conversations.controller.spec.ts`](src/conversations/conversations.controller.spec.ts).
+
+## Bootstrap
+
+- Import `ConfigModule.forRoot()` and `PrismaModule` only.
+- Use `providers: []` — do not register application services in the Nest module.
+- Call `createTestApp(module)`, then `prismaService = app.get(PrismaService)`.
+- Use `Factory.createStrategy(prismaService)` for test data.
+- Reset with `resetDb(prismaService)` in `afterEach`.
+
+## Construct dependencies manually
+
+Build the graph with `new`, passing `prismaService` (or other already-constructed deps):
+
+```typescript
+const roleService = new RoleService();
+const conversationsService = new ConversationsService(prismaService);
+const teammatesService = new TeammatesService(prismaService);
+const permissionService = new PermissionService(prismaService, roleService);
+
+controller = new ConversationsController(
+  conversationsService,
+  teammatesService,
+  permissionService,
+);
+```
+
+## Avoid
+
+- Listing service classes in `providers: [ConversationsService, TeammatesService, ...]`
+- Two-phase module compiles just to wire `useValue` providers
+- `TestControllerModuleWithAuthUser` when testing controller/service logic directly
+
+## Invoke the unit under test directly
+
+Call methods on the manually constructed instance (e.g. `controller.createDirectMessage(...)`). Assert thrown Nest exceptions with `rejects.toThrow(ForbiddenException)`.
+
+## HTTP / auth guard tests
+
+Use `TestControllerModuleWithAuthUser` + `supertest` only when the test specifically covers routing, guards, or status codes that require the HTTP layer (e.g. 401 without a token). For business logic and permission checks, prefer direct method calls.
