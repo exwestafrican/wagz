@@ -67,3 +67,7 @@ export function repeatFn<T>(
 ): (() => Promise<T>)[] {
   return Array.from({ length: n }, () => fn);
 }
+
+export function isSame<T>(left: T, right: T): boolean {
+  return left === right;
+}
