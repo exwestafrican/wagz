@@ -73,10 +73,11 @@ export class TeammatesService {
       workspaceCode: string,
     ) => Promise<T>,
   ): Promise<T> {
+    const ids = [anchorTeammateId, ...teammateIds];
     const mapping = await this.prismaService.teammate.findMany({
       where: {
         id: {
-          in: [anchorTeammateId, ...teammateIds],
+          in: ids,
         },
       },
       orderBy: {
@@ -84,24 +85,35 @@ export class TeammatesService {
       },
       select: {
         workspaceCode: true,
+        id: true,
       },
-      distinct: ['workspaceCode'],
     });
 
-    const workspaceCodes = mapping.map((m) => m.workspaceCode);
+    const foundTeammateIds = mapping.map((teammate) => teammate.id);
 
-    if (workspaceCodes.length > 1) {
+    if (foundTeammateIds.length !== ids.length) {
+      const missingTeammateIds = ids.filter(
+        (id) => !foundTeammateIds.includes(id),
+      );
+      throw new NotFoundInDb(
+        `Teammate not found; missingTeammateIds=[${missingTeammateIds.join(', ')}]`,
+      );
+    }
+
+    const distinctWorkspaceCodes = [
+      ...new Set(mapping.map((teammate) => teammate.workspaceCode)),
+    ];
+
+    if (distinctWorkspaceCodes.length > 1) {
       throw new TeammatesNotInSameWorkspace(
         `Teammates span multiple workspaces; anchorTeammateId=${anchorTeammateId} teammateIds=[${teammateIds.join(', ')}]`,
       );
     }
 
-    if (workspaceCodes.length === 0) {
-      throw new NotFoundInDb(
-        `No teammates found; anchorTeammateId=${anchorTeammateId} teammateIds=[${teammateIds.join(', ')}]`,
-      );
-    }
-
-    return await action(anchorTeammateId, teammateIds, workspaceCodes[0]);
+    return await action(
+      anchorTeammateId,
+      teammateIds,
+      distinctWorkspaceCodes[0],
+    );
   }
 }

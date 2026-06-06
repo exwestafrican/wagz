@@ -73,10 +73,11 @@ export class ConversationsController {
           let conversation: Conversation;
 
           if (isSame(sender, recipient)) {
-            conversation = await this.conversationsService.createSelfConversation(
-              dto.workspaceCode,
-              senderTeammate.id,
-            );
+            conversation =
+              await this.conversationsService.createSelfConversation(
+                dto.workspaceCode,
+                senderTeammate.id,
+              );
           } else {
             conversation =
               await this.teammatesService.runIfTeammatesInSameWorkspace(
