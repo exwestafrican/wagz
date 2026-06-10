@@ -28,7 +28,7 @@ export class WorkspaceInviteService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly authService: AuthService,
-    private readonly conversationsService: ConversationsService
+    private readonly conversationsService: ConversationsService,
   ) {}
 
   encodeInvite(
@@ -137,11 +137,14 @@ export class WorkspaceInviteService {
     await this.createConversationForTeammates(workspaceCode, teammateEmail);
   }
 
-  private async createConversationForTeammates( workspaceCode: string, teammateEmail: string): Promise<void> {
+  private async createConversationForTeammates(
+    workspaceCode: string,
+    teammateEmail: string,
+  ): Promise<void> {
     const teammates = await this.prismaService.teammate.findMany({
       where: { workspaceCode: workspaceCode },
       take: 4,
-      orderBy: { id: 'asc' }
+      orderBy: { id: 'asc' },
     });
 
     if (teammates.length === 0) {
@@ -150,12 +153,14 @@ export class WorkspaceInviteService {
       );
       return;
     }
-
+    const requester = await this.prismaService.teammate.findFirstOrThrow({
+      where: { email: teammateEmail, workspaceCode: workspaceCode },
+    });
     const teammateIds = teammates.map((t) => t.id);
     await this.conversationsService.createConversationForTeammates(
-      workspaceCode,
+      requester.id,
       teammateIds,
-      teammateEmail
+      workspaceCode,
     );
     this.logger.log(
       `Successfully created conversation for teammates; workspaceCode=${workspaceCode} teammateIds=${teammateIds.join(',')}`,
