@@ -34,3 +34,7 @@ export const TeammatesEndpoints = {
   CHECK_USERNAME: '/teammates/check-username',
   RANDOM: '',
 };
+
+export const ConversationsEndpoints = {
+  DIRECT_MESSAGE: '/conversations/direct-message',
+};

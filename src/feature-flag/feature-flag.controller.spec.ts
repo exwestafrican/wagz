@@ -11,6 +11,7 @@ import { ENVOYE_WORKSPACE_CODE } from './const';
 import FeatureFlagManager from '@/feature-flag/manager';
 import { PrismaService } from '@/prisma/prisma.service';
 import { setupWorkspaceWithFeatures } from '@/test-helpers/workspace-helpers';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('FeatureFlagController', () => {
   let requestUser: RequestUser;
@@ -29,9 +30,7 @@ describe('FeatureFlagController', () => {
   });
 
   afterEach(async () => {
-    await prismaService.workspaceFeature.deleteMany();
-    await prismaService.featureFlag.deleteMany();
-    await prismaService.companyProfile.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 

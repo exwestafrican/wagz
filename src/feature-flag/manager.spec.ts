@@ -15,6 +15,8 @@ import FeatureFlagManager from '@/feature-flag/manager';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import CompanyProfileFactory from '@/factories/company-profile.factory';
+import { resetDb } from '@/test-helpers/rest-db';
+import preVerificationFactory from '@/factories/preverification.factory';
 
 describe('FeatureFlagManager', () => {
   let featureFlagManager: FeatureFlagManager;
@@ -56,11 +58,7 @@ describe('FeatureFlagManager', () => {
   });
 
   afterEach(async () => {
-    await prismaService.preVerification.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-    await prismaService.workspaceFeature.deleteMany();
-    await prismaService.featureFlag.deleteMany();
-
+    await resetDb(prismaService);
     await app.close();
   });
 
@@ -359,8 +357,11 @@ describe('FeatureFlagManager', () => {
     });
 
     it('returns up to 100 apps for GLOBAL flag', async () => {
+      const preverification = await factory.persist('preverification', () =>
+        preVerificationFactory.build(),
+      );
       const companyProfile = await factory.persist('companyProfile', () =>
-        CompanyProfileFactory.build(),
+        CompanyProfileFactory.build({ preVerificationId: preverification.id }),
       );
       await prismaService.workspace.createMany({
         data: workspaceFactory.buildList(200, { ownedById: companyProfile.id }),
@@ -469,8 +470,11 @@ describe('FeatureFlagManager', () => {
     });
 
     it('returns up to 100 apps', async () => {
+      const preverification = await factory.persist('preverification', () =>
+        preVerificationFactory.build(),
+      );
       const companyProfile = await factory.persist('companyProfile', () =>
-        CompanyProfileFactory.build(),
+        CompanyProfileFactory.build({ preVerificationId: preverification.id }),
       );
       await prismaService.workspace.createMany({
         data: workspaceFactory.buildList(200, { ownedById: companyProfile.id }),

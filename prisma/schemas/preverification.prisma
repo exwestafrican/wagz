@@ -15,4 +15,5 @@ model PreVerification {
   createdAt        DateTime              @default(now())
   updatedAt        DateTime              @updatedAt
   timezone         String                @default("Africa/Lagos") @db.VarChar(255)
+  companyProfiles  CompanyProfile[]
 }

@@ -30,6 +30,7 @@ import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
 import CompanyProfileFactory from '@/factories/company-profile.factory';
 import { ConversationsService } from '@/conversations/conversations.service';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -71,13 +72,7 @@ describe('WorkspaceService', () => {
   });
 
   afterEach(async () => {
-    await prismaService.conversation.deleteMany();
-    await prismaService.preVerification.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-    await prismaService.workspace.deleteMany();
-  });
-
-  afterAll(async () => {
+    await resetDb(prismaService);
     await app.close();
   });
 
@@ -557,8 +552,11 @@ describe('WorkspaceService', () => {
 
   describe('listApps', () => {
     it('returns up to 100 workspaces ordered by id', async () => {
+      const preverification = await factory.persist('preverification', () =>
+        preVerificationFactory.build(),
+      );
       const companyProfile = await factory.persist('companyProfile', () =>
-        CompanyProfileFactory.build(),
+        CompanyProfileFactory.build({ preVerificationId: preverification.id }),
       );
       await prismaService.workspace.createMany({
         data: workspaceFactory.buildList(200, { ownedById: companyProfile.id }),

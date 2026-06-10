@@ -12,6 +12,7 @@ import {
 } from '@/test-helpers/workspace-helpers';
 import { ConversationsService } from './conversations.service';
 import { ConversationStatus } from '@/generated/prisma/client';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('ConversationsService', () => {
   let service: ConversationsService;
@@ -32,9 +33,7 @@ describe('ConversationsService', () => {
   });
 
   afterEach(async () => {
-    await prismaService.conversation.deleteMany();
-    await prismaService.teammate.deleteMany();
-    await prismaService.workspace.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 
@@ -64,16 +63,16 @@ describe('ConversationsService', () => {
     });
   });
 
-  describe('createConversation', () => {
+  describe('createDirectMessage', () => {
     it('creates a conversation with two participants', async () => {
       const { workspace, teammates } =
         await setupWorkspaceWithMultipleTeammates(factory, 4);
 
       const [dan, marvin] = teammates.slice(2);
-      const conversation = await service.createConversation(
-        workspace.code,
+      const conversation = await service.createDirectMessage(
+        dan.id,
         marvin.id,
-        dan.email,
+        workspace.code,
       );
 
       const participants = await prismaService.conversationParticipant.findMany(

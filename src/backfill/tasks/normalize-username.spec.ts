@@ -10,6 +10,7 @@ import teammateFactory from '@/factories/teammate.factory';
 import { ROLES } from '@/permission/types';
 import { Teammate } from '@/generated/prisma/client';
 import { NormalizeUsernames } from '@/backfill/tasks/normalize-username';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('Normalize Username Backfill Task', () => {
   let app: INestApplication;
@@ -30,9 +31,8 @@ describe('Normalize Username Backfill Task', () => {
   });
 
   afterEach(async () => {
-    await prismaService.preVerification.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-    await prismaService.workspace.deleteMany();
+    await resetDb(prismaService);
+    await app.close();
   });
 
   test('we backfill usernames correctly', async () => {
