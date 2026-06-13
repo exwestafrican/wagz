@@ -20,7 +20,7 @@ export class CreateSelfConversationStep implements PostSetupStep {
       },
     });
 
-    const conversation = await this.conversationsService.createSelfConversation(
+    const conversation = await this.conversationsService.createDirectMessageWithSelf(
       workspaceDetails.code,
       admin.id,
     );

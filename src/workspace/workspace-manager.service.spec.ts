@@ -281,7 +281,7 @@ describe('WorkspaceService', () => {
 
       it('rolls everything back when self-conversation creation fails', async () => {
         jest
-          .spyOn(conversationsService, 'createSelfConversation')
+          .spyOn(conversationsService, 'createDirectMessageWithSelf')
           .mockRejectedValue(new Error('Database error'));
 
         await expect(
@@ -305,7 +305,7 @@ describe('WorkspaceService', () => {
           preVerificationFactory.build(),
         );
         jest
-          .spyOn(conversationsService, 'createSelfConversation')
+          .spyOn(conversationsService, 'createDirectMessageWithSelf')
           .mockRejectedValue(new Error('Database error'));
 
         await expect(

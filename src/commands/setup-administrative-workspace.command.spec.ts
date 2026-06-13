@@ -68,7 +68,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
       new TestEmailClient(),
       jest.fn() as unknown as LinkService,
       new RoleService(),
-      new WorkspaceInviteService(prismaService, authService),
+      new WorkspaceInviteService(prismaService, authService, conversationsService),
       conversationsService,
     );
 
