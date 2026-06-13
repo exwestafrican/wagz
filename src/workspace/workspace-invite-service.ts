@@ -4,7 +4,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { isEmpty } from '@/common/utils';
 import { InviteStatus } from '@/generated/prisma/enums';
 import { AuthService } from '@/auth/auth.service';
-import { WorkspaceInvite } from '@/generated/prisma/client';
+import { WorkspaceInvite, Teammate, Prisma } from '@/generated/prisma/client';
 import { ConversationsService } from '@/conversations/conversations.service';
 
 export interface TeammateDetails {
@@ -120,67 +120,69 @@ export class WorkspaceInviteService {
         },
       });
 
+      const teammate = await tx.teammate.findFirstOrThrow({
+        where: {
+          workspaceCode: workspaceCode,
+          email: teammateDetails.email,
+        },
+      });
+
+      await this.setUpOnboardingDirectMessages(tx, teammate);
+
       await this.authService.signTeammateUpAndPushMagicLink(
         invite.recipientEmail,
         invite.workspaceCode,
       );
     });
-    await this.initialiseConversation(workspaceCode, teammateDetails.email);
     return invite;
   }
 
-  private async initialiseConversation(
-    workspaceCode: string,
-    teammateEmail: string,
+  private async setUpOnboardingDirectMessages(
+    transactionClient: Prisma.TransactionClient,
+    teammate: Teammate,
   ): Promise<void> {
-    await this.createSelfConversationForTeammate(workspaceCode, teammateEmail);
-    await this.createConversationForTeammates(workspaceCode, teammateEmail);
+    await this.createOnboardingDirectMessageWithSelf(
+      transactionClient,
+      teammate,
+    );
+    await this.createOnboardingDirectMessageWithTeammates(
+      transactionClient,
+      teammate,
+    );
   }
 
-  private async createConversationForTeammates(
-    workspaceCode: string,
-    teammateEmail: string,
+  private async createOnboardingDirectMessageWithTeammates(
+    transactionClient: Prisma.TransactionClient,
+    requester: Teammate,
   ): Promise<void> {
     const teammates = await this.prismaService.teammate.findMany({
-      where: { workspaceCode: workspaceCode },
+      where: {
+        workspaceCode: requester.workspaceCode,
+        email: { not: requester.email },
+      },
       take: 4,
       orderBy: { id: 'asc' },
     });
-
-    if (teammates.length === 0) {
-      this.logger.warn(
-        `No teammates found in workspace to create conversation for; workspaceCode=${workspaceCode}`,
-      );
-      return;
-    }
-    const requester = await this.prismaService.teammate.findFirstOrThrow({
-      where: { email: teammateEmail, workspaceCode: workspaceCode },
-    });
     const teammateIds = teammates.map((t) => t.id);
-    await this.conversationsService.createConversationForTeammates(
+    await this.conversationsService.createDirectMessageWithTeammates(
       requester.id,
       teammateIds,
-      workspaceCode,
+      requester.workspaceCode,
+      transactionClient,
     );
     this.logger.log(
-      `Successfully created conversation for teammates; workspaceCode=${workspaceCode} teammateIds=${teammateIds.join(',')}`,
+      `Successfully created conversation for teammates; workspaceCode=${requester.workspaceCode} teammateIds=${teammateIds.join(',')}`,
     );
   }
 
-  private async createSelfConversationForTeammate(
-    workspaceCode: string,
-    teammateEmail: string,
+  private async createOnboardingDirectMessageWithSelf(
+    transactionClient: Prisma.TransactionClient,
+    teammate: Teammate,
   ): Promise<void> {
-    const teammate = await this.prismaService.teammate.findFirstOrThrow({
-      where: {
-        workspaceCode: workspaceCode,
-        email: teammateEmail,
-      },
-    });
-
-    await this.conversationsService.createSelfConversation(
-      workspaceCode,
+    await this.conversationsService.createDirectMessageWithSelf(
+      teammate.workspaceCode,
       teammate.id,
+      transactionClient,
     );
   }
 

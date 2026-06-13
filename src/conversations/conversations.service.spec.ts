@@ -43,7 +43,7 @@ describe('ConversationsService', () => {
         factory,
         teammateFactory.build({ email: 'owner@useenvoye.com' }),
       );
-      const conversation = await service.createSelfConversation(
+      const conversation = await service.createDirectMessageWithSelf(
         workspace.code,
         teammate.id,
       );

@@ -1,9 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Conversation } from '@/generated/prisma/client';
+import { TransactionClient } from '@/generated/prisma/internal/prismaNamespace';
+import { ConcurrentLimit } from '@/common/concurrent-runner';
 
 @Injectable()
 export class ConversationsService {
+  private static readonly CONVERSATION_CONCURRENCY = 3;
+
   constructor(private readonly prisma: PrismaService) {}
 
   async createDirectMessage(
@@ -36,17 +40,18 @@ export class ConversationsService {
     return conversation;
   }
 
-  async createSelfConversation(
+  async createDirectMessageWithSelf(
     workspaceCode: string,
     teammateId: number,
+    transactionClient: TransactionClient,
   ): Promise<Conversation> {
-    const conversation = await this.prisma.conversation.create({
+    const conversation = await transactionClient.conversation.create({
       data: {
         workspaceCode,
       },
     });
 
-    await this.prisma.conversationParticipant.create({
+    await transactionClient.conversationParticipant.create({
       data: {
         workspaceCode,
         conversationId: conversation.id,
@@ -58,18 +63,59 @@ export class ConversationsService {
     return conversation;
   }
 
-  async createConversationForTeammates(
+  async createDirectMessageWithTeammates(
     senderId: number,
     teammateIds: number[],
     workspaceCode: string,
+    transactionClient: TransactionClient,
   ): Promise<void> {
-    if (teammateIds.length === 0) {
-      return;
-    }
-    await Promise.all(
+    const limit = ConcurrentLimit(
+      ConversationsService.CONVERSATION_CONCURRENCY,
+      teammateIds.length,
+    );
+
+    await Promise.allSettled(
       teammateIds.map((teammateId) =>
-        this.createDirectMessage(senderId, teammateId, workspaceCode),
+        limit.run(() =>
+          this.createDirectMessageInTransaction(
+            senderId,
+            teammateId,
+            workspaceCode,
+            transactionClient,
+          ),
+        ),
       ),
     );
+  }
+
+  private async createDirectMessageInTransaction(
+    senderId: number,
+    recipientTeammateId: number,
+    workspaceCode: string,
+    transactionClient: TransactionClient,
+  ): Promise<Conversation> {
+    const conversation = await transactionClient.conversation.create({
+      data: {
+        workspaceCode,
+      },
+    });
+
+    await transactionClient.conversationParticipant.createMany({
+      data: [
+        {
+          workspaceCode,
+          conversationId: conversation.id,
+          teammateId: senderId,
+          isOwner: true,
+        },
+        {
+          workspaceCode,
+          conversationId: conversation.id,
+          teammateId: recipientTeammateId,
+        },
+      ],
+    });
+
+    return conversation;
   }
 }

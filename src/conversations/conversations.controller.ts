@@ -74,7 +74,7 @@ export class ConversationsController {
 
           if (isSame(sender, recipient)) {
             conversation =
-              await this.conversationsService.createSelfConversation(
+              await this.conversationsService.createDirectMessageWithSelf(
                 dto.workspaceCode,
                 senderTeammate.id,
               );

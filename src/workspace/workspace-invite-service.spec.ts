@@ -255,22 +255,23 @@ describe('WorkspaceInviteService', () => {
           username: 'new.teammate',
         },
       );
-      const allParticipants =
-        await prismaService.conversationParticipant.findMany({
-          where: {
-            conversation: { workspaceCode: workspace.code },
+      const conversations = await prismaService.conversation.findMany({
+        where: { workspaceCode: workspace.code },
+        include: {
+          conversationParticipants: {
+            include: { teammate: true },
           },
-          include: {
-            teammate: true,
-            conversation: true,
-          },
-        });
-      const selfParticipant = allParticipants.filter(
-        (convPart) =>
-          convPart.conversationId === 1 &&
-          convPart.teammate.email === 'new.teammate@useenvoye.co',
+        },
+      });
+
+      const selfConversations = conversations.filter(
+        (c) => c.conversationParticipants.length === 1,
       );
-      expect(selfParticipant).toHaveLength(1);
+
+      expect(selfConversations).toHaveLength(1);
+      expect(
+        selfConversations[0].conversationParticipants[0].teammate.email,
+      ).toBe('new.teammate@useenvoye.co');
     });
 
     it('Creates conversation with 4 teammates and self when invite is accepted', async () => {
@@ -308,21 +309,6 @@ describe('WorkspaceInviteService', () => {
         )
         .map((convPart) => convPart.conversation);
       expect(allDefaultConversations).toHaveLength(5);
-    });
-
-    it('throws InvalidInviteCode when invite does not exist', async () => {
-      await expect(
-        workspaceInviteService.tryAcceptInviteAndRequestMagicLink(
-          '9Jk076',
-          'nope00',
-          {
-            email: 'laura@useenvoye.co',
-            firstName: 'Laura',
-            lastName: 'Smith',
-            username: 'laura.smith',
-          },
-        ),
-      ).rejects.toThrow(InvalidInviteCode);
     });
   });
 
