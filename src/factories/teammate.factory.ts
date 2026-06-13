@@ -35,11 +35,6 @@ export async function persistTeammate(
   teammate: Teammate,
 ) {
   await prismaService.teammate.create({ data: teammate });
-  await prismaService.$executeRaw`
-    SELECT setval(
-      pg_get_serial_sequence('teammate', 'id'),
-      (SELECT MAX(id) FROM teammate)
-    )`;
 }
 
 export default teammateFactory;
