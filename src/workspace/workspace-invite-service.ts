@@ -101,7 +101,7 @@ export class WorkspaceInviteService {
     }
 
     const teammate = await this.prismaService.$transaction(async (tx) => {
-      await tx.teammate.create({
+      const teammate = await tx.teammate.create({
         data: {
           workspaceCode: workspaceCode,
           email: teammateDetails.email,
@@ -117,13 +117,6 @@ export class WorkspaceInviteService {
         data: {
           status: InviteStatus.ACCEPTED,
           acceptedAt: new Date(),
-        },
-      });
-
-      const teammate = await tx.teammate.findFirstOrThrow({
-        where: {
-          workspaceCode: workspaceCode,
-          email: teammateDetails.email,
         },
       });
 
@@ -150,7 +143,10 @@ export class WorkspaceInviteService {
   private async setUpOnboardingDirectMessages(
     teammate: Teammate,
   ): Promise<void> {
-    await this.createOnboardingDirectMessageWithSelf(teammate);
+    await this.conversationsService.createDirectMessageWithSelf(
+      teammate.workspaceCode,
+      teammate.id,
+    );
     await this.createOnboardingDirectMessageWithTeammates(teammate);
   }
 
@@ -173,15 +169,6 @@ export class WorkspaceInviteService {
     );
     this.logger.log(
       `Successfully created conversation for teammates; workspaceCode=${requester.workspaceCode} teammateIds=${teammateIds.join(',')}`,
-    );
-  }
-
-  private async createOnboardingDirectMessageWithSelf(
-    teammate: Teammate,
-  ): Promise<void> {
-    await this.conversationsService.createDirectMessageWithSelf(
-      teammate.workspaceCode,
-      teammate.id,
     );
   }
 
