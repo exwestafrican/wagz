@@ -333,7 +333,7 @@ describe('WorkspaceInviteService', () => {
       );
 
       const setUpOnboardingDirectMessagesSpy = jest.spyOn(
-        WorkspaceInviteService.prototype,
+        workspaceInviteService as any,
         'setUpOnboardingDirectMessages',
       );
 
