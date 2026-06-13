@@ -276,7 +276,7 @@ describe('WorkspaceInviteService', () => {
 
     it('Creates conversation with 4 teammates and self when invite is accepted', async () => {
       const { workspace, teammates } =
-        await setupWorkspaceWithMultipleTeammates(factory, 4);
+        await setupWorkspaceWithMultipleTeammates(factory, 8);
 
       await inviteTeammate(
         teammates[0],
