@@ -310,6 +310,58 @@ describe('WorkspaceInviteService', () => {
         .map((convPart) => convPart.conversation);
       expect(allDefaultConversations).toHaveLength(5);
     });
+
+    it('rolls back and does not set up direct messaged when teammate invite transaction fails', async () => {
+      const { teammate: adminTeammate, workspace } =
+        await setupWorkspaceWithTeammate(
+          factory,
+          teammateFactory.build({
+            id: 6,
+            email: 'admin@useenvoye.com',
+            groups: ['WorkspaceAdmin'],
+            workspaceCode: '9Jk076',
+          }),
+        );
+
+      await inviteTeammate(adminTeammate, 'laura@useenvoye.co', workspace);
+
+      await factory.persist('teammate', () =>
+        teammateFactory.build({
+          email: 'laura@useenvoye.co',
+          workspaceCode: '9Jk076',
+        }),
+      );
+
+      const setUpOnboardingDirectMessagesSpy = jest.spyOn(
+        WorkspaceInviteService.prototype,
+        'setUpOnboardingDirectMessages',
+      );
+
+      await expect(
+        workspaceInviteService.tryAcceptInviteAndRequestMagicLink(
+          '9Jk076',
+          'ap7ol0',
+          {
+            email: 'laura@useenvoye.co',
+            firstName: 'Laura',
+            lastName: 'Smith',
+            username: 'laura.smith',
+          },
+        ),
+      ).rejects.toThrow();
+
+      expect(setUpOnboardingDirectMessagesSpy).not.toHaveBeenCalled();
+
+      const invite = await prismaService.workspaceInvite.findFirstOrThrow({
+        where: {
+          workspaceCode: '9Jk076',
+          inviteCode: 'ap7ol0',
+          recipientEmail: 'laura@useenvoye.co',
+        },
+      });
+      expect(invite.status).toBe(InviteStatus.SENT);
+      expect(invite.acceptedAt).toBeNull();
+    });
   });
 
   describe('tryAcceptInviteAndRequestMagicLink', () => {

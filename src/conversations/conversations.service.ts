@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Conversation } from '@/generated/prisma/client';
-import { TransactionClient } from '@/generated/prisma/internal/prismaNamespace';
 import { ConcurrentLimit } from '@/common/concurrent-runner';
 
 @Injectable()
@@ -43,15 +42,14 @@ export class ConversationsService {
   async createDirectMessageWithSelf(
     workspaceCode: string,
     teammateId: number,
-    transactionClient: TransactionClient,
   ): Promise<Conversation> {
-    const conversation = await transactionClient.conversation.create({
+    const conversation = await this.prisma.conversation.create({
       data: {
         workspaceCode,
       },
     });
 
-    await transactionClient.conversationParticipant.create({
+    await this.prisma.conversationParticipant.create({
       data: {
         workspaceCode,
         conversationId: conversation.id,
@@ -67,7 +65,6 @@ export class ConversationsService {
     senderId: number,
     teammateIds: number[],
     workspaceCode: string,
-    transactionClient: TransactionClient,
   ): Promise<void> {
     const limit = ConcurrentLimit(
       ConversationsService.CONVERSATION_CONCURRENCY,
@@ -77,30 +74,28 @@ export class ConversationsService {
     await Promise.allSettled(
       teammateIds.map((teammateId) =>
         limit.run(() =>
-          this.createDirectMessageInTransaction(
+          this.createDirectMessageForTeammate(
             senderId,
             teammateId,
             workspaceCode,
-            transactionClient,
           ),
         ),
       ),
     );
   }
 
-  private async createDirectMessageInTransaction(
+  private async createDirectMessageForTeammate(
     senderId: number,
     recipientTeammateId: number,
     workspaceCode: string,
-    transactionClient: TransactionClient,
   ): Promise<Conversation> {
-    const conversation = await transactionClient.conversation.create({
+    const conversation = await this.prisma.conversation.create({
       data: {
         workspaceCode,
       },
     });
 
-    await transactionClient.conversationParticipant.createMany({
+    await this.prisma.conversationParticipant.createMany({
       data: [
         {
           workspaceCode,
