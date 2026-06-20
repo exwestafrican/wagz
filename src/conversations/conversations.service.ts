@@ -23,12 +23,6 @@ export class ConversationsService {
       return action();
     }
 
-    // Ensure we distinguish "conversation missing" (P2025) from "not a participant" (403).
-    await this.prisma.conversation.findUniqueOrThrow({
-      where: { id: conversationId },
-      select: { id: true },
-    });
-
     throw new ForbiddenException();
   }
 
