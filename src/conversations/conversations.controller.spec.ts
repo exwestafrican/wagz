@@ -13,6 +13,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { createTestApp } from '@/test-helpers/test-app';
 import { ConversationsService } from '@/conversations/conversations.service';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { PermissionService } from '@/permission/permission.service';
 import { RoleService } from '@/permission/role/role.service';
@@ -28,6 +29,7 @@ describe('ConversationsController', () => {
   let prismaService: PrismaService;
   let factory: PersistStrategy;
   let controller: ConversationsController;
+  let conversationsService: ConversationsService;
 
   beforeEach(async () => {
     requestUser = RequestUser.of('laura@useEnvoye.com');
@@ -42,14 +44,16 @@ describe('ConversationsController', () => {
     factory = Factory.createStrategy(prismaService);
 
     const roleService = new RoleService();
-    const conversationsService = new ConversationsService(prismaService);
+    conversationsService = new ConversationsService(prismaService);
     const teammatesService = new TeammatesService(prismaService);
     const permissionService = new PermissionService(prismaService, roleService);
+    const envoyeMessenger = new EnvoyeMessenger(prismaService);
 
     controller = new ConversationsController(
       conversationsService,
       teammatesService,
       permissionService,
+      envoyeMessenger,
     );
   });
 
@@ -199,6 +203,152 @@ describe('ConversationsController', () => {
           recipientTeammateId: 999999,
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('sendTextMessage', () => {
+    it('persists a text message when sender is a participant', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      await controller.sendTextMessage(requestUser, {
+        workspaceCode: koboMart.code,
+        conversationId: conversation.id,
+        message: 'Hey buddy',
+      });
+
+      const createdMessage = await prismaService.message.findFirst({
+        where: {
+          workspaceCode: koboMart.code,
+          conversationId: conversation.id,
+          authorId: dan.id,
+        },
+      });
+
+      expect(createdMessage).toBeTruthy();
+      expect(createdMessage?.content).toBe('Hey buddy');
+    });
+
+    it('throws ForbiddenException when sender is not a participant', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 3);
+
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+
+      const dan = teammates[1];
+      const marvin = teammates[2];
+
+      const conversation = await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      await expect(
+        controller.sendTextMessage(requestUser, {
+          workspaceCode: koboMart.code,
+          conversationId: conversation.id,
+          message: 'Hey buddy',
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when sender is not an active member of the workspace', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      await expect(
+        controller.sendTextMessage(requestUser, {
+          workspaceCode: '345dv5',
+          conversationId: conversation.id,
+          message: 'Hey buddy',
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when sender lacks message_teammates permission', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      await expect(
+        controller.sendTextMessage(requestUser, {
+          workspaceCode: koboMart.code,
+          conversationId: conversation.id,
+          message: 'Hey buddy',
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when conversation id does not exist', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 1);
+
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+
+      await expect(
+        controller.sendTextMessage(requestUser, {
+          workspaceCode: koboMart.code,
+          conversationId: 999999,
+          message: 'Hey buddy',
+        }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });
