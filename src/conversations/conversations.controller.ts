@@ -26,8 +26,11 @@ import { TeammatesNotInSameWorkspace } from '@/common/exceptions/teammates-not-i
 import NotFoundInDb from '@/common/exceptions/not-found';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
+import { notInDbError } from '@/common/error-type';
 import { isSame } from '@/common/utils';
 import { Conversation } from '@/generated/prisma/client';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
 
 @Controller('conversations')
 export class ConversationsController {
@@ -37,6 +40,7 @@ export class ConversationsController {
     private readonly conversationsService: ConversationsService,
     private readonly teammatesService: TeammatesService,
     private readonly permissionService: PermissionService,
+    private readonly messanger: EnvoyeMessenger,
   ) {}
 
   @Post('direct-message')
@@ -62,6 +66,7 @@ export class ConversationsController {
     @User() requestUser: RequestUser,
     @Body() dto: CreateConversationDto,
   ): Promise<ConversationResponseDto> {
+    //TODO we might not need
     return this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
       requestUser,
       dto.workspaceCode,
@@ -98,6 +103,54 @@ export class ConversationsController {
             throw new BadRequestException();
           }
           if (error instanceof NotFoundInDb) {
+            throw new NotFoundException();
+          }
+          throw error;
+        }
+      },
+    );
+  }
+
+  @Post('send-text')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Send text message to conversation' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Create Text for Conversation',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User is unauthorized to make this request',
+  })
+  @ApiBadRequestResponse()
+  @ApiForbiddenResponse()
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Conversation not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async sendTextMessage(
+    @User() requestUser: RequestUser,
+    @Body() msgDto: SendTextMessageDto,
+  ) {
+    await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+      requestUser,
+      msgDto.workspaceCode,
+      PERMISSIONS.MESSAGE_TEAMMATES,
+      async (senderTeammate) => {
+        try {
+          await this.conversationsService.runIfConversationParticipant(
+            msgDto.conversationId,
+            senderTeammate.id,
+            () =>
+              this.messanger.sendTextMessage(
+                msgDto.conversationId,
+                senderTeammate.id,
+                msgDto.message,
+              ),
+          );
+        } catch (error) {
+          if (notInDbError(error)) {
             throw new NotFoundException();
           }
           throw error;

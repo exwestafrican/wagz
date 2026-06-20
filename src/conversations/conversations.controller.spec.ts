@@ -13,6 +13,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { createTestApp } from '@/test-helpers/test-app';
 import { ConversationsService } from '@/conversations/conversations.service';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { PermissionService } from '@/permission/permission.service';
 import { RoleService } from '@/permission/role/role.service';
@@ -28,6 +29,7 @@ describe('ConversationsController', () => {
   let prismaService: PrismaService;
   let factory: PersistStrategy;
   let controller: ConversationsController;
+  let conversationsService: ConversationsService;
 
   beforeEach(async () => {
     requestUser = RequestUser.of('laura@useEnvoye.com');
@@ -42,14 +44,16 @@ describe('ConversationsController', () => {
     factory = Factory.createStrategy(prismaService);
 
     const roleService = new RoleService();
-    const conversationsService = new ConversationsService(prismaService);
+    conversationsService = new ConversationsService(prismaService);
     const teammatesService = new TeammatesService(prismaService);
     const permissionService = new PermissionService(prismaService, roleService);
+    const envoyeMessenger = new EnvoyeMessenger(prismaService);
 
     controller = new ConversationsController(
       conversationsService,
       teammatesService,
       permissionService,
+      envoyeMessenger,
     );
   });
 
