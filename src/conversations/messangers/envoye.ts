@@ -39,7 +39,7 @@ export default class EnvoyeMessenger implements Messenger {
       recipientId: otherParticipant.teammateId,
     };
   }
-  async inbox(teammateId: number, limit = 7) {
+  async conversations(teammateId: number, limit = 7) {
     const conversations = await this.prisma.conversation.findMany({
       where: {
         conversationParticipants: {
