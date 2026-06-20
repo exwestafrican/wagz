@@ -9,6 +9,8 @@ model Message {
   workspace                Workspace                 @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
   conversationId           Int
   conversation             Conversation              @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  authorId                 Int
+  teammate                 Teammate                  @relation(fields: [authorId], references: [id], onDelete: Cascade)
   content                  String                    @db.VarChar(65000)
   url                      String?                   @db.VarChar(2000)
   createdAt                DateTime                  @default(now())
