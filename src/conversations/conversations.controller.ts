@@ -2,14 +2,16 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Logger,
   NotFoundException,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
@@ -31,6 +33,8 @@ import { isSame } from '@/common/utils';
 import { Conversation } from '@/generated/prisma/client';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
+import { ListConversationsQueryDto } from '@/conversations/dto/list-conversations-query.dto';
+import { ConversationMetadataResponseDto } from '@/conversations/dto/conversation-metadata-response.dto';
 
 @Controller('conversations')
 export class ConversationsController {
@@ -42,6 +46,40 @@ export class ConversationsController {
     private readonly permissionService: PermissionService,
     private readonly messanger: EnvoyeMessenger,
   ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'List user conversations in a workspace' })
+  @ApiQuery({
+    name: 'workspaceCode',
+    required: true,
+    type: String,
+    description: 'Workspace code',
+    example: '12er56',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'User conversations in the workspace',
+    type: ConversationMetadataResponseDto,
+    isArray: true,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User is unauthorized to make this request',
+  })
+  @ApiForbiddenResponse()
+  @UseGuards(SupabaseAuthGuard)
+  async listConversations(
+    @User() requestUser: RequestUser,
+    @Query() query: ListConversationsQueryDto,
+  ): Promise<ConversationMetadataResponseDto[]> {
+    return this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+      requestUser,
+      query.workspaceCode,
+      PERMISSIONS.MESSAGE_TEAMMATES,
+      (teammate) =>
+        this.messanger.conversations(query.workspaceCode, teammate.id),
+    );
+  }
 
   @Post('direct-message')
   @HttpCode(HttpStatus.CREATED)

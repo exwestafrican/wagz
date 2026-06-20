@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import Messenger from '@/conversations/messangers/messenger';
-import { ConversationParticipant, Message } from '@/generated/prisma/client';
+import { Message } from '@/generated/prisma/client';
 
 @Injectable()
 export default class EnvoyeMessenger implements Messenger {
@@ -28,20 +28,10 @@ export default class EnvoyeMessenger implements Messenger {
     });
   }
 
-  private conversationMetaData(
-    conversationId: number,
-    owner: ConversationParticipant,
-    otherParticipant: ConversationParticipant,
-  ) {
-    return {
-      id: conversationId,
-      authorId: owner.teammateId,
-      recipientId: otherParticipant.teammateId,
-    };
-  }
-  async conversations(teammateId: number, limit = 7) {
+  async conversations(workspaceCode: string, teammateId: number, limit = 7) {
     const conversations = await this.prisma.conversation.findMany({
       where: {
+        workspaceCode,
         conversationParticipants: {
           some: {
             teammateId: teammateId,
@@ -60,21 +50,25 @@ export default class EnvoyeMessenger implements Messenger {
       .filter(
         (conversation) => conversation.conversationParticipants.length <= 2,
       )
-      .map(({ id: conversationId, conversationParticipants }) => {
-        const [firstParticipant, secondParticipant] = conversationParticipants;
-        if (firstParticipant.isOwner) {
-          return this.conversationMetaData(
-            conversationId,
-            firstParticipant,
-            secondParticipant,
-          );
-        } else {
-          return this.conversationMetaData(
-            conversationId,
-            secondParticipant,
-            firstParticipant,
+      .map(({ id: conversationId, conversationParticipants: participants }) => {
+        const owner = participants.find((participant) => participant.isOwner);
+        const otherParticipants = participants.filter(
+          (participant) => !participant.isOwner,
+        );
+
+        if (!owner) {
+          throw Error(
+            `Malformed conversation participants for conversation; id=${conversationId}`,
           );
         }
+
+        return {
+          id: conversationId,
+          authorId: owner.teammateId,
+          participantIds: otherParticipants.map(
+            (participant) => participant.teammateId,
+          ),
+        };
       });
   }
 }
