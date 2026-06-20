@@ -66,7 +66,6 @@ export class ConversationsController {
     @User() requestUser: RequestUser,
     @Body() dto: CreateConversationDto,
   ): Promise<ConversationResponseDto> {
-    //TODO we might not need
     return this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
       requestUser,
       dto.workspaceCode,
