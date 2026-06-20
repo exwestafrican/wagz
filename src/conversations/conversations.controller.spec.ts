@@ -248,7 +248,7 @@ describe('ConversationsController', () => {
       const { workspace: koboMart, teammates } =
         await setupWorkspaceWithMultipleTeammates(factory, 3);
 
-      const nonParticipantSender = await prismaService.teammate.update({
+      await prismaService.teammate.update({
         where: { id: teammates[0].id },
         data: {
           email: requestUser.email,

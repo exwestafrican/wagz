@@ -130,22 +130,22 @@ export class ConversationsController {
   @UseGuards(SupabaseAuthGuard)
   async sendTextMessage(
     @User() requestUser: RequestUser,
-    @Body() msgDto: SendTextMessageDto,
+    @Body() dto: SendTextMessageDto,
   ) {
     await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
       requestUser,
-      msgDto.workspaceCode,
+      dto.workspaceCode,
       PERMISSIONS.MESSAGE_TEAMMATES,
       async (senderTeammate) => {
         try {
           await this.conversationsService.runIfConversationParticipant(
-            msgDto.conversationId,
+            dto.conversationId,
             senderTeammate.id,
             () =>
               this.messanger.sendTextMessage(
-                msgDto.conversationId,
+                dto.conversationId,
                 senderTeammate.id,
-                msgDto.message,
+                dto.message,
               ),
           );
         } catch (error) {
