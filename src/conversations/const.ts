@@ -1,0 +1,1 @@
+export const MAX_ENVOYE_MESSAGE_CHARACTERS = 2000;

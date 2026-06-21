@@ -10,7 +10,7 @@ export default class EnvoyeMessenger implements Messenger {
   async sendTextMessage(
     conversationId: number,
     senderId: number,
-    content: string,
+    content: string[],
   ): Promise<Message> {
     const conversation = await this.prisma.conversation.findUniqueOrThrow({
       where: {
@@ -18,12 +18,13 @@ export default class EnvoyeMessenger implements Messenger {
       },
     });
 
+    const message = content.join('\n');
     return this.prisma.message.create({
       data: {
         workspaceCode: conversation.workspaceCode,
         conversationId: conversation.id,
         authorId: senderId,
-        content: content,
+        content: message,
       },
     });
   }

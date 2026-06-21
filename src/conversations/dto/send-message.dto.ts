@@ -1,5 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsString } from 'class-validator';
+import {
+  ArrayNotEmpty,
+  IsArray,
+  IsInt,
+  IsNotEmpty,
+  IsString,
+} from 'class-validator';
+import MaxCharacterLimit from '@/common/validators/max-character-limit';
+import { MAX_ENVOYE_MESSAGE_CHARACTERS } from '@/conversations/const';
 
 export class SendTextMessageDto {
   @ApiProperty({ description: 'Workspace code', example: '12er56' })
@@ -12,8 +20,17 @@ export class SendTextMessageDto {
   @IsNotEmpty()
   conversationId: number;
 
-  @ApiProperty({ description: 'Text content', example: 'Hey buddy' })
-  @IsString()
-  @IsNotEmpty()
-  message: string;
+  @ApiProperty({
+    description:
+      'Messages to send when the conversation is created (max 2000 characters total)',
+    example: ['Hey buddy', "what's up?"],
+    type: [String],
+    minItems: 1,
+  })
+  @IsArray()
+  @ArrayNotEmpty()
+  @IsString({ each: true })
+  @IsNotEmpty({ each: true })
+  @MaxCharacterLimit(MAX_ENVOYE_MESSAGE_CHARACTERS)
+  message: string[];
 }

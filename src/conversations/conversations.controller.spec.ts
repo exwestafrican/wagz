@@ -78,6 +78,7 @@ describe('ConversationsController', () => {
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
         recipientTeammateId: marvin.id,
+        openingMessage: ['Hey, how are you feeling.'],
       });
 
       expect(body.workspaceCode).toBe(koboMart.code);
@@ -107,6 +108,7 @@ describe('ConversationsController', () => {
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
         recipientTeammateId: dan.id,
+        openingMessage: ['in the office today?'],
       });
 
       expect(body.workspaceCode).toBe(koboMart.code);
@@ -143,6 +145,7 @@ describe('ConversationsController', () => {
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
           recipientTeammateId: marvinInZuriBakery.id,
+          openingMessage: ['wagwan G!'],
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -165,6 +168,7 @@ describe('ConversationsController', () => {
         controller.createDirectMessage(requestUser, {
           workspaceCode: '345dv5',
           recipientTeammateId: marvin.id,
+          openingMessage: ['Welcome to Envoye!'],
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -182,6 +186,7 @@ describe('ConversationsController', () => {
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
           recipientTeammateId: marvin.id,
+          openingMessage: ['Lets sync a bit later'],
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -201,6 +206,7 @@ describe('ConversationsController', () => {
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
           recipientTeammateId: 999999,
+          openingMessage: ['Note to self'],
         }),
       ).rejects.toThrow(NotFoundException);
     });
@@ -397,7 +403,7 @@ describe('ConversationsController', () => {
       await controller.sendTextMessage(requestUser, {
         workspaceCode: koboMart.code,
         conversationId: conversation.id,
-        message: 'Hey buddy',
+        message: ['Hey buddy'],
       });
 
       const createdMessage = await prismaService.message.findFirst({
@@ -437,7 +443,7 @@ describe('ConversationsController', () => {
         controller.sendTextMessage(requestUser, {
           workspaceCode: koboMart.code,
           conversationId: conversation.id,
-          message: 'Hey buddy',
+          message: ['Hey buddy'],
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -465,7 +471,7 @@ describe('ConversationsController', () => {
         controller.sendTextMessage(requestUser, {
           workspaceCode: '345dv5',
           conversationId: conversation.id,
-          message: 'Hey buddy',
+          message: ['Hey buddy'],
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -493,7 +499,7 @@ describe('ConversationsController', () => {
         controller.sendTextMessage(requestUser, {
           workspaceCode: koboMart.code,
           conversationId: conversation.id,
-          message: 'Hey buddy',
+          message: ['Hey buddy'],
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -514,7 +520,7 @@ describe('ConversationsController', () => {
         controller.sendTextMessage(requestUser, {
           workspaceCode: koboMart.code,
           conversationId: 999999,
-          message: 'Hey buddy',
+          message: ['Hey buddy'],
         }),
       ).rejects.toThrow(ForbiddenException);
     });
