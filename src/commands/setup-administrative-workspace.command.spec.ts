@@ -12,7 +12,6 @@ import {
   type MockSupabaseClient,
 } from '@/auth/test-utils/supabase.mock';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
-import FeatureFlagManager from '@/feature-flag/manager';
 import { ROLES } from '@/permission/types';
 import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
