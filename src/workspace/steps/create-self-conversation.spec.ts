@@ -5,18 +5,18 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { PrismaService } from '@/prisma/prisma.service';
 import { createTestApp } from '@/test-helpers/test-app';
 import { CreateSelfConversationStep } from '@/workspace/steps/create-self-conversation';
-import { ConversationsService } from '@/conversations/conversations.service';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import { setupWorkspaceWithMultipleTeammates } from '@/test-helpers/workspace-helpers';
 import { resetDb } from '@/test-helpers/rest-db';
 import Factory, { PersistStrategy } from '@/factories/factory';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 describe('CreateSelfConversationStep', () => {
   let step: CreateSelfConversationStep;
   let app: INestApplication;
   let prismaService: PrismaService;
-  let conversationsService: ConversationsService;
+  let messenger: EnvoyeMessenger;
   let factory: PersistStrategy;
 
   async function miniWorkspaceWithAdmin(): Promise<WorkspaceDetails> {
@@ -34,13 +34,13 @@ describe('CreateSelfConversationStep', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule],
-      providers: [ConversationsService],
+      providers: [EnvoyeMessenger],
     }).compile();
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
     factory = Factory.createStrategy(prismaService);
-    conversationsService = app.get<ConversationsService>(ConversationsService);
-    step = new CreateSelfConversationStep(conversationsService, prismaService);
+    messenger = app.get<EnvoyeMessenger>(EnvoyeMessenger);
+    step = new CreateSelfConversationStep(messenger, prismaService);
   });
 
   afterEach(async () => {
@@ -85,10 +85,11 @@ describe('CreateSelfConversationStep', () => {
       2,
     );
     const [laura, tumise] = teammates;
-    await conversationsService.createDirectMessage(
+    await messenger.sendOpeningTextMessage(
       laura.id,
       tumise.id,
       workspace.code,
+      [],
     );
 
     const workspaceDetails = await miniWorkspaceWithAdmin();

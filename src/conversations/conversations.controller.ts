@@ -29,8 +29,6 @@ import NotFoundInDb from '@/common/exceptions/not-found';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
 import { notInDbError } from '@/common/error-type';
-import { isSame } from '@/common/utils';
-import { Conversation } from '@/generated/prisma/client';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
 import { ListConversationsQueryDto } from '@/conversations/dto/list-conversations-query.dto';
@@ -110,32 +108,10 @@ export class ConversationsController {
       PERMISSIONS.MESSAGE_TEAMMATES,
       async (senderTeammate) => {
         try {
-          const sender = senderTeammate.id;
-          const recipient = dto.recipientTeammateId;
-          let conversation: Conversation;
-
-          if (isSame(sender, recipient)) {
-            conversation =
-              await this.conversationsService.createDirectMessageWithSelf(
-                dto.workspaceCode,
-                senderTeammate.id,
-              );
-          } else {
-            conversation =
-              await this.teammatesService.runIfTeammatesInSameWorkspace(
-                senderTeammate.id,
-                [dto.recipientTeammateId],
-                (senderId, [recipientId], workspaceCode) =>
-                  this.conversationsService.createDirectMessage(
-                    senderId,
-                    recipientId,
-                    workspaceCode,
-                  ),
-              );
-          }
-          await this.messanger.sendTextMessage(
-            conversation.id,
+          const conversation = await this.messanger.sendOpeningTextMessage(
             senderTeammate.id,
+            dto.recipientTeammateId,
+            dto.workspaceCode,
             dto.openingMessage,
           );
           return toConversationResponse(conversation);

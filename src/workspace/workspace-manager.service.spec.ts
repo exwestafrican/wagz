@@ -29,8 +29,8 @@ import { LinkService } from '@/common/link-service';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
 import CompanyProfileFactory from '@/factories/company-profile.factory';
-import { ConversationsService } from '@/conversations/conversations.service';
 import { resetDb } from '@/test-helpers/rest-db';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -40,7 +40,7 @@ describe('WorkspaceService', () => {
   let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
   let workspaceInviteService: WorkspaceInviteService;
-  let conversationsService: ConversationsService;
+  let messenger: EnvoyeMessenger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -50,7 +50,7 @@ describe('WorkspaceService', () => {
         LinkService,
         RoleService,
         WorkspaceInviteService,
-        ConversationsService,
+        EnvoyeMessenger,
         {
           provide: AuthService,
           useValue: mockAuthService as unknown as AuthService,
@@ -64,7 +64,7 @@ describe('WorkspaceService', () => {
     workspaceInviteService = app.get<WorkspaceInviteService>(
       WorkspaceInviteService,
     );
-    conversationsService = app.get<ConversationsService>(ConversationsService);
+    messenger = app.get<EnvoyeMessenger>(EnvoyeMessenger);
     factory = Factory.createStrategy(prismaService);
     preVerificationDetails = await factory.persist('preverification', () =>
       preVerificationFactory.build(),
@@ -281,7 +281,7 @@ describe('WorkspaceService', () => {
 
       it('rolls everything back when self-conversation creation fails', async () => {
         jest
-          .spyOn(conversationsService, 'createDirectMessageWithSelf')
+          .spyOn(messenger, 'sendOpeningTextMessage')
           .mockRejectedValue(new Error('Database error'));
 
         await expect(
@@ -305,7 +305,7 @@ describe('WorkspaceService', () => {
           preVerificationFactory.build(),
         );
         jest
-          .spyOn(conversationsService, 'createDirectMessageWithSelf')
+          .spyOn(messenger, 'sendOpeningTextMessage')
           .mockRejectedValue(new Error('Database error'));
 
         await expect(

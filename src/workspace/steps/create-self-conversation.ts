@@ -2,13 +2,13 @@ import { Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
-import { ConversationsService } from '@/conversations/conversations.service';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 export class CreateSelfConversationStep implements PostSetupStep {
   logger = new Logger(CreateSelfConversationStep.name);
 
   constructor(
-    private readonly conversationsService: ConversationsService,
+    private readonly messenger: EnvoyeMessenger,
     private readonly prismaService: PrismaService,
   ) {}
 
@@ -20,11 +20,12 @@ export class CreateSelfConversationStep implements PostSetupStep {
       },
     });
 
-    const conversation =
-      await this.conversationsService.createDirectMessageWithSelf(
-        workspaceDetails.code,
-        admin.id,
-      );
+    const conversation = await this.messenger.sendOpeningTextMessage(
+      admin.id,
+      admin.id,
+      admin.workspaceCode,
+      [],
+    );
 
     this.logger.log(
       `Successfully created self-conversation for admin; workspaceCode=${workspaceDetails.code} conversationId=${conversation.id}`,
