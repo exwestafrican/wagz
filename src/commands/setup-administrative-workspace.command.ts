@@ -6,8 +6,7 @@ import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { CreateSuperAdminStep } from '@/workspace/steps/create-super-admin';
 import { CreateSelfConversationStep } from '@/workspace/steps/create-self-conversation';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
-import FeatureFlagManager from '@/feature-flag/manager';
-import { ConversationsService } from '@/conversations/conversations.service';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 interface Options {
   email: string;
@@ -27,8 +26,7 @@ export class SetupAdministrativeWorkspaceCommand extends CommandRunner {
     private readonly prismaService: PrismaService,
     private readonly authService: AuthService,
     private readonly workspaceManager: WorkspaceManager,
-    private readonly featureFlagManager: FeatureFlagManager,
-    private readonly conversationsService: ConversationsService,
+    private readonly messenger: EnvoyeMessenger,
   ) {
     super();
   }
@@ -50,10 +48,7 @@ export class SetupAdministrativeWorkspaceCommand extends CommandRunner {
       preverification,
       [
         new CreateSuperAdminStep(this.prismaService),
-        new CreateSelfConversationStep(
-          this.conversationsService,
-          this.prismaService,
-        ),
+        new CreateSelfConversationStep(this.messenger, this.prismaService),
       ],
     );
 
