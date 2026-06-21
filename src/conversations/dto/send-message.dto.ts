@@ -9,21 +9,21 @@ import {
 import MaxCharacterLimit from '@/common/validators/max-character-limit';
 import { MAX_ENVOYE_MESSAGE_CHARACTERS } from '@/conversations/const';
 
-export class CreateConversationDto {
+export class SendTextMessageDto {
   @ApiProperty({ description: 'Workspace code', example: '12er56' })
   @IsString()
   @IsNotEmpty()
   workspaceCode: string;
 
-  @ApiProperty({ description: 'Teammate ID of the recipient', example: 5 })
+  @ApiProperty({ description: 'Conversation ID for message', example: 5 })
   @IsInt()
   @IsNotEmpty()
-  recipientTeammateId: number;
+  conversationId: number;
 
   @ApiProperty({
     description:
       'Messages to send when the conversation is created (max 2000 characters total)',
-    example: ['Hey buddy', 'Hi'],
+    example: ['Hey buddy', "what's up?"],
     type: [String],
     minItems: 1,
   })
@@ -32,5 +32,5 @@ export class CreateConversationDto {
   @IsString({ each: true })
   @IsNotEmpty({ each: true })
   @MaxCharacterLimit(MAX_ENVOYE_MESSAGE_CHARACTERS)
-  openingMessage: string[];
+  message: string[];
 }

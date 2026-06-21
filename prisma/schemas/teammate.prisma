@@ -20,6 +20,7 @@ model Teammate {
   updatedAt                DateTime                  @updatedAt
   workspaceInvites         WorkspaceInvite[]
   conversationParticipants ConversationParticipant[]
+  messages                 Message[]
 
   @@unique([workspaceCode, email])
   @@unique([workspaceCode, username])

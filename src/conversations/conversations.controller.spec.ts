@@ -13,6 +13,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { createTestApp } from '@/test-helpers/test-app';
 import { ConversationsService } from '@/conversations/conversations.service';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { PermissionService } from '@/permission/permission.service';
 import { RoleService } from '@/permission/role/role.service';
@@ -28,6 +29,7 @@ describe('ConversationsController', () => {
   let prismaService: PrismaService;
   let factory: PersistStrategy;
   let controller: ConversationsController;
+  let conversationsService: ConversationsService;
 
   beforeEach(async () => {
     requestUser = RequestUser.of('laura@useEnvoye.com');
@@ -42,14 +44,16 @@ describe('ConversationsController', () => {
     factory = Factory.createStrategy(prismaService);
 
     const roleService = new RoleService();
-    const conversationsService = new ConversationsService(prismaService);
+    conversationsService = new ConversationsService(prismaService);
     const teammatesService = new TeammatesService(prismaService);
     const permissionService = new PermissionService(prismaService, roleService);
+    const envoyeMessenger = new EnvoyeMessenger(prismaService);
 
     controller = new ConversationsController(
       conversationsService,
       teammatesService,
       permissionService,
+      envoyeMessenger,
     );
   });
 
@@ -74,6 +78,7 @@ describe('ConversationsController', () => {
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
         recipientTeammateId: marvin.id,
+        openingMessage: ['Hey, how are you feeling.'],
       });
 
       expect(body.workspaceCode).toBe(koboMart.code);
@@ -103,6 +108,7 @@ describe('ConversationsController', () => {
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
         recipientTeammateId: dan.id,
+        openingMessage: ['in the office today?'],
       });
 
       expect(body.workspaceCode).toBe(koboMart.code);
@@ -139,6 +145,7 @@ describe('ConversationsController', () => {
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
           recipientTeammateId: marvinInZuriBakery.id,
+          openingMessage: ['wagwan G!'],
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -161,6 +168,7 @@ describe('ConversationsController', () => {
         controller.createDirectMessage(requestUser, {
           workspaceCode: '345dv5',
           recipientTeammateId: marvin.id,
+          openingMessage: ['Welcome to Envoye!'],
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -178,6 +186,7 @@ describe('ConversationsController', () => {
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
           recipientTeammateId: marvin.id,
+          openingMessage: ['Lets sync a bit later'],
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -197,8 +206,323 @@ describe('ConversationsController', () => {
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
           recipientTeammateId: 999999,
+          openingMessage: ['Note to self'],
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('listConversations', () => {
+    it('returns conversation metadata for the requesting teammate in the workspace', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      const conversations = await controller.listConversations(requestUser, {
+        workspaceCode: koboMart.code,
+      });
+
+      expect(conversations).toHaveLength(1);
+      expect(conversations[0]).toEqual({
+        id: conversation.id,
+        authorId: dan.id,
+        participantIds: [marvin.id],
+      });
+    });
+
+    it('returns self-conversation metadata when the user has a self DM', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 1);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+
+      const conversation =
+        await conversationsService.createDirectMessageWithSelf(
+          koboMart.code,
+          dan.id,
+        );
+
+      const conversations = await controller.listConversations(requestUser, {
+        workspaceCode: koboMart.code,
+      });
+
+      expect(conversations).toHaveLength(1);
+      expect(conversations[0]).toEqual({
+        id: conversation.id,
+        authorId: dan.id,
+        participantIds: [],
+      });
+    });
+
+    it('does not return conversations from other workspaces', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      const zuriBakery = await factory.persist('workspace', () =>
+        workspaceFactory.build(),
+      );
+      const danInZuriBakery = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          workspaceCode: zuriBakery.code,
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        }),
+      );
+      const marvinInZuriBakery = await factory.persist('teammate', () =>
+        teammateFactory.build({ workspaceCode: zuriBakery.code }),
+      );
+
+      await conversationsService.createDirectMessage(
+        danInZuriBakery.id,
+        marvinInZuriBakery.id,
+        zuriBakery.code,
+      );
+
+      const koboMartConversations = await controller.listConversations(
+        requestUser,
+        { workspaceCode: koboMart.code },
+      );
+      const zuriBakeryConversations = await controller.listConversations(
+        requestUser,
+        { workspaceCode: zuriBakery.code },
+      );
+
+      expect(koboMartConversations).toHaveLength(1);
+      expect(zuriBakeryConversations).toHaveLength(1);
+      expect(koboMartConversations[0].authorId).toBe(dan.id);
+      expect(zuriBakeryConversations[0].authorId).toBe(danInZuriBakery.id);
+    });
+
+    it('returns an empty list when the user has no conversations', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 1);
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+
+      const conversations = await controller.listConversations(requestUser, {
+        workspaceCode: koboMart.code,
+      });
+
+      expect(conversations).toEqual([]);
+    });
+
+    it('throws ForbiddenException when sender is not an active member of the workspace', async () => {
+      const { teammates } = await setupWorkspaceWithMultipleTeammates(
+        factory,
+        1,
+      );
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+
+      await expect(
+        controller.listConversations(requestUser, {
+          workspaceCode: '345dv5',
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when sender lacks message_teammates permission', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 1);
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: { email: requestUser.email, groups: [] },
+      });
+
+      await expect(
+        controller.listConversations(requestUser, {
+          workspaceCode: koboMart.code,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('sendTextMessage', () => {
+    it('persists a text message when sender is a participant', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      await controller.sendTextMessage(requestUser, {
+        workspaceCode: koboMart.code,
+        conversationId: conversation.id,
+        message: ['Hey buddy'],
+      });
+
+      const createdMessage = await prismaService.message.findFirst({
+        where: {
+          workspaceCode: koboMart.code,
+          conversationId: conversation.id,
+          authorId: dan.id,
+        },
+      });
+
+      expect(createdMessage).toBeTruthy();
+      expect(createdMessage?.content).toBe('Hey buddy');
+    });
+
+    it('throws ForbiddenException when sender is not a participant', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 3);
+
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+
+      const dan = teammates[1];
+      const marvin = teammates[2];
+
+      const conversation = await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      await expect(
+        controller.sendTextMessage(requestUser, {
+          workspaceCode: koboMart.code,
+          conversationId: conversation.id,
+          message: ['Hey buddy'],
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when sender is not an active member of the workspace', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      await expect(
+        controller.sendTextMessage(requestUser, {
+          workspaceCode: '345dv5',
+          conversationId: conversation.id,
+          message: ['Hey buddy'],
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when sender lacks message_teammates permission', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await conversationsService.createDirectMessage(
+        dan.id,
+        marvin.id,
+        koboMart.code,
+      );
+
+      await expect(
+        controller.sendTextMessage(requestUser, {
+          workspaceCode: koboMart.code,
+          conversationId: conversation.id,
+          message: ['Hey buddy'],
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when conversation id does not exist', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 1);
+
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+
+      await expect(
+        controller.sendTextMessage(requestUser, {
+          workspaceCode: koboMart.code,
+          conversationId: 999999,
+          message: ['Hey buddy'],
+        }),
+      ).rejects.toThrow(ForbiddenException);
     });
   });
 });
