@@ -133,7 +133,11 @@ export class ConversationsController {
                   ),
               );
           }
-
+          await this.messanger.sendTextMessage(
+            conversation.id,
+            senderTeammate.id,
+            dto.openingMessage,
+          );
           return toConversationResponse(conversation);
         } catch (error) {
           if (error instanceof TeammatesNotInSameWorkspace) {
