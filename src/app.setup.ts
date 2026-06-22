@@ -6,25 +6,14 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ENVIROMENT } from '@/common/const';
-
-/**
- * Explicit allowlist of origins permitted to make cross-origin requests.
- *
- */
-export const ALLOWED_ORIGINS = [
-  'https://envoye.co',
-  'http://localhost:3000',
-];
 
 export function setupApp(app: INestApplication) {
   const configService = app.get(ConfigService);
-  const isProduction =
-    configService.get<string>('NODE_ENV') === ENVIROMENT.PRODUCTION;
+  const isProduction = configService.get<string>('NODE_ENV') === 'production';
   const enableSwagger = !isProduction;
 
   app.enableCors({
-    origin: ALLOWED_ORIGINS,
+    origin: '*', //TODO: change this to specific (move to env)
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
