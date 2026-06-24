@@ -91,7 +91,7 @@ export class TeammatesService {
 
     const foundTeammateIds = mapping.map((teammate) => teammate.id);
 
-    if (foundTeammateIds.length !== ids.length) {
+    if (foundTeammateIds.length !== new Set(ids).size) {
       const missingTeammateIds = ids.filter(
         (id) => !foundTeammateIds.includes(id),
       );

@@ -33,6 +33,7 @@ import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
 import { ListConversationsQueryDto } from '@/conversations/dto/list-conversations-query.dto';
 import { ConversationMetadataResponseDto } from '@/conversations/dto/conversation-metadata-response.dto';
+import { Conversation } from '@/generated/prisma/client';
 
 @Controller('conversations')
 export class ConversationsController {
@@ -108,14 +109,23 @@ export class ConversationsController {
       PERMISSIONS.MESSAGE_TEAMMATES,
       async (senderTeammate) => {
         try {
-          const conversation = await this.messanger.sendOpeningTextMessage(
-            senderTeammate.id,
-            dto.recipientTeammateId,
-            dto.workspaceCode,
-            dto.openingMessage,
-          );
+          const conversation: Conversation =
+            await this.teammatesService.runIfTeammatesInSameWorkspace(
+              senderTeammate.id,
+              [dto.recipientTeammateId],
+              async (anchorTeammateId, teammateIds, workspaceCode) => {
+                // send text or open message
+                return await this.messanger.sendOpeningTextMessage(
+                  anchorTeammateId,
+                  teammateIds[0],
+                  workspaceCode,
+                  dto.openingMessage,
+                );
+              },
+            );
           return toConversationResponse(conversation);
         } catch (error) {
+          this.logger.error(`Error for workspace=${dto.workspaceCode}`);
           if (error instanceof TeammatesNotInSameWorkspace) {
             throw new BadRequestException();
           }

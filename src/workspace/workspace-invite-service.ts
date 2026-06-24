@@ -4,9 +4,8 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { isEmpty } from '@/common/utils';
 import { InviteStatus } from '@/generated/prisma/enums';
 import { AuthService } from '@/auth/auth.service';
-import { WorkspaceInvite, Teammate } from '@/generated/prisma/client';
+import { WorkspaceInvite } from '@/generated/prisma/client';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
-import { ConcurrentLimit } from '@/common/concurrent-runner';
 
 export interface TeammateDetails {
   firstName: string;
@@ -134,7 +133,13 @@ export class WorkspaceInviteService {
     });
 
     try {
-      await this.setUpOnboardingDirectMessages(teammate);
+      // message self and others
+      await this.messenger.sendOpeningTextMessage(
+        teammate.id,
+        teammate.id,
+        teammate.workspaceCode,
+        [],
+      );
     } catch (error) {
       this.logger.error(
         `Failed to set up onboarding direct messages; workspaceCode=${teammate.workspaceCode} teammateId=${teammate.id}`,
@@ -143,51 +148,6 @@ export class WorkspaceInviteService {
     }
 
     return invite;
-  }
-
-  private async setUpOnboardingDirectMessages(
-    teammate: Teammate,
-  ): Promise<void> {
-    // message self and others
-    await this.messenger.sendOpeningTextMessage(
-      teammate.id,
-      teammate.id,
-      teammate.workspaceCode,
-      [],
-    );
-    await this.createOnboardingDirectMessageWithTeammates(teammate);
-  }
-
-  private async createOnboardingDirectMessageWithTeammates(
-    sender: Teammate,
-  ): Promise<void> {
-    const teammates = await this.prismaService.teammate.findMany({
-      where: {
-        workspaceCode: sender.workspaceCode,
-        id: { not: sender.id },
-      },
-      take: 4,
-      orderBy: { id: 'asc' },
-    });
-    const teammateIds = teammates.map((t) => t.id);
-
-    const limit = ConcurrentLimit(CONVERSATION_CONCURRENCY, teammateIds.length);
-
-    await Promise.allSettled(
-      teammateIds.map((teammateId) =>
-        limit.run(() =>
-          this.messenger.sendOpeningTextMessage(
-            sender.id,
-            teammateId,
-            sender.workspaceCode,
-            [],
-          ),
-        ),
-      ),
-    );
-    this.logger.log(
-      `Successfully created conversation for teammates; workspaceCode=${sender.workspaceCode} teammateIds=${teammateIds.join(',')}`,
-    );
   }
 
   private decodedValue(inviteCode: string): string {
