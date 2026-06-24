@@ -20,8 +20,6 @@ export interface DecodedResult {
   codeInInvite: string;
 }
 
-const CONVERSATION_CONCURRENCY = 3;
-
 @Injectable()
 export class WorkspaceInviteService {
   logger = new Logger(WorkspaceInviteService.name);
