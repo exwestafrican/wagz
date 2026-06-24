@@ -13,11 +13,13 @@ model Message {
   teammate                 Teammate                  @relation(fields: [authorId], references: [id], onDelete: Cascade)
   content                  String                    @db.VarChar(65000)
   url                      String?                   @db.VarChar(2000)
+  sentAt                   DateTime                  @default(now())
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
   messagetype              MessageType               @default(TEXT)
   conversationParticipants ConversationParticipant[]
 
   @@index([workspaceCode, conversationId])
+  @@index([conversationId, sentAt])
   @@map("message")
 }
