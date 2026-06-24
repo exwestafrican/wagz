@@ -137,6 +137,7 @@ export class WorkspaceInviteService {
         teammate.id,
         teammate.workspaceCode,
         [],
+        new Date(),
       );
     } catch (error) {
       this.logger.error(

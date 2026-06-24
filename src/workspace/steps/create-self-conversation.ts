@@ -25,6 +25,7 @@ export class CreateSelfConversationStep implements PostSetupStep {
       admin.id,
       admin.workspaceCode,
       [],
+      new Date(),
     );
 
     this.logger.log(

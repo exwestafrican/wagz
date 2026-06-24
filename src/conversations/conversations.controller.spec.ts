@@ -8,6 +8,8 @@ import {
   INestApplication,
   NotFoundException,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
+import { validate } from 'class-validator';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { PrismaService } from '@/prisma/prisma.service';
 import Factory, { PersistStrategy } from '@/factories/factory';
@@ -22,6 +24,11 @@ import teammateFactory from '@/factories/teammate.factory';
 import workspaceFactory from '@/factories/workspace.factory';
 import { resetDb } from '@/test-helpers/rest-db';
 import { ROLES } from '@/permission/types';
+import { CreateConversationDto } from '@/conversations/dto/create-conversation.dto';
+import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
+
+const validSentAt = new Date('2026-06-20T10:00:00.000Z');
+const futureSentAt = new Date(Date.now() + 60_000);
 
 describe('ConversationsController', () => {
   let requestUser: RequestUser;
@@ -80,6 +87,7 @@ describe('ConversationsController', () => {
         workspaceCode: koboMart.code,
         recipientTeammateId: marvin.id,
         openingMessage: ['Hey, how are you feeling.'],
+        sentAt: validSentAt,
       });
 
       expect(body.workspaceCode).toBe(koboMart.code);
@@ -110,6 +118,7 @@ describe('ConversationsController', () => {
         workspaceCode: koboMart.code,
         recipientTeammateId: dan.id,
         openingMessage: ['in the office today?'],
+        sentAt: validSentAt,
       });
 
       expect(body.workspaceCode).toBe(koboMart.code);
@@ -147,6 +156,7 @@ describe('ConversationsController', () => {
           workspaceCode: koboMart.code,
           recipientTeammateId: marvinInZuriBakery.id,
           openingMessage: ['wagwan G!'],
+          sentAt: validSentAt,
         }),
       ).rejects.toThrow(BadRequestException);
     });
@@ -170,6 +180,7 @@ describe('ConversationsController', () => {
           workspaceCode: '345dv5',
           recipientTeammateId: marvin.id,
           openingMessage: ['Welcome to Envoye!'],
+          sentAt: validSentAt,
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -188,6 +199,7 @@ describe('ConversationsController', () => {
           workspaceCode: koboMart.code,
           recipientTeammateId: marvin.id,
           openingMessage: ['Lets sync a bit later'],
+          sentAt: validSentAt,
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -208,8 +220,36 @@ describe('ConversationsController', () => {
           workspaceCode: koboMart.code,
           recipientTeammateId: 999999,
           openingMessage: ['Note to self'],
+          sentAt: validSentAt,
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('persists opening message with client-provided sentAt', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const body = await controller.createDirectMessage(requestUser, {
+        workspaceCode: koboMart.code,
+        recipientTeammateId: marvin.id,
+        openingMessage: ['Hey there'],
+        sentAt: validSentAt,
+      });
+
+      const openingMessage = await prismaService.message.findFirst({
+        where: { conversationId: body.id },
+      });
+
+      expect(openingMessage?.content).toBe('Hey there');
+      expect(openingMessage?.sentAt.toISOString()).toBe(validSentAt.toISOString());
     });
   });
 
@@ -231,6 +271,7 @@ describe('ConversationsController', () => {
         marvin.id,
         koboMart.code,
         [],
+        new Date(),
       );
 
       const conversations = await controller.listConversations(requestUser, {
@@ -262,6 +303,7 @@ describe('ConversationsController', () => {
         dan.id,
         koboMart.code,
         [],
+        new Date(),
       );
 
       const conversations = await controller.listConversations(requestUser, {
@@ -293,6 +335,7 @@ describe('ConversationsController', () => {
         marvin.id,
         koboMart.code,
         [],
+        new Date(),
       );
 
       const zuriBakery = await factory.persist('workspace', () =>
@@ -314,6 +357,7 @@ describe('ConversationsController', () => {
         marvinInZuriBakery.id,
         zuriBakery.code,
         [],
+        new Date(),
       );
 
       const koboMartConversations = await controller.listConversations(
@@ -404,12 +448,14 @@ describe('ConversationsController', () => {
         marvin.id,
         koboMart.code,
         [],
+        new Date(),
       );
 
       await controller.sendTextMessage(requestUser, {
         workspaceCode: koboMart.code,
         conversationId: conversation.id,
         message: ['Hey buddy'],
+        sentAt: validSentAt,
       });
 
       const createdMessage = await prismaService.message.findFirst({
@@ -422,6 +468,7 @@ describe('ConversationsController', () => {
 
       expect(createdMessage).toBeTruthy();
       expect(createdMessage?.content).toBe('Hey buddy');
+      expect(createdMessage?.sentAt.toISOString()).toBe(validSentAt.toISOString());
     });
 
     it('throws ForbiddenException when sender is not a participant', async () => {
@@ -444,6 +491,7 @@ describe('ConversationsController', () => {
         marvin.id,
         koboMart.code,
         [],
+        new Date(),
       );
 
       await expect(
@@ -451,6 +499,7 @@ describe('ConversationsController', () => {
           workspaceCode: koboMart.code,
           conversationId: conversation.id,
           message: ['Hey buddy'],
+          sentAt: validSentAt,
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -473,6 +522,7 @@ describe('ConversationsController', () => {
         marvin.id,
         koboMart.code,
         [],
+        new Date(),
       );
 
       await expect(
@@ -480,6 +530,7 @@ describe('ConversationsController', () => {
           workspaceCode: '345dv5',
           conversationId: conversation.id,
           message: ['Hey buddy'],
+          sentAt: validSentAt,
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -502,6 +553,7 @@ describe('ConversationsController', () => {
         marvin.id,
         koboMart.code,
         [],
+        new Date(),
       );
 
       await expect(
@@ -509,6 +561,7 @@ describe('ConversationsController', () => {
           workspaceCode: koboMart.code,
           conversationId: conversation.id,
           message: ['Hey buddy'],
+          sentAt: validSentAt,
         }),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -530,8 +583,61 @@ describe('ConversationsController', () => {
           workspaceCode: koboMart.code,
           conversationId: 999999,
           message: ['Hey buddy'],
+          sentAt: validSentAt,
         }),
       ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('sentAt validation', () => {
+    it('rejects SendTextMessageDto when sentAt is omitted', async () => {
+      const dto = plainToInstance(SendTextMessageDto, {
+        workspaceCode: '12er56',
+        conversationId: 1,
+        message: ['Hey buddy'],
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.map((error) => error.property)).toContain('sentAt');
+    });
+
+    it('rejects SendTextMessageDto when sentAt is in the future', async () => {
+      const dto = plainToInstance(SendTextMessageDto, {
+        workspaceCode: '12er56',
+        conversationId: 1,
+        message: ['Hey buddy'],
+        sentAt: futureSentAt.toISOString(),
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.map((error) => error.property)).toContain('sentAt');
+    });
+
+    it('rejects CreateConversationDto when sentAt is omitted', async () => {
+      const dto = plainToInstance(CreateConversationDto, {
+        workspaceCode: '12er56',
+        recipientTeammateId: 1,
+        openingMessage: ['Hey buddy'],
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.map((error) => error.property)).toContain('sentAt');
+    });
+
+    it('rejects CreateConversationDto when sentAt is in the future', async () => {
+      const dto = plainToInstance(CreateConversationDto, {
+        workspaceCode: '12er56',
+        recipientTeammateId: 1,
+        openingMessage: ['Hey buddy'],
+        sentAt: futureSentAt.toISOString(),
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.map((error) => error.property)).toContain('sentAt');
     });
   });
 });

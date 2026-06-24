@@ -120,6 +120,7 @@ export class ConversationsController {
                   teammateIds[0],
                   workspaceCode,
                   dto.openingMessage,
+                  dto.sentAt,
                 );
               },
             );
@@ -174,6 +175,7 @@ export class ConversationsController {
                 dto.conversationId,
                 senderTeammate.id,
                 dto.message,
+                dto.sentAt,
               ),
           );
         } catch (error) {

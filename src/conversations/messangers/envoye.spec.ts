@@ -48,6 +48,7 @@ describe('EnvoyeMessenger', () => {
         teammate.id,
         workspace.code,
         [],
+        new Date(),
       );
 
       expect(conversation.workspaceCode).toBe(workspace.code);
@@ -74,6 +75,7 @@ describe('EnvoyeMessenger', () => {
         marvin.id,
         workspace.code,
         [],
+        new Date(),
       );
 
       const participants = await prismaService.conversationParticipant.findMany(
@@ -85,6 +87,32 @@ describe('EnvoyeMessenger', () => {
       expect(participants).toHaveLength(2);
       expect(participants[0].isOwner).toBe(true);
       expect(participants[0].teammateId).toBe(dan.id);
+    });
+  });
+
+  describe('sendTextMessage', () => {
+    it('persists client-provided sentAt', async () => {
+      const { workspace, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+      const [dan, marvin] = teammates;
+      const sentAt = new Date('2026-06-20T10:00:00.000Z');
+
+      const conversation = await messenger.sendOpeningTextMessage(
+        dan.id,
+        marvin.id,
+        workspace.code,
+        [],
+        new Date(),
+      );
+
+      const message = await messenger.sendTextMessage(
+        conversation.id,
+        dan.id,
+        ['Hello'],
+        sentAt,
+      );
+
+      expect(message.sentAt.toISOString()).toBe(sentAt.toISOString());
     });
   });
 });
