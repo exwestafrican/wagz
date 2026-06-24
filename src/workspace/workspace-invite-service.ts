@@ -4,8 +4,8 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { isEmpty } from '@/common/utils';
 import { InviteStatus } from '@/generated/prisma/enums';
 import { AuthService } from '@/auth/auth.service';
-import { WorkspaceInvite, Teammate } from '@/generated/prisma/client';
-import { ConversationsService } from '@/conversations/conversations.service';
+import { WorkspaceInvite } from '@/generated/prisma/client';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 export interface TeammateDetails {
   firstName: string;
@@ -22,13 +22,12 @@ export interface DecodedResult {
 
 @Injectable()
 export class WorkspaceInviteService {
-  private static readonly MAX_TEAMMATES_FOR_CONVERSATION_INITIALISATION = 4;
   logger = new Logger(WorkspaceInviteService.name);
 
   constructor(
     private readonly prismaService: PrismaService,
     private readonly authService: AuthService,
-    private readonly conversationsService: ConversationsService,
+    private readonly messenger: EnvoyeMessenger,
   ) {}
 
   encodeInvite(
@@ -100,6 +99,7 @@ export class WorkspaceInviteService {
       throw new InvalidInviteCode('Invalid invite code');
     }
 
+    //TODO: use step pattern here
     const teammate = await this.prismaService.$transaction(async (tx) => {
       const teammate = await tx.teammate.create({
         data: {
@@ -120,6 +120,8 @@ export class WorkspaceInviteService {
         },
       });
 
+      //TODO: tell admin that invited user that they have joined workspace
+
       await this.authService.signTeammateUpAndPushMagicLink(
         invite.recipientEmail,
         invite.workspaceCode,
@@ -129,7 +131,13 @@ export class WorkspaceInviteService {
     });
 
     try {
-      await this.setUpOnboardingDirectMessages(teammate);
+      // message self and others
+      await this.messenger.sendOpeningTextMessage(
+        teammate.id,
+        teammate.id,
+        teammate.workspaceCode,
+        [],
+      );
     } catch (error) {
       this.logger.error(
         `Failed to set up onboarding direct messages; workspaceCode=${teammate.workspaceCode} teammateId=${teammate.id}`,
@@ -138,38 +146,6 @@ export class WorkspaceInviteService {
     }
 
     return invite;
-  }
-
-  private async setUpOnboardingDirectMessages(
-    teammate: Teammate,
-  ): Promise<void> {
-    await this.conversationsService.createDirectMessageWithSelf(
-      teammate.workspaceCode,
-      teammate.id,
-    );
-    await this.createOnboardingDirectMessageWithTeammates(teammate);
-  }
-
-  private async createOnboardingDirectMessageWithTeammates(
-    requester: Teammate,
-  ): Promise<void> {
-    const teammates = await this.prismaService.teammate.findMany({
-      where: {
-        workspaceCode: requester.workspaceCode,
-        email: { not: requester.email },
-      },
-      take: 4,
-      orderBy: { id: 'asc' },
-    });
-    const teammateIds = teammates.map((t) => t.id);
-    await this.conversationsService.createDirectMessageWithTeammates(
-      requester.id,
-      teammateIds,
-      requester.workspaceCode,
-    );
-    this.logger.log(
-      `Successfully created conversation for teammates; workspaceCode=${requester.workspaceCode} teammateIds=${teammateIds.join(',')}`,
-    );
   }
 
   private decodedValue(inviteCode: string): string {

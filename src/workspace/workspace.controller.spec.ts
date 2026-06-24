@@ -38,6 +38,7 @@ import DebounceService, { DEBOUNCE_SERVICE } from '@/common/debounce.service';
 import { Time } from '@/common/utils';
 import { ConversationsService } from '@/conversations/conversations.service';
 import { resetDb } from '@/test-helpers/rest-db';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -59,6 +60,7 @@ describe('WorkspaceController', () => {
         PermissionService,
         WorkspaceInviteService,
         ConversationsService,
+        EnvoyeMessenger,
         {
           provide: DEBOUNCE_SERVICE,
           useClass: DebounceService,

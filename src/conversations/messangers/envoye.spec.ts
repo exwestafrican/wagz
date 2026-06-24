@@ -10,12 +10,12 @@ import {
   setupWorkspaceWithMultipleTeammates,
   setupWorkspaceWithTeammate,
 } from '@/test-helpers/workspace-helpers';
-import { ConversationsService } from './conversations.service';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { ConversationStatus } from '@/generated/prisma/client';
 import { resetDb } from '@/test-helpers/rest-db';
 
-describe('ConversationsService', () => {
-  let service: ConversationsService;
+describe('EnvoyeMessenger', () => {
+  let messenger: EnvoyeMessenger;
   let app: INestApplication;
   let prismaService: PrismaService;
   let factory: PersistStrategy;
@@ -27,7 +27,7 @@ describe('ConversationsService', () => {
     }).compile();
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
-    service = new ConversationsService(prismaService);
+    messenger = new EnvoyeMessenger(prismaService);
 
     factory = Factory.createStrategy(prismaService);
   });
@@ -37,15 +37,17 @@ describe('ConversationsService', () => {
     await app.close();
   });
 
-  describe('createSelfConversation', () => {
+  describe('sendOpeningTextMessage', () => {
     it('creates an open conversation with the teammate as sole owner participant', async () => {
       const { workspace, teammate } = await setupWorkspaceWithTeammate(
         factory,
         teammateFactory.build({ email: 'owner@useenvoye.com' }),
       );
-      const conversation = await service.createDirectMessageWithSelf(
-        workspace.code,
+      const conversation = await messenger.sendOpeningTextMessage(
         teammate.id,
+        teammate.id,
+        workspace.code,
+        [],
       );
 
       expect(conversation.workspaceCode).toBe(workspace.code);
@@ -61,18 +63,17 @@ describe('ConversationsService', () => {
       expect(participants[0].isOwner).toBe(true);
       expect(participants[0].workspaceCode).toBe(workspace.code);
     });
-  });
 
-  describe('createDirectMessage', () => {
     it('creates a conversation with two participants', async () => {
       const { workspace, teammates } =
         await setupWorkspaceWithMultipleTeammates(factory, 4);
 
       const [dan, marvin] = teammates.slice(2);
-      const conversation = await service.createDirectMessage(
+      const conversation = await messenger.sendOpeningTextMessage(
         dan.id,
         marvin.id,
         workspace.code,
+        [],
       );
 
       const participants = await prismaService.conversationParticipant.findMany(

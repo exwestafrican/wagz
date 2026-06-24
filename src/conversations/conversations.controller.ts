@@ -29,12 +29,11 @@ import NotFoundInDb from '@/common/exceptions/not-found';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
 import { notInDbError } from '@/common/error-type';
-import { isSame } from '@/common/utils';
-import { Conversation } from '@/generated/prisma/client';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
 import { ListConversationsQueryDto } from '@/conversations/dto/list-conversations-query.dto';
 import { ConversationMetadataResponseDto } from '@/conversations/dto/conversation-metadata-response.dto';
+import { Conversation } from '@/generated/prisma/client';
 
 @Controller('conversations')
 export class ConversationsController {
@@ -110,36 +109,23 @@ export class ConversationsController {
       PERMISSIONS.MESSAGE_TEAMMATES,
       async (senderTeammate) => {
         try {
-          const sender = senderTeammate.id;
-          const recipient = dto.recipientTeammateId;
-          let conversation: Conversation;
-
-          if (isSame(sender, recipient)) {
-            conversation =
-              await this.conversationsService.createDirectMessageWithSelf(
-                dto.workspaceCode,
-                senderTeammate.id,
-              );
-          } else {
-            conversation =
-              await this.teammatesService.runIfTeammatesInSameWorkspace(
-                senderTeammate.id,
-                [dto.recipientTeammateId],
-                (senderId, [recipientId], workspaceCode) =>
-                  this.conversationsService.createDirectMessage(
-                    senderId,
-                    recipientId,
-                    workspaceCode,
-                  ),
-              );
-          }
-          await this.messanger.sendTextMessage(
-            conversation.id,
-            senderTeammate.id,
-            dto.openingMessage,
-          );
+          const conversation: Conversation =
+            await this.teammatesService.runIfTeammatesInSameWorkspace(
+              senderTeammate.id,
+              [dto.recipientTeammateId],
+              async (anchorTeammateId, teammateIds, workspaceCode) => {
+                // send text or open message
+                return await this.messanger.sendOpeningTextMessage(
+                  anchorTeammateId,
+                  teammateIds[0],
+                  workspaceCode,
+                  dto.openingMessage,
+                );
+              },
+            );
           return toConversationResponse(conversation);
         } catch (error) {
+          this.logger.error(`Error for workspace=${dto.workspaceCode}`);
           if (error instanceof TeammatesNotInSameWorkspace) {
             throw new BadRequestException();
           }

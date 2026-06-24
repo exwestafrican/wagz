@@ -30,6 +30,7 @@ describe('ConversationsController', () => {
   let factory: PersistStrategy;
   let controller: ConversationsController;
   let conversationsService: ConversationsService;
+  let envoyeMessenger: EnvoyeMessenger;
 
   beforeEach(async () => {
     requestUser = RequestUser.of('laura@useEnvoye.com');
@@ -47,7 +48,7 @@ describe('ConversationsController', () => {
     conversationsService = new ConversationsService(prismaService);
     const teammatesService = new TeammatesService(prismaService);
     const permissionService = new PermissionService(prismaService, roleService);
-    const envoyeMessenger = new EnvoyeMessenger(prismaService);
+    envoyeMessenger = new EnvoyeMessenger(prismaService);
 
     controller = new ConversationsController(
       conversationsService,
@@ -225,10 +226,11 @@ describe('ConversationsController', () => {
       });
       const marvin = teammates[1];
 
-      const conversation = await conversationsService.createDirectMessage(
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
         marvin.id,
         koboMart.code,
+        [],
       );
 
       const conversations = await controller.listConversations(requestUser, {
@@ -255,11 +257,12 @@ describe('ConversationsController', () => {
         },
       });
 
-      const conversation =
-        await conversationsService.createDirectMessageWithSelf(
-          koboMart.code,
-          dan.id,
-        );
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
+        dan.id,
+        dan.id,
+        koboMart.code,
+        [],
+      );
 
       const conversations = await controller.listConversations(requestUser, {
         workspaceCode: koboMart.code,
@@ -285,10 +288,11 @@ describe('ConversationsController', () => {
       });
       const marvin = teammates[1];
 
-      await conversationsService.createDirectMessage(
+      await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
         marvin.id,
         koboMart.code,
+        [],
       );
 
       const zuriBakery = await factory.persist('workspace', () =>
@@ -305,10 +309,11 @@ describe('ConversationsController', () => {
         teammateFactory.build({ workspaceCode: zuriBakery.code }),
       );
 
-      await conversationsService.createDirectMessage(
+      await envoyeMessenger.sendOpeningTextMessage(
         danInZuriBakery.id,
         marvinInZuriBakery.id,
         zuriBakery.code,
+        [],
       );
 
       const koboMartConversations = await controller.listConversations(
@@ -394,10 +399,11 @@ describe('ConversationsController', () => {
       });
       const marvin = teammates[1];
 
-      const conversation = await conversationsService.createDirectMessage(
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
         marvin.id,
         koboMart.code,
+        [],
       );
 
       await controller.sendTextMessage(requestUser, {
@@ -433,10 +439,11 @@ describe('ConversationsController', () => {
       const dan = teammates[1];
       const marvin = teammates[2];
 
-      const conversation = await conversationsService.createDirectMessage(
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
         marvin.id,
         koboMart.code,
+        [],
       );
 
       await expect(
@@ -461,10 +468,11 @@ describe('ConversationsController', () => {
       });
       const marvin = teammates[1];
 
-      const conversation = await conversationsService.createDirectMessage(
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
         marvin.id,
         koboMart.code,
+        [],
       );
 
       await expect(
@@ -489,10 +497,11 @@ describe('ConversationsController', () => {
       });
       const marvin = teammates[1];
 
-      const conversation = await conversationsService.createDirectMessage(
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
         marvin.id,
         koboMart.code,
+        [],
       );
 
       await expect(

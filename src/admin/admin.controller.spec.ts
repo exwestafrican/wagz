@@ -31,6 +31,7 @@ import { EMAIL_CLIENT } from '@/messaging/email/email-client';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
 import { resetDb } from '@/test-helpers/rest-db';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 describe('AdminController', () => {
   let requestUser: RequestUser;
@@ -50,6 +51,7 @@ describe('AdminController', () => {
         LinkService,
         WorkspaceInviteService,
         ConversationsService,
+        EnvoyeMessenger,
         { provide: EMAIL_CLIENT, useValue: { send: jest.fn() } },
         { provide: AuthService, useValue: mockAuthService },
       ],

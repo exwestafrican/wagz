@@ -12,7 +12,6 @@ import {
   type MockSupabaseClient,
 } from '@/auth/test-utils/supabase.mock';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
-import FeatureFlagManager from '@/feature-flag/manager';
 import { ROLES } from '@/permission/types';
 import workspaceFactory from '@/factories/workspace.factory';
 import teammateFactory from '@/factories/teammate.factory';
@@ -22,7 +21,6 @@ import { faker } from '@faker-js/faker';
 import { LinkService } from '@/common/link-service';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
 import { RoleService } from '@/permission/role/role.service';
-import { ConversationsService } from '@/conversations/conversations.service';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { AuthService } from '@/auth/auth.service';
 import PasswordGenerator from '@/auth/services/password.generator';
@@ -30,12 +28,12 @@ import { TeammatesService } from '@/teammates/teammates.service';
 import { TestEmailClient } from '@/messaging/email/test-email-client';
 import { PermissionService } from '@/permission/permission.service';
 import { resetDb } from '@/test-helpers/rest-db';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 describe('SetupAdministrativeWorkspaceCommand', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let command: SetupAdministrativeWorkspaceCommand;
-  let featureFlagManager: FeatureFlagManager;
   let mockSupabaseClient: MockSupabaseClient;
 
   beforeEach(async () => {
@@ -49,11 +47,10 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
 
-    featureFlagManager = new FeatureFlagManager(prismaService);
     const teammateService = new TeammatesService(prismaService);
     const roleService = new RoleService();
     const permissionService = new PermissionService(prismaService, roleService);
-    const conversationsService = new ConversationsService(prismaService);
+    const messenger = new EnvoyeMessenger(prismaService);
     const authService = new AuthService(
       mockSupabaseClient as unknown as SupabaseClient,
       new PasswordGenerator(),
@@ -68,20 +65,15 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
       new TestEmailClient(),
       jest.fn() as unknown as LinkService,
       new RoleService(),
-      new WorkspaceInviteService(
-        prismaService,
-        authService,
-        conversationsService,
-      ),
-      conversationsService,
+      new WorkspaceInviteService(prismaService, authService, messenger),
+      messenger,
     );
 
     command = new SetupAdministrativeWorkspaceCommand(
       prismaService,
       authService,
       workspaceManager,
-      featureFlagManager,
-      conversationsService,
+      messenger,
     );
   });
 

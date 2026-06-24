@@ -30,7 +30,7 @@ import { ConcurrentLimit } from '@/common/concurrent-runner';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { LinkService } from '@/common/link-service';
 import { CreateSelfConversationStep } from '@/workspace/steps/create-self-conversation';
-import { ConversationsService } from '@/conversations/conversations.service';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 @Injectable()
 export class WorkspaceManager {
@@ -44,7 +44,7 @@ export class WorkspaceManager {
     private readonly linkService: LinkService,
     private readonly roleService: RoleService,
     private readonly workspaceInviteService: WorkspaceInviteService,
-    private readonly conversationsService: ConversationsService,
+    private readonly messenger: EnvoyeMessenger,
   ) {}
 
   async runPostWorkspaceCreationSteps(
@@ -98,10 +98,7 @@ export class WorkspaceManager {
       preverificationDetails,
       [
         new CreateWorkspaceAdminStep(this.prismaService),
-        new CreateSelfConversationStep(
-          this.conversationsService,
-          this.prismaService,
-        ),
+        new CreateSelfConversationStep(this.messenger, this.prismaService),
       ],
     );
 

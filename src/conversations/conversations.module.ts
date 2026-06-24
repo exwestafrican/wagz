@@ -9,6 +9,6 @@ import EnvoyeMessenger from '@/conversations/messangers/envoye';
   imports: [PermissionModule, TeammatesModule],
   providers: [ConversationsService, EnvoyeMessenger],
   controllers: [ConversationsController],
-  exports: [ConversationsService],
+  exports: [ConversationsService, EnvoyeMessenger],
 })
 export class ConversationsModule {}

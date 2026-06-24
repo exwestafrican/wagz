@@ -1,11 +1,62 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import Messenger from '@/conversations/messangers/messenger';
-import { Message } from '@/generated/prisma/client';
+import { Conversation, Message } from '@/generated/prisma/client';
+import { isEmpty, isSame } from '@/common/utils';
 
 @Injectable()
 export default class EnvoyeMessenger implements Messenger {
   constructor(private readonly prisma: PrismaService) {}
+
+  async sendOpeningTextMessage(
+    senderId: number,
+    recipientTeammateId: number,
+    workspaceCode: string,
+    openingMessage: string[],
+  ): Promise<Conversation> {
+    const conversation = await this.prisma.conversation.create({
+      data: {
+        workspaceCode: workspaceCode,
+      },
+    });
+
+    if (isSame(senderId, recipientTeammateId)) {
+      await this.prisma.conversationParticipant.create({
+        data: {
+          workspaceCode,
+          conversationId: conversation.id,
+          teammateId: senderId,
+          isOwner: true,
+        },
+      });
+    } else {
+      await this.prisma.conversationParticipant.createMany({
+        data: [
+          {
+            workspaceCode: workspaceCode,
+            conversationId: conversation.id,
+            teammateId: senderId,
+            isOwner: true,
+          },
+          {
+            workspaceCode: workspaceCode,
+            conversationId: conversation.id,
+            teammateId: recipientTeammateId,
+          },
+        ],
+      });
+    }
+
+    if (!isEmpty(openingMessage)) {
+      await this.sendTextMessageWithConversation(
+        conversation,
+        senderId,
+        openingMessage,
+      );
+    }
+
+    return conversation;
+  }
 
   async sendTextMessage(
     conversationId: number,
@@ -17,7 +68,18 @@ export default class EnvoyeMessenger implements Messenger {
         id: conversationId,
       },
     });
+    return await this.sendTextMessageWithConversation(
+      conversation,
+      senderId,
+      content,
+    );
+  }
 
+  private async sendTextMessageWithConversation(
+    conversation: Conversation,
+    senderId: number,
+    content: string[],
+  ) {
     const message = content.join('\n');
     return this.prisma.message.create({
       data: {
