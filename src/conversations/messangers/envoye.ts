@@ -19,7 +19,6 @@ export default class EnvoyeMessenger implements Messenger {
   ): Promise<DomainMessage[]> {
     // maximum permissible limit here is 100 please do not exceed.
     //TODO: add a way of validating limit, or use min(100, numberUserProvided)
-    //TODO content is a string.
     const messages = await this.prisma.message.findMany({
       take: limit,
       orderBy: {
