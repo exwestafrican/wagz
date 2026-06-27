@@ -1,8 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { MessageType } from '@/generated/prisma/client';
 import { Message } from '@/conversations/domain/message';
-import MaxCharacterLimit from '@/common/validators/max-character-limit';
-import { MAX_ENVOYE_MESSAGE_CHARACTERS } from '@/conversations/const';
 
 export class ChatHistoryDto {
   @ApiProperty({ description: 'Message Id', example: 1 })
