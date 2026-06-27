@@ -10,6 +10,11 @@ export class ChatHistoryQueryDto {
   @ApiProperty({ description: 'Conversation ID', example: 123 })
   conversationId: number;
 
-  @ApiProperty({ description: 'message id to load from', example: 10 })
+  @ApiProperty({
+    description:
+      'Optional cursor (sentAt in milliseconds). Pass the sentAt of the oldest message in the current page to load older messages.',
+    example: 1718877600000,
+    required: false,
+  })
   lastMessageSentAt?: number;
 }

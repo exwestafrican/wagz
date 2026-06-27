@@ -21,9 +21,7 @@ export class ChatHistoryDto {
     description: 'message user sent',
     example: ['Hey buddy', "what's up?"],
     type: [String],
-    minItems: 1,
   })
-  @MaxCharacterLimit(MAX_ENVOYE_MESSAGE_CHARACTERS)
   content: string[];
 
   @ApiProperty({ description: 'text user sent', example: 1 })

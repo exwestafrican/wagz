@@ -15,7 +15,7 @@ export default class EnvoyeMessenger implements Messenger {
   async chatHistory(
     conversationId: number,
     limit: number,
-    lastMsgSentAtTimestamp?: number,
+    lastMessageSentAt?: number,
   ): Promise<DomainMessage[]> {
     // maximum permissible limit here is 100 please do not exceed.
     //TODO: add a way of validating limit, or use min(100, numberUserProvided)
@@ -26,9 +26,9 @@ export default class EnvoyeMessenger implements Messenger {
       },
       where: {
         conversationId,
-        ...(lastMsgSentAtTimestamp && {
+        ...(lastMessageSentAt != null && {
           sentAt: {
-            lt: new Date(lastMsgSentAtTimestamp).toISOString(),
+            lt: new Date(lastMessageSentAt).toISOString(),
           },
         }),
       },

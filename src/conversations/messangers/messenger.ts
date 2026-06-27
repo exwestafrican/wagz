@@ -6,12 +6,12 @@ export default interface Messenger {
     conversationId: number,
     senderId: number,
     content: string[],
-    lastMsgSentAtTimestamp: Date,
+    sentAt: Date,
   ): Promise<Message>;
 
   chatHistory(
     conversationId: number,
     limit: number,
-    lastMessageId?: number,
+    lastMessageSentAt?: number,
   ): Promise<DomainMessage[]>;
 }
