@@ -195,28 +195,6 @@ export class ConversationsController {
       'To load older messages, pass lastMessageSentAt as the sentAt (milliseconds) of the first message in the current page. ' +
       'When fewer than 20 messages are returned, there is no more history.',
   })
-  @ApiQuery({
-    name: 'workspaceCode',
-    required: true,
-    type: String,
-    description: 'Workspace code',
-    example: '12er56',
-  })
-  @ApiQuery({
-    name: 'conversationId',
-    required: true,
-    type: Number,
-    description: 'Conversation ID',
-    example: 123,
-  })
-  @ApiQuery({
-    name: 'lastMessageSentAt',
-    required: false,
-    type: Number,
-    description:
-      'Cursor (sentAt in ms). Oldest message sentAt from the current page, to fetch older messages.',
-    example: 1718877600000,
-  })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Messages in chronological order within the page',

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class ChatHistoryQueryDto {
   @ApiProperty({ description: 'Workspace code', example: '12er56' })
@@ -8,6 +8,7 @@ export class ChatHistoryQueryDto {
   workspaceCode: string;
 
   @ApiProperty({ description: 'Conversation ID', example: 123 })
+  @IsNumber()
   conversationId: number;
 
   @ApiProperty({
@@ -16,5 +17,7 @@ export class ChatHistoryQueryDto {
     example: 1718877600000,
     required: false,
   })
+  @IsOptional()
+  @IsNumber()
   lastMessageSentAt?: number;
 }
