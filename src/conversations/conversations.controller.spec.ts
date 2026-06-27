@@ -475,7 +475,7 @@ describe('ConversationsController', () => {
       );
     });
 
-    it('throws ForbiddenException when sender is not a participant', async () => {
+    it('throws Not found when sender is not a participant', async () => {
       const { workspace: koboMart, teammates } =
         await setupWorkspaceWithMultipleTeammates(factory, 3);
 
@@ -505,7 +505,7 @@ describe('ConversationsController', () => {
           message: ['Hey buddy'],
           sentAt: validSentAt,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(NotFoundException);
     });
 
     it('throws ForbiddenException when sender is not an active member of the workspace', async () => {
@@ -570,7 +570,7 @@ describe('ConversationsController', () => {
       ).rejects.toThrow(ForbiddenException);
     });
 
-    it('throws ForbiddenException when conversation id does not exist', async () => {
+    it('throws Not Found when conversation id does not exist', async () => {
       const { workspace: koboMart, teammates } =
         await setupWorkspaceWithMultipleTeammates(factory, 1);
 
@@ -589,7 +589,7 @@ describe('ConversationsController', () => {
           message: ['Hey buddy'],
           sentAt: validSentAt,
         }),
-      ).rejects.toThrow(ForbiddenException);
+      ).rejects.toThrow(NotFoundException);
     });
   });
 

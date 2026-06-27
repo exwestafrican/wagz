@@ -39,7 +39,7 @@ export class ConversationsService {
       });
     } catch (error) {
       if (notInDbError(error)) {
-        throw new ForbiddenException();
+        throw new NotFoundException();
       }
       throw error;
     }
