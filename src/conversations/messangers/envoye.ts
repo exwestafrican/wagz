@@ -13,6 +13,7 @@ export default class EnvoyeMessenger implements Messenger {
     recipientTeammateId: number,
     workspaceCode: string,
     openingMessage: string[],
+    sentAt: Date,
   ): Promise<Conversation> {
     const conversation = await this.prisma.conversation.create({
       data: {
@@ -52,6 +53,7 @@ export default class EnvoyeMessenger implements Messenger {
         conversation,
         senderId,
         openingMessage,
+        sentAt,
       );
     }
 
@@ -62,6 +64,7 @@ export default class EnvoyeMessenger implements Messenger {
     conversationId: number,
     senderId: number,
     content: string[],
+    sentAt: Date,
   ): Promise<Message> {
     const conversation = await this.prisma.conversation.findUniqueOrThrow({
       where: {
@@ -72,6 +75,7 @@ export default class EnvoyeMessenger implements Messenger {
       conversation,
       senderId,
       content,
+      sentAt,
     );
   }
 
@@ -79,6 +83,7 @@ export default class EnvoyeMessenger implements Messenger {
     conversation: Conversation,
     senderId: number,
     content: string[],
+    sentAt: Date,
   ) {
     const message = content.join('\n');
     return this.prisma.message.create({
@@ -87,6 +92,7 @@ export default class EnvoyeMessenger implements Messenger {
         conversationId: conversation.id,
         authorId: senderId,
         content: message,
+        sentAt,
       },
     });
   }

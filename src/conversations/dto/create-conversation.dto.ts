@@ -1,10 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
 import {
   ArrayNotEmpty,
   IsArray,
+  IsDate,
   IsInt,
   IsNotEmpty,
   IsString,
+  MaxDate,
 } from 'class-validator';
 import MaxCharacterLimit from '@/common/validators/max-character-limit';
 import { MAX_ENVOYE_MESSAGE_CHARACTERS } from '@/conversations/const';
@@ -33,4 +36,15 @@ export class CreateConversationDto {
   @IsNotEmpty({ each: true })
   @MaxCharacterLimit(MAX_ENVOYE_MESSAGE_CHARACTERS)
   openingMessage: string[];
+
+  @ApiProperty({
+    type: String,
+    format: 'date-time',
+    example: '2026-06-24T12:00:00.000Z',
+  })
+  @Type(() => Date)
+  @IsDate()
+  @IsNotEmpty()
+  @MaxDate(() => new Date(), { message: 'sentAt cannot be in the future' })
+  sentAt: Date;
 }

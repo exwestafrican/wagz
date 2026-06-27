@@ -90,6 +90,7 @@ describe('CreateSelfConversationStep', () => {
       tumise.id,
       workspace.code,
       [],
+      new Date(),
     );
 
     const workspaceDetails = await miniWorkspaceWithAdmin();

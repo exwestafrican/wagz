@@ -5,5 +5,6 @@ export default interface Messenger {
     conversationId: number,
     senderId: number,
     content: string[],
+    sentAt: Date,
   ): Promise<Message>;
 }
