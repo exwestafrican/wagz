@@ -28,12 +28,16 @@ import { TeammatesNotInSameWorkspace } from '@/common/exceptions/teammates-not-i
 import NotFoundInDb from '@/common/exceptions/not-found';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
-import { notInDbError } from '@/common/error-type';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
 import { ListConversationsQueryDto } from '@/conversations/dto/list-conversations-query.dto';
 import { ConversationMetadataResponseDto } from '@/conversations/dto/conversation-metadata-response.dto';
 import { Conversation } from '@/generated/prisma/client';
+import { ChatHistoryQueryDto } from '@/conversations/dto/chat-history-query.dto';
+import {
+  ChatHistoryDto,
+  toChatHistoryDto,
+} from '@/conversations/dto/chat-history.dto';
 
 @Controller('conversations')
 export class ConversationsController {
@@ -43,7 +47,7 @@ export class ConversationsController {
     private readonly conversationsService: ConversationsService,
     private readonly teammatesService: TeammatesService,
     private readonly permissionService: PermissionService,
-    private readonly messanger: EnvoyeMessenger,
+    private readonly messenger: EnvoyeMessenger,
   ) {}
 
   @Get()
@@ -76,7 +80,7 @@ export class ConversationsController {
       query.workspaceCode,
       PERMISSIONS.MESSAGE_TEAMMATES,
       (teammate) =>
-        this.messanger.conversations(query.workspaceCode, teammate.id),
+        this.messenger.conversations(query.workspaceCode, teammate.id),
     );
   }
 
@@ -115,7 +119,7 @@ export class ConversationsController {
               [dto.recipientTeammateId],
               async (anchorTeammateId, teammateIds, workspaceCode) => {
                 // send text or open message
-                return await this.messanger.sendOpeningTextMessage(
+                return await this.messenger.sendOpeningTextMessage(
                   anchorTeammateId,
                   teammateIds[0],
                   workspaceCode,
@@ -166,25 +170,66 @@ export class ConversationsController {
       dto.workspaceCode,
       PERMISSIONS.MESSAGE_TEAMMATES,
       async (senderTeammate) => {
-        try {
-          await this.conversationsService.runIfConversationParticipant(
-            dto.conversationId,
-            senderTeammate.id,
-            () =>
-              this.messanger.sendTextMessage(
-                dto.conversationId,
-                senderTeammate.id,
-                dto.message,
-                dto.sentAt,
-              ),
-          );
-        } catch (error) {
-          if (notInDbError(error)) {
-            throw new NotFoundException();
-          }
-          throw error;
-        }
+        await this.conversationsService.runIfConversationParticipant(
+          dto.conversationId,
+          senderTeammate.id,
+          () =>
+            this.messenger.sendTextMessage(
+              dto.conversationId,
+              senderTeammate.id,
+              dto.message,
+              dto.sentAt,
+            ),
+        );
       },
     );
+  }
+
+  @Get('chat-history')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Fetch paginated chat history for a conversation',
+    description:
+      'Returns up to 20 messages per request, ordered oldest to newest within each page. ' +
+      'Omit lastMessageSentAt on the first request to load the most recent messages. ' +
+      'To load older messages, pass lastMessageSentAt as the sentAt (milliseconds) of the first message in the current page. ' +
+      'When fewer than 20 messages are returned, there is no more history.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Messages in chronological order within the page',
+    type: ChatHistoryDto,
+    isArray: true,
+  })
+  @ApiBadRequestResponse()
+  @ApiForbiddenResponse()
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Conversation not found or requester is not a participant',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async chatHistory(
+    @User() requestUser: RequestUser,
+    @Query() query: ChatHistoryQueryDto,
+  ): Promise<ChatHistoryDto[]> {
+    const history =
+      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+        requestUser,
+        query.workspaceCode,
+        PERMISSIONS.MESSAGE_TEAMMATES,
+        async (requestTeammate) => {
+          return this.conversationsService.runIfConversationParticipant(
+            query.conversationId,
+            requestTeammate.id,
+            async () =>
+              await this.messenger.chatHistory(
+                query.conversationId,
+                20,
+                query.lastMessageSentAt,
+              ),
+          );
+        },
+      );
+    return history.map((msg) => toChatHistoryDto(msg));
   }
 }

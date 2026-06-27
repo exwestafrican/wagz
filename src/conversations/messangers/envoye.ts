@@ -3,10 +3,38 @@ import { PrismaService } from '@/prisma/prisma.service';
 import Messenger from '@/conversations/messangers/messenger';
 import { Conversation, Message } from '@/generated/prisma/client';
 import { isEmpty, isSame } from '@/common/utils';
+import {
+  type Message as DomainMessage,
+  toDomainMessage,
+} from '@/conversations/domain/message';
 
 @Injectable()
 export default class EnvoyeMessenger implements Messenger {
   constructor(private readonly prisma: PrismaService) {}
+
+  async chatHistory(
+    conversationId: number,
+    limit: number,
+    lastMessageSentAt?: number,
+  ): Promise<DomainMessage[]> {
+    // maximum permissible limit here is 100 please do not exceed.
+    //TODO: add a way of validating limit, or use min(100, numberUserProvided)
+    const messages = await this.prisma.message.findMany({
+      take: limit,
+      orderBy: {
+        sentAt: 'desc',
+      },
+      where: {
+        conversationId,
+        ...(lastMessageSentAt != null && {
+          sentAt: {
+            lt: new Date(lastMessageSentAt).toISOString(),
+          },
+        }),
+      },
+    });
+    return messages.map((message) => toDomainMessage(message)).reverse();
+  }
 
   async sendOpeningTextMessage(
     senderId: number,
