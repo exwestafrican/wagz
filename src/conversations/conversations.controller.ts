@@ -33,7 +33,7 @@ import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
 import { ListConversationsQueryDto } from '@/conversations/dto/list-conversations-query.dto';
 import { ConversationMetadataResponseDto } from '@/conversations/dto/conversation-metadata-response.dto';
 import { Conversation } from '@/generated/prisma/client';
-import { ChatHistoryRequestDto } from '@/conversations/dto/chat-history-request.dto';
+import { ChatHistoryQueryDto } from '@/conversations/dto/chat-history-query.dto';
 import { toChatHistoryDto } from '@/conversations/dto/chat-history.dto';
 
 @Controller('conversations')
@@ -197,22 +197,22 @@ export class ConversationsController {
   @UseGuards(SupabaseAuthGuard)
   async chatHistory(
     @User() requestUser: RequestUser,
-    @Body() dto: ChatHistoryRequestDto,
+    @Query() query: ChatHistoryQueryDto,
   ) {
     const history =
       await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
         requestUser,
-        dto.workspaceCode,
+        query.workspaceCode,
         PERMISSIONS.MESSAGE_TEAMMATES,
         async (requestTeammate) => {
           return this.conversationsService.runIfConversationParticipant(
-            dto.conversationId,
+            query.conversationId,
             requestTeammate.id,
             async () =>
               await this.messenger.chatHistory(
-                dto.conversationId,
+                query.conversationId,
                 20,
-                dto.lastMessageSentAt,
+                query.lastMessageSentAt,
               ),
           );
         },

@@ -4,7 +4,7 @@ import { Message } from '@/conversations/domain/message';
 import MaxCharacterLimit from '@/common/validators/max-character-limit';
 import { MAX_ENVOYE_MESSAGE_CHARACTERS } from '@/conversations/const';
 
-export class ChatHistoryDtO {
+export class ChatHistoryDto {
   @ApiProperty({ description: 'Message Id', example: 1 })
   id: number;
 
@@ -36,7 +36,7 @@ export class ChatHistoryDtO {
   type: string;
 }
 
-export function toChatHistoryDto(message: Message): ChatHistoryDtO {
+export function toChatHistoryDto(message: Message): ChatHistoryDto {
   const baseConfig = {
     id: message.id,
     authorId: message.authorId,

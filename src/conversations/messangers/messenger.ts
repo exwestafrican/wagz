@@ -6,7 +6,7 @@ export default interface Messenger {
     conversationId: number,
     senderId: number,
     content: string[],
-    sentAt: Date,
+    lastMsgSentAtTimestamp: Date,
   ): Promise<Message>;
 
   chatHistory(

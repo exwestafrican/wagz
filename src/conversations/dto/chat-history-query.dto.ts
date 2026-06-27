@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsNotEmpty, IsString } from 'class-validator';
 
-export class ChatHistoryRequestDto {
+export class ChatHistoryQueryDto {
   @ApiProperty({ description: 'Workspace code', example: '12er56' })
   @IsString()
   @IsNotEmpty()
