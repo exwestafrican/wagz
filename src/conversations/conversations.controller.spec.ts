@@ -249,7 +249,9 @@ describe('ConversationsController', () => {
       });
 
       expect(openingMessage?.content).toBe('Hey there');
-      expect(openingMessage?.sentAt.toISOString()).toBe(validSentAt.toISOString());
+      expect(openingMessage?.sentAt.toISOString()).toBe(
+        validSentAt.toISOString(),
+      );
     });
   });
 
@@ -468,7 +470,9 @@ describe('ConversationsController', () => {
 
       expect(createdMessage).toBeTruthy();
       expect(createdMessage?.content).toBe('Hey buddy');
-      expect(createdMessage?.sentAt.toISOString()).toBe(validSentAt.toISOString());
+      expect(createdMessage?.sentAt.toISOString()).toBe(
+        validSentAt.toISOString(),
+      );
     });
 
     it('throws ForbiddenException when sender is not a participant', async () => {
