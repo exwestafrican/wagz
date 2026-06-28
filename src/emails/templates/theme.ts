@@ -1,18 +1,6 @@
 import plugin from 'tailwindcss/plugin';
 import { TailwindConfig } from '@react-email/components';
 
-// const colors = {
-//   canvas: '#FBFCFB',
-//   bg: '#FFFFFF',
-//   'bg-2': '#FBFCFB',
-//   fg: '#103B05',
-//   'fg-2': '#194A07',
-//   'fg-3': '#869C7F',
-//   'fg-inverted': '#FBFFF9',
-//   stroke: '#D8E1D4',
-//   brand: '#103B05',
-// } as const;
-
 const colors = {
   // Backgrounds
   canvas: '#FAFAFA',
