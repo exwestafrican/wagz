@@ -38,6 +38,7 @@ import {
   ChatHistoryDto,
   toChatHistoryDto,
 } from '@/conversations/dto/chat-history.dto';
+import { isSame } from '@/common/utils';
 
 @Controller('conversations')
 export class ConversationsController {
@@ -128,6 +129,15 @@ export class ConversationsController {
                 );
               },
             );
+          if (!isSame(senderTeammate.id, dto.recipientTeammateId)) {
+            await this.conversationsService.notifyRecipients(
+              dto.workspaceCode,
+              conversation.id,
+              senderTeammate,
+              dto.openingMessage[0],
+            );
+          }
+
           return toConversationResponse(conversation);
         } catch (error) {
           this.logger.error(`Error for workspace=${dto.workspaceCode}`);
@@ -173,13 +183,20 @@ export class ConversationsController {
         await this.conversationsService.runIfConversationParticipant(
           dto.conversationId,
           senderTeammate.id,
-          () =>
-            this.messenger.sendTextMessage(
+          async () => {
+            await this.messenger.sendTextMessage(
               dto.conversationId,
               senderTeammate.id,
               dto.message,
               dto.sentAt,
-            ),
+            );
+            await this.conversationsService.notifyRecipients(
+              dto.workspaceCode,
+              dto.conversationId,
+              senderTeammate,
+              dto.message[0],
+            );
+          },
         );
       },
     );
