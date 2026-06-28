@@ -52,13 +52,13 @@ const fontScale = {
 
 export const collageTailwindConfig: TailwindConfig = {
   plugins: [
-    plugin(({ addUtilities, addVariant }) => {
-      addVariant('mobile', '@media (max-width: 600px)');
+    plugin((pluginApi) => {
+      pluginApi.addVariant('mobile', '@media (max-width: 600px)');
       const utilities: Record<string, Record<string, string>> = {};
       for (const [step, token] of Object.entries(fontScale)) {
         utilities[`.font-${step}`] = token;
       }
-      addUtilities(utilities);
+      pluginApi.addUtilities(utilities);
     }),
   ],
   theme: {
