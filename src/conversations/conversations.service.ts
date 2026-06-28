@@ -73,7 +73,7 @@ export class ConversationsService {
       const emailHtml = await render(
         React.createElement(NewMessageNotificationTemplate, {
           workspaceName: workspaceName,
-          senderName: fullName(sender),
+          senderName: sender.firstName,
           message: message,
           url: conversationUrl,
           quote: quotes[randomNumber],
