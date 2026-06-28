@@ -26,6 +26,9 @@ import { resetDb } from '@/test-helpers/rest-db';
 import { ROLES } from '@/permission/types';
 import { CreateConversationDto } from '@/conversations/dto/create-conversation.dto';
 import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
+import { TestEmailClient } from '@/messaging/email/test-email-client';
+import { LinkService } from '@/common/link-service';
+import { mockConfigService } from '@/test-helpers/mocks';
 
 const validSentAt = new Date('2026-06-20T10:00:00.000Z');
 const futureSentAt = new Date(Date.now() + 60_000);
@@ -52,7 +55,12 @@ describe('ConversationsController', () => {
     factory = Factory.createStrategy(prismaService);
 
     const roleService = new RoleService();
-    conversationsService = new ConversationsService(prismaService);
+    const linkService = new LinkService(mockConfigService);
+    conversationsService = new ConversationsService(
+      prismaService,
+      new TestEmailClient(),
+      linkService,
+    );
     const teammatesService = new TeammatesService(prismaService);
     const permissionService = new PermissionService(prismaService, roleService);
     envoyeMessenger = new EnvoyeMessenger(prismaService);

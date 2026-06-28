@@ -21,6 +21,10 @@ export class LinkService {
     return `${this.siteUrl}/admin`;
   }
 
+  conversationUrl(workspaceCode: string, conversationId: number): string {
+    return `${this.siteUrl}/workspace/conversation?code=${workspaceCode}&conversationId=${conversationId}`;
+  }
+
   private get siteUrl(): string {
     return this.configService.get<string>('SITE_URL', '');
   }
