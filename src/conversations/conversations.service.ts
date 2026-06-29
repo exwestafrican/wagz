@@ -103,7 +103,7 @@ export class ConversationsService {
         code: workspaceCode,
       },
     });
-    
+
     const workspaceName = cleanWorkspaceName(workspace);
     const workspaceUrl = this.linkService.workspaceUrl(workspaceCode);
 
@@ -130,7 +130,7 @@ export class ConversationsService {
     sender: Teammate,
     recepient: Teammate,
     subject: string,
-    emailHtml: any //need to get correct ruturn type from render() function
+    emailHtml: string
   ) {
     await this.emailClient.send({
       from: {
