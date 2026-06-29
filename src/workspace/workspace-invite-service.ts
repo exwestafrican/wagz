@@ -6,6 +6,7 @@ import { InviteStatus } from '@/generated/prisma/enums';
 import { AuthService } from '@/auth/auth.service';
 import { WorkspaceInvite } from '@/generated/prisma/client';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 export interface TeammateDetails {
   firstName: string;
@@ -28,6 +29,7 @@ export class WorkspaceInviteService {
     private readonly prismaService: PrismaService,
     private readonly authService: AuthService,
     private readonly messenger: EnvoyeMessenger,
+    private readonly conversationsService: ConversationsService
   ) {}
 
   encodeInvite(
@@ -119,9 +121,7 @@ export class WorkspaceInviteService {
           acceptedAt: new Date(),
         },
       });
-
-      //TODO: tell admin that invited user that they have joined workspace
-
+      
       await this.authService.signTeammateUpAndPushMagicLink(
         invite.recipientEmail,
         invite.workspaceCode,
@@ -131,12 +131,30 @@ export class WorkspaceInviteService {
     });
 
     try {
-      // message self and others
+      const inviter = await this.prismaService.teammate.findFirstOrThrow({
+        where: {
+          id: invite.senderId,
+        },
+      });
+      await this.conversationsService.notifyInviteAccepted(
+        workspaceCode,
+        teammate,
+        inviter,
+      );
+      // message self
       await this.messenger.sendOpeningTextMessage(
         teammate.id,
         teammate.id,
         teammate.workspaceCode,
         [],
+        new Date(),
+      );
+      //Admin opening message to new teammate
+      await this.messenger.sendOpeningTextMessage(
+        inviter.id,
+        teammate.id,
+        teammate.workspaceCode,
+        [`Hi ${teammate.firstName}, welcome to the workspace!`], //I think this should be in draft state, so that the inviter can edit it before sending it to the teammate
         new Date(),
       );
     } catch (error) {

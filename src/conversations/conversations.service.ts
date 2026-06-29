@@ -11,6 +11,7 @@ import { faker } from '@faker-js/faker';
 import { quotes } from '@/conversations/messangers/quotes';
 import { LinkService } from '@/common/link-service';
 import cleanWorkspaceName from '@/workspace/utils/CleanWorkspaceName';
+import { InviteAcceptedNotificationTemplate } from '@/emails/templates/invite-accepted-notification-template';
 
 @Injectable()
 export class ConversationsService {
@@ -80,18 +81,69 @@ export class ConversationsService {
         }),
       );
 
-      await this.emailClient.send({
-        from: {
-          email: `${workspaceName.toLowerCase()}+notifications@envoye.co`,
-          name: fullName(sender),
-        },
-        to: {
-          email: recipient.teammate.email,
-          name: fullName(recipient.teammate),
-        },
-        subject: `${sender.firstName} envoyed you 📬`,
-        html: emailHtml,
-      });
+      const subject = `${sender.firstName} envoyed you 📬`;
+
+      this.sendNotificationEmail(
+        workspaceName,
+        sender,
+        recipient.teammate,
+        subject,
+        emailHtml,
+      );
     }
   }
-}
+
+  async notifyInviteAccepted(
+    workspaceCode: string,
+    accepter: Teammate,
+    inviter: Teammate,
+  ) {
+    const workspace = await this.prisma.workspace.findFirstOrThrow({
+      where: {
+        code: workspaceCode,
+      },
+    });
+    
+    const workspaceName = cleanWorkspaceName(workspace);
+    const workspaceUrl = this.linkService.workspaceUrl(workspaceCode);
+
+    const emailHtml = await render(
+      React.createElement(InviteAcceptedNotificationTemplate, {
+        workspaceName: workspaceName,
+        accepterName: accepter.firstName,
+        workspaceLink: workspaceUrl,
+      }),
+    );
+    const subject = `${accepter.firstName} joined ${workspaceName} 🎉`;
+
+    this.sendNotificationEmail(
+      workspaceName,
+      accepter,
+      inviter,
+      subject,
+      emailHtml,
+    );
+  }
+
+  async sendNotificationEmail(
+    workspaceName: string,
+    sender: Teammate,
+    recepient: Teammate,
+    subject: string,
+    emailHtml: any //need to get correct ruturn type from render() function
+  ) {
+    await this.emailClient.send({
+      from: {
+        email: `${workspaceName.toLowerCase()}+notifications@envoye.co`,
+        name: sender ? fullName(sender) : workspaceName,
+      },
+      to: {
+        email: recepient.email,
+        name: fullName(recepient),
+      },
+      subject: subject,
+      html: emailHtml,
+    });
+  }
+  }
+  
