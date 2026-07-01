@@ -39,6 +39,7 @@ import { Time } from '@/common/utils';
 import { ConversationsService } from '@/conversations/conversations.service';
 import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import FeatureFlagManager from '@/feature-flag/manager';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -61,6 +62,7 @@ describe('WorkspaceController', () => {
         WorkspaceInviteService,
         ConversationsService,
         EnvoyeMessenger,
+        FeatureFlagManager,
         {
           provide: DEBOUNCE_SERVICE,
           useClass: DebounceService,
