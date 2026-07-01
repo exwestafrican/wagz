@@ -29,6 +29,8 @@ import { TestEmailClient } from '@/messaging/email/test-email-client';
 import { PermissionService } from '@/permission/permission.service';
 import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import FeatureFlagManager from '@/feature-flag/manager';
+import { mockConfigService } from '@/test-helpers/mocks';
 
 describe('SetupAdministrativeWorkspaceCommand', () => {
   let app: INestApplication;
@@ -50,6 +52,10 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     const teammateService = new TeammatesService(prismaService);
     const roleService = new RoleService();
     const permissionService = new PermissionService(prismaService, roleService);
+    //instatiate link service
+    const linkService = new LinkService(mockConfigService);
+    const featureFlagManager = new FeatureFlagManager(prismaService);
+    const mockEmailClient = new TestEmailClient();
     const messenger = new EnvoyeMessenger(prismaService);
     const authService = new AuthService(
       mockSupabaseClient as unknown as SupabaseClient,
@@ -65,7 +71,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
       new TestEmailClient(),
       jest.fn() as unknown as LinkService,
       new RoleService(),
-      new WorkspaceInviteService(prismaService, authService, messenger),
+      new WorkspaceInviteService(prismaService, authService, messenger, linkService, featureFlagManager, mockEmailClient),
       messenger,
     );
 
