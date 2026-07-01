@@ -11,7 +11,6 @@ import { faker } from '@faker-js/faker';
 import { quotes } from '@/conversations/messangers/quotes';
 import { LinkService } from '@/common/link-service';
 import cleanWorkspaceName from '@/workspace/utils/CleanWorkspaceName';
-import { InviteAcceptedNotificationTemplate } from '@/emails/templates/invite-accepted-notification-template';
 
 @Injectable()
 export class ConversationsService {
@@ -96,4 +95,3 @@ export class ConversationsService {
     }
   }
   }
-  
