@@ -52,6 +52,11 @@ export const PERMISSIONS = {
     'Allows user to list workspaces in the admin panel',
     'workspace',
   ),
+  IMPERSONATE: Permission.of(
+    'Impersonate Teammates',
+    'Allows support staff to act as a teammate in a customer workspace',
+    'impersonate',
+  ),
 } as const;
 
 export const ROLES: Record<string, Role> = {
@@ -67,6 +72,7 @@ export const ROLES: Record<string, Role> = {
     PERMISSIONS.MANAGE_FEATURE_FLAGS,
     PERMISSIONS.ACCESS_ADMIN,
     PERMISSIONS.WORKSPACE,
+    PERMISSIONS.IMPERSONATE,
   ]),
   WorkspaceAdmin: Role.of('WorkspaceAdmin', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
