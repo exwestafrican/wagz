@@ -11,6 +11,7 @@ import {
 } from 'class-validator';
 import MaxCharacterLimit from '@/common/validators/max-character-limit';
 import { MAX_ENVOYE_MESSAGE_CHARACTERS } from '@/conversations/const';
+import { addMinutes } from 'date-fns/addMinutes';
 
 export class SendTextMessageDto {
   @ApiProperty({ description: 'Workspace code', example: '12er56' })
@@ -45,6 +46,8 @@ export class SendTextMessageDto {
   @Type(() => Date)
   @IsDate()
   @IsNotEmpty()
-  @MaxDate(() => new Date(), { message: 'sentAt cannot be in the future' })
+  @MaxDate(() => addMinutes(Date.now(), 2), {
+    message: 'sentAt cannot be in the future',
+  }) // let's allow grace for clock skew.
   sentAt: Date;
 }

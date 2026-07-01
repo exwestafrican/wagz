@@ -31,7 +31,7 @@ import { LinkService } from '@/common/link-service';
 import { mockConfigService } from '@/test-helpers/mocks';
 
 const validSentAt = new Date('2026-06-20T10:00:00.000Z');
-const futureSentAt = new Date(Date.now() + 60_000);
+const futureSentAt = new Date(Date.now() + 300_000);
 
 describe('ConversationsController', () => {
   let requestUser: RequestUser;
