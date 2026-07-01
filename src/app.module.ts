@@ -17,6 +17,7 @@ import { BackfillModule } from './backfill/backfill.module';
 import { CommandsModule } from '@/commands/commands.module';
 import { AdminModule } from './admin/admin.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { ImpersonationModule } from './impersonation/impersonation.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ConversationsModule } from './conversations/conversations.module';
     CommandsModule,
     AdminModule,
     ConversationsModule,
+    ImpersonationModule,
   ],
   controllers: [AppController],
   providers: [AppService],

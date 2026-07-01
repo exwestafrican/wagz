@@ -40,7 +40,7 @@ describe('PermissionService', () => {
   it('should return no permissions when teammate does not belong to any role', async () => {
     const teammate = await setupWorkspaceWithTeammateRole(factory, []);
     const result = await service.teammatePermissions(
-      teammate.email,
+      RequestUser.of(teammate.email),
       teammate.workspaceCode,
     );
     expect(result).toMatchObject([]);
@@ -77,7 +77,7 @@ describe('PermissionService', () => {
           role.code,
         ]);
         const result = await service.teammatePermissions(
-          teammate.email,
+          RequestUser.of(teammate.email),
           teammate.workspaceCode,
         );
         const expectedPermissionCodes = permissions.map(
@@ -114,7 +114,7 @@ describe('PermissionService', () => {
         'NotSoSuperAdmin',
       ]);
       const result = await service.teammatePermissions(
-        teammate.email,
+        RequestUser.of(teammate.email),
         teammate.workspaceCode,
       );
       expect(result).toEqual(['manage_users', 'manage_nothing']);
@@ -146,7 +146,7 @@ describe('PermissionService', () => {
         'WorkspaceAdmin',
       ]);
       const result = await service.teammatePermissions(
-        teammate.email,
+        RequestUser.of(teammate.email),
         teammate.workspaceCode,
       );
       expect(result).toEqual(['remove_workspace', 'manage_users']);
@@ -196,6 +196,72 @@ describe('PermissionService', () => {
           requestUser,
           teammate.workspaceCode,
           PERMISSIONS.MESSAGE_TEAMMATES,
+          () => 'should not run',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('impersonation', () => {
+    it('resolves the subject teammate in runIfActiveWorkspaceMember', async () => {
+      const subjectTeammate = await setupWorkspaceWithTeammateRole(factory, [
+        ROLES.WorkspaceMember.code,
+      ]);
+      const requestUser = RequestUser.of('admin@useEnvoye.co').withImpersonation(
+        {
+          sessionId: 'session-1',
+          teammateId: subjectTeammate.id,
+          workspaceCode: subjectTeammate.workspaceCode,
+        },
+      );
+
+      const result = await service.runIfActiveWorkspaceMember(
+        requestUser,
+        subjectTeammate.workspaceCode,
+        (teammate) => teammate.id,
+      );
+
+      expect(result).toBe(subjectTeammate.id);
+    });
+
+    it('applies subject permissions when impersonating', async () => {
+      const subjectTeammate = await setupWorkspaceWithTeammateRole(factory, [
+        ROLES.WorkspaceMember.code,
+      ]);
+      const requestUser = RequestUser.of('admin@useEnvoye.co').withImpersonation(
+        {
+          sessionId: 'session-1',
+          teammateId: subjectTeammate.id,
+          workspaceCode: subjectTeammate.workspaceCode,
+        },
+      );
+
+      await expect(
+        service.runIfActiveWorkspaceMemberAndPermitted(
+          requestUser,
+          subjectTeammate.workspaceCode,
+          PERMISSIONS.MANAGE_TEAMMATES,
+          () => 'should not run',
+        ),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws ForbiddenException when impersonation workspace does not match request', async () => {
+      const subjectTeammate = await setupWorkspaceWithTeammateRole(factory, [
+        ROLES.WorkspaceMember.code,
+      ]);
+      const requestUser = RequestUser.of('admin@useEnvoye.co').withImpersonation(
+        {
+          sessionId: 'session-1',
+          teammateId: subjectTeammate.id,
+          workspaceCode: subjectTeammate.workspaceCode,
+        },
+      );
+
+      await expect(
+        service.runIfActiveWorkspaceMember(
+          requestUser,
+          'other1',
           () => 'should not run',
         ),
       ).rejects.toThrow(ForbiddenException);

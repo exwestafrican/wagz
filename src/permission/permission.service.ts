@@ -16,17 +16,19 @@ export class PermissionService {
   ) {}
 
   async teammatePermissions(
-    email: string,
+    requestUser: RequestUser,
     workspaceCode: string,
   ): Promise<string[]> {
-    const teammate = await this.prismaService.teammate.findUniqueOrThrow({
-      where: {
-        workspaceCode_email: {
-          workspaceCode: workspaceCode,
-          email: email,
-        },
-      },
-    });
+    const teammate = requestUser.isImpersonating
+      ? await this.resolveImpersonatedTeammate(requestUser, workspaceCode)
+      : await this.prismaService.teammate.findUniqueOrThrow({
+          where: {
+            workspaceCode_email: {
+              workspaceCode: workspaceCode,
+              email: requestUser.email,
+            },
+          },
+        });
 
     const roleCodes = teammate.groups;
     if (isEmpty(roleCodes)) {
@@ -46,14 +48,16 @@ export class PermissionService {
     requiredPermission: Permission,
     authorizedAction: (teammate: Teammate) => T,
   ): Promise<T> {
-    const teammate = await this.prismaService.teammate.findUniqueOrThrow({
-      where: {
-        workspaceCode_email: {
-          workspaceCode: workspaceCode,
-          email: requestUser.email,
-        },
-      },
-    });
+    const teammate = requestUser.isImpersonating
+      ? await this.resolveImpersonatedTeammate(requestUser, workspaceCode)
+      : await this.prismaService.teammate.findUniqueOrThrow({
+          where: {
+            workspaceCode_email: {
+              workspaceCode: workspaceCode,
+              email: requestUser.email,
+            },
+          },
+        });
 
     const roleCodes = teammate.groups;
     if (this.roleService.hasPermission(roleCodes, requiredPermission)) {
@@ -61,6 +65,50 @@ export class PermissionService {
     } else {
       throw new ForbiddenException();
     }
+  }
+
+  async resolveActingTeammate(
+    requestUser: RequestUser,
+    workspaceCode: string,
+  ): Promise<Teammate | null> {
+    if (requestUser.isImpersonating) {
+      try {
+        return await this.resolveImpersonatedTeammate(
+          requestUser,
+          workspaceCode,
+        );
+      } catch (error) {
+        if (error instanceof ForbiddenException) {
+          return null;
+        }
+        throw error;
+      }
+    }
+
+    return this.findActiveWorkspaceMember(requestUser.email, workspaceCode);
+  }
+
+  private async resolveImpersonatedTeammate(
+    requestUser: RequestUser,
+    workspaceCode: string,
+  ): Promise<Teammate> {
+    if (requestUser.impersonation!.workspaceCode !== workspaceCode) {
+      throw new ForbiddenException();
+    }
+
+    const subjectTeammate = await this.prismaService.teammate.findFirst({
+      where: {
+        id: requestUser.impersonation!.teammateId,
+        workspaceCode,
+        status: TeammateStatus.ACTIVE,
+      },
+    });
+
+    if (!subjectTeammate) {
+      throw new ForbiddenException();
+    }
+
+    return subjectTeammate;
   }
 
   private async findActiveWorkspaceMember(
@@ -82,6 +130,23 @@ export class PermissionService {
     requiredPermission: Permission,
     authorizedAction: (teammate: Teammate) => T,
   ) {
+    if (requestUser.isImpersonating) {
+      const subjectTeammate = await this.resolveActingTeammate(
+        requestUser,
+        workspaceCode,
+      );
+      if (
+        subjectTeammate &&
+        this.roleService.hasPermission(
+          subjectTeammate.groups,
+          requiredPermission,
+        )
+      ) {
+        return authorizedAction(subjectTeammate);
+      }
+      throw new ForbiddenException();
+    }
+
     const workspaceMember = await this.findActiveWorkspaceMember(
       requestUser.email,
       workspaceCode,
@@ -108,8 +173,8 @@ export class PermissionService {
     workspaceCode: string,
     authorizedAction: (teammate: Teammate) => T,
   ) {
-    const workspaceTeammate = await this.findActiveWorkspaceMember(
-      requestUser.email,
+    const workspaceTeammate = await this.resolveActingTeammate(
+      requestUser,
       workspaceCode,
     );
 

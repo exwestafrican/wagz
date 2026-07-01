@@ -32,6 +32,8 @@ import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
 import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import { ImpersonationService } from '@/impersonation/impersonation.service';
+import { IMPERSONATION_SESSION_HEADER } from '@/impersonation/consts';
 
 describe('AdminController', () => {
   let requestUser: RequestUser;
@@ -52,6 +54,7 @@ describe('AdminController', () => {
         WorkspaceInviteService,
         ConversationsService,
         EnvoyeMessenger,
+        ImpersonationService,
         { provide: EMAIL_CLIENT, useValue: { send: jest.fn() } },
         { provide: AuthService, useValue: mockAuthService },
       ],
@@ -540,6 +543,66 @@ describe('AdminController', () => {
         .get('/admin/apps')
         .set('Authorization', 'Bearer test-token')
         .expect(HttpStatus.FORBIDDEN);
+    });
+  });
+
+  describe('impersonation', () => {
+    it('starts an impersonation session for SuperAdmin', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const { teammate: subjectTeammate } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build(),
+      );
+
+      const response = await request(getHttpServer(app))
+        .post('/admin/impersonate')
+        .set('Authorization', 'Bearer test-token')
+        .send({ teammateId: subjectTeammate.id })
+        .expect(HttpStatus.CREATED);
+
+      expect(response.body.sessionId).toBeDefined();
+      expect(response.body.subject.id).toBe(subjectTeammate.id);
+    });
+
+    it('ends an impersonation session', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const { teammate: subjectTeammate } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build(),
+      );
+
+      const startResponse = await request(getHttpServer(app))
+        .post('/admin/impersonate')
+        .set('Authorization', 'Bearer test-token')
+        .send({ teammateId: subjectTeammate.id })
+        .expect(HttpStatus.CREATED);
+
+      await request(getHttpServer(app))
+        .delete(`/admin/impersonate/${startResponse.body.sessionId}`)
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.NO_CONTENT);
+    });
+
+    it('returns the active impersonation session', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const { teammate: subjectTeammate } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build(),
+      );
+
+      const startResponse = await request(getHttpServer(app))
+        .post('/admin/impersonate')
+        .set('Authorization', 'Bearer test-token')
+        .send({ teammateId: subjectTeammate.id })
+        .expect(HttpStatus.CREATED);
+
+      const activeResponse = await request(getHttpServer(app))
+        .get('/admin/impersonate/active')
+        .set('Authorization', 'Bearer test-token')
+        .expect(HttpStatus.OK);
+
+      expect(activeResponse.body.sessionId).toBe(startResponse.body.sessionId);
+      expect(activeResponse.body.subject.id).toBe(subjectTeammate.id);
     });
   });
 });
