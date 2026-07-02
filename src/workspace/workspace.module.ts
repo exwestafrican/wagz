@@ -9,6 +9,7 @@ import { LinkService } from '@/common/link-service';
 import { AuthModule } from '@/auth/auth.module';
 import { DebounceServiceProvider } from '@/common/debounce.service';
 import { ConversationsModule } from '@/conversations/conversations.module';
+import FeatureFlagManager from '@/feature-flag/manager';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { ConversationsModule } from '@/conversations/conversations.module';
     WorkspaceManager,
     LinkService,
     WorkspaceInviteService,
+    FeatureFlagManager,
     DebounceServiceProvider,
   ],
   controllers: [WorkspaceController],
