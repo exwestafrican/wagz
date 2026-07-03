@@ -68,7 +68,7 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
 
     const workspaceManager = new WorkspaceManager(
       prismaService,
-      new TestEmailClient(),
+      mockEmailClient,
       jest.fn() as unknown as LinkService,
       new RoleService(),
       new WorkspaceInviteService(

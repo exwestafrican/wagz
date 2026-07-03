@@ -140,11 +140,6 @@ export class WorkspaceInviteService {
     });
 
     try {
-      const inviter = await this.prismaService.teammate.findFirstOrThrow({
-        where: {
-          id: invite.senderId,
-        },
-      });
       // message self
       await this.messenger.sendOpeningTextMessage(
         teammate.id,
@@ -161,6 +156,11 @@ export class WorkspaceInviteService {
         );
 
       if (isInviteAcceptedNotificationEnabled) {
+        const inviter = await this.prismaService.teammate.findFirstOrThrow({
+          where: {
+            id: invite.senderId,
+          },
+        });
         await this.notifyInviteAccepted(workspaceCode, teammate, inviter);
       }
     } catch (error) {
