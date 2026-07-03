@@ -27,6 +27,7 @@ import { Teammate, Workspace } from '@/generated/prisma/client';
 import { mockAuthService } from '@/test-helpers/mocks';
 import { LinkService } from '@/common/link-service';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import FeatureFlagManager from '@/feature-flag/manager';
 
 describe('WorkspaceInviteService', () => {
   let app: INestApplication;
@@ -61,6 +62,7 @@ describe('WorkspaceInviteService', () => {
         WorkspaceInviteService,
         LinkService,
         EnvoyeMessenger,
+        FeatureFlagManager,
         {
           provide: AuthService,
           useValue: mockAuthService as unknown as AuthService,
