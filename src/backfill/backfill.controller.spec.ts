@@ -22,6 +22,8 @@ import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { EMAIL_CLIENT, EmailClient } from '@/messaging/email/email-client';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { resetDb } from '@/test-helpers/rest-db';
+import { ConversationsService } from '@/conversations/conversations.service';
+import { LinkService } from '@/common/link-service';
 
 describe('BackfillController', () => {
   let requestUser: RequestUser;
@@ -41,6 +43,8 @@ describe('BackfillController', () => {
         RoleService,
         PrismaService,
         TeammatesService,
+        ConversationsService,
+        LinkService,
         { provide: EMAIL_CLIENT, useValue: { send: sendMock } },
       ],
     }).with(requestUser);
@@ -71,7 +75,7 @@ describe('BackfillController', () => {
         .send()
         .expect(HttpStatus.OK);
       const body = response.body as BackfillResponseDto[];
-      expect(body.length).toBe(1);
+      expect(body.length).toBe(2);
     });
 
     it('should return 403 for when user is not super admin', async () => {
