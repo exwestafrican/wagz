@@ -50,13 +50,12 @@ export default class EnvoyeMessenger implements Messenger {
     const conversation = await this.prisma.conversation.create({
       data: {
         workspaceCode: workspaceCode,
-        participantSignature:
-          this.conversationsService.participantSignatureFromTeammateIds(
-            workspaceCode,
-            isSame(senderId, recipientTeammateId)
-              ? [senderId]
-              : [senderId, recipientTeammateId],
-          ),
+        participantSignature: this.conversationsService.participantSignature(
+          workspaceCode,
+          isSame(senderId, recipientTeammateId)
+            ? [senderId]
+            : [senderId, recipientTeammateId],
+        ),
       },
     });
 

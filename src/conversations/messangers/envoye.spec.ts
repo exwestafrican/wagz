@@ -67,10 +67,7 @@ describe('EnvoyeMessenger', () => {
       expect(conversation.workspaceCode).toBe(workspace.code);
       expect(conversation.status).toBe(ConversationStatus.OPEN);
       expect(conversation.participantSignature).toBe(
-        conversationsService.participantSignatureFromTeammateIds(
-          workspace.code,
-          [teammate.id],
-        ),
+        `${workspace.code}:${teammate.id}`,
       );
 
       const participants = await prismaService.conversationParticipant.findMany(
@@ -98,10 +95,10 @@ describe('EnvoyeMessenger', () => {
       );
 
       expect(conversation.participantSignature).toBe(
-        conversationsService.participantSignatureFromTeammateIds(
-          workspace.code,
-          [dan.id, marvin.id],
-        ),
+        conversationsService.participantSignature(workspace.code, [
+          dan.id,
+          marvin.id,
+        ]),
       );
 
       const participants = await prismaService.conversationParticipant.findMany(
