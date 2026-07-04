@@ -99,9 +99,17 @@ export class ConversationsService {
     workspaceCode: string,
     participants: ConversationParticipant[],
   ) {
-    const teammateIds = participants
-      .map((participant) => participant.teammateId)
-      .sort((a, b) => a - b); //ascending order
-    return [workspaceCode, teammateIds].join(':');
+    const teammateIds = participants.map(
+      (participant) => participant.teammateId,
+    );
+    return this.participantSignatureFromTeammateIds(workspaceCode, teammateIds);
+  }
+
+  participantSignatureFromTeammateIds(
+    workspaceCode: string,
+    teammateIds: number[],
+  ) {
+    const sortedTeammateIDs = teammateIds.sort((a, b) => a - b); //ascending order
+    return [workspaceCode, sortedTeammateIDs].join(':');
   }
 }
