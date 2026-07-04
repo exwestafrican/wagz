@@ -32,6 +32,7 @@ import CompanyProfileFactory from '@/factories/company-profile.factory';
 import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import FeatureFlagManager from '@/feature-flag/manager';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -53,6 +54,7 @@ describe('WorkspaceService', () => {
         WorkspaceInviteService,
         EnvoyeMessenger,
         FeatureFlagManager,
+        ConversationsService,
         {
           provide: AuthService,
           useValue: mockAuthService as unknown as AuthService,
