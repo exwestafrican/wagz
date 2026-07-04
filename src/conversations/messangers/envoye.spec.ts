@@ -50,6 +50,56 @@ describe('EnvoyeMessenger', () => {
     await app.close();
   });
 
+  async function mockWorkspaceWithConversationHistory() {
+    const { workspace, teammates } = await setupWorkspaceWithMultipleTeammates(
+      factory,
+      5,
+    );
+
+    const sammy = teammates[0];
+    const derick = teammates[1];
+
+    const conversationStartTime = Date.now();
+
+    const chatHistory = [
+      {
+        senderId: sammy.id,
+        messages: ['Hey how are you doing?', 'Just welcoming you to the team.'],
+        sentAt: addMinutes(conversationStartTime, 1),
+      },
+      {
+        senderId: derick.id,
+        messages: ['Heyyy thanks. I am excited to be here'],
+        sentAt: addMinutes(conversationStartTime, 2),
+      },
+      {
+        senderId: derick.id,
+        messages: ["can't wait to get started."],
+        sentAt: addMinutes(conversationStartTime, 3),
+      },
+      {
+        senderId: sammy.id,
+        messages: [
+          "yeah! i'll add you to the team rituals!!",
+          "How's on boarding going. I know it's a lot",
+        ],
+        sentAt: addMinutes(conversationStartTime, 4),
+      },
+      {
+        senderId: derick.id,
+        messages: ['yeah men, e go be.'],
+        sentAt: addMinutes(conversationStartTime, 5),
+      },
+    ];
+
+    return {
+      workspace: workspace,
+      sender: sammy,
+      recipient: derick,
+      chatHistory,
+    };
+  }
+
   describe('sendOpeningTextMessage', () => {
     it('creates an open conversation with the teammate as sole owner participant', async () => {
       const { workspace, teammate } = await setupWorkspaceWithTeammate(
@@ -162,57 +212,6 @@ describe('EnvoyeMessenger', () => {
   });
 
   describe('chat History', () => {
-    async function mockWorkspaceWithConversationHistory() {
-      const { workspace, teammates } =
-        await setupWorkspaceWithMultipleTeammates(factory, 5);
-
-      const sammy = teammates[0];
-      const derick = teammates[1];
-
-      const conversationStartTime = Date.now();
-
-      const chatHistory = [
-        {
-          senderId: sammy.id,
-          messages: [
-            'Hey how are you doing?',
-            'Just welcoming you to the team.',
-          ],
-          sentAt: addMinutes(conversationStartTime, 1),
-        },
-        {
-          senderId: derick.id,
-          messages: ['Heyyy thanks. I am excited to be here'],
-          sentAt: addMinutes(conversationStartTime, 2),
-        },
-        {
-          senderId: derick.id,
-          messages: ["can't wait to get started."],
-          sentAt: addMinutes(conversationStartTime, 3),
-        },
-        {
-          senderId: sammy.id,
-          messages: [
-            "yeah! i'll add you to the team rituals!!",
-            "How's on boarding going. I know it's a lot",
-          ],
-          sentAt: addMinutes(conversationStartTime, 4),
-        },
-        {
-          senderId: derick.id,
-          messages: ['yeah men, e go be.'],
-          sentAt: addMinutes(conversationStartTime, 5),
-        },
-      ];
-
-      return {
-        workspace: workspace,
-        sender: sammy,
-        recipient: derick,
-        chatHistory,
-      };
-    }
-
     it('we fetch chat history for conversation with less the chat limit', async () => {
       const { workspace, chatHistory } =
         await mockWorkspaceWithConversationHistory();
@@ -265,6 +264,57 @@ describe('EnvoyeMessenger', () => {
       expect(conversationHistory.map((msg) => msg.content)).toMatchObject(
         expectedResponse,
       );
+    });
+  });
+
+  describe('load new messages', () => {
+    async function assertLastReadMessageId(
+      participantId: number,
+      messageId: number,
+    ) {
+      const participantInfo =
+        await prismaService.conversationParticipant.findFirstOrThrow({
+          where: { id: participantId },
+        });
+      expect(participantInfo.lastReadMessage).toBe(messageId);
+    }
+
+    it('loads new messages from last read', async () => {
+      const { workspace, chatHistory, sender, recipient } =
+        await mockWorkspaceWithConversationHistory();
+
+      const conversation = await singeParticipantMessageHistory(
+        workspace,
+        messenger,
+        [
+          ...chatHistory,
+          {
+            senderId: recipient.id,
+            messages: ['talk later'],
+            sentAt: addMinutes(chatHistory[4].sentAt, 5),
+          },
+        ],
+      );
+
+      const messages = await prismaService.message.findMany({
+        where: { conversationId: conversation.id, workspace: workspace },
+      });
+
+      const participantInfo =
+        await prismaService.conversationParticipant.findFirstOrThrow({
+          where: { teammateId: sender.id, conversationId: conversation.id },
+        });
+
+      await messenger.markAsRead(participantInfo.id, messages[3].id);
+      await assertLastReadMessageId(participantInfo.id, messages[3].id);
+
+      const unreadMessages = await messenger.loadUnReadMessages(
+        messages[3].authorId,
+        conversation.id,
+      );
+
+      expect(unreadMessages).toHaveLength(2);
+      await assertLastReadMessageId(participantInfo.id, messages[5].id); // last read message is last sent.
     });
   });
 });

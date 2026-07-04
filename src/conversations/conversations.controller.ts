@@ -39,6 +39,7 @@ import {
   toChatHistoryDto,
 } from '@/conversations/dto/chat-history.dto';
 import { isSame } from '@/common/utils';
+import { UnreadMessageQueryDto } from '@/conversations/dto/unread-message-query.dto';
 
 @Controller('conversations')
 export class ConversationsController {
@@ -248,5 +249,41 @@ export class ConversationsController {
         },
       );
     return history.map((msg) => toChatHistoryDto(msg));
+  }
+
+  @Get('unread-messages')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Fetch all unread messages for teammate for a given conversation',
+  })
+  @ApiBadRequestResponse()
+  @ApiForbiddenResponse()
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Conversation not found or requester is not a participant',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async unreadMessages(
+    @User() requestUser: RequestUser,
+    @Query() query: UnreadMessageQueryDto,
+  ): Promise<ChatHistoryDto[]> {
+    const unreadMsgHistory =
+      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+        requestUser,
+        query.workspaceCode,
+        PERMISSIONS.MESSAGE_TEAMMATES,
+        async (requestTeammate) => {
+          return this.conversationsService.runIfConversationParticipant(
+            query.conversationId,
+            requestTeammate.id,
+            async () =>
+              await this.messenger.loadUnReadMessages(
+                requestTeammate.id,
+                query.conversationId,
+              ),
+          );
+        },
+      );
+    return unreadMsgHistory.map((msg) => toChatHistoryDto(msg));
   }
 }
