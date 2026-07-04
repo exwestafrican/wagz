@@ -63,7 +63,7 @@ describe('ConversationsController', () => {
     );
     const teammatesService = new TeammatesService(prismaService);
     const permissionService = new PermissionService(prismaService, roleService);
-    envoyeMessenger = new EnvoyeMessenger(prismaService);
+    envoyeMessenger = new EnvoyeMessenger(prismaService, conversationsService);
 
     controller = new ConversationsController(
       conversationsService,
