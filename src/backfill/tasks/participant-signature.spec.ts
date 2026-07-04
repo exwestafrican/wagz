@@ -108,14 +108,14 @@ describe(' Conversation Participant Signature Backfill Task', () => {
     const conversation = await createConversationWithOwner(sammy);
     await addOtherParticipants(conversation, [derick]);
 
-    assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
+    await assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
       1,
       workspace.code,
     );
 
     await service.run(workspace);
 
-    assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
+    await assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
       0,
       workspace.code,
     );
@@ -131,14 +131,14 @@ describe(' Conversation Participant Signature Backfill Task', () => {
 
     await createConversationWithOwner(dammy);
 
-    assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
+    await assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
       1,
       workspace.code,
     );
 
     await service.run(workspace);
 
-    assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
+    await assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
       0,
       workspace.code,
     );
@@ -157,14 +157,14 @@ describe(' Conversation Participant Signature Backfill Task', () => {
     const conversation = await createConversationWithOwner(vivian);
     await addOtherParticipants(conversation, [joy, tomi]);
 
-    assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
+    await assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
       1,
       workspace.code,
     );
 
     await service.run(workspace);
 
-    assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
+    await assertConversationWithMissingParticipantSignatureCountForWorkspaceIsExpectedNumber(
       1,
       workspace.code,
     );
