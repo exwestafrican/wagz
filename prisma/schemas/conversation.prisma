@@ -13,10 +13,12 @@ model Conversation {
   subject                  String?                   @db.VarChar(100)
   customerInfo             String?                   @db.VarChar(100)
   lastMessage              Int?
+  participantSignature     String?
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
   messages                 Message[]
   conversationParticipants ConversationParticipant[]
 
+  @@index([workspaceCode, participantSignature])
   @@map("conversation")
 }
