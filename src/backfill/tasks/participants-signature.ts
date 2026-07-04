@@ -29,9 +29,12 @@ export class ConversationParticipantsSignature implements BackfillTask {
           },
         });
       if (participants.length <= 2) {
+        const teammateIds = participants.map(
+          (participant) => participant.teammateId,
+        );
         const signature = this.conversationService.participantSignature(
           workspace.code,
-          participants,
+          teammateIds,
         );
         await this.prismaService.conversation.update({
           where: { id: conversation.id },

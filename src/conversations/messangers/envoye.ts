@@ -7,10 +7,14 @@ import {
   type Message as DomainMessage,
   toDomainMessage,
 } from '@/conversations/domain/message';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 @Injectable()
 export default class EnvoyeMessenger implements Messenger {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly conversationsService: ConversationsService,
+  ) {}
 
   async chatHistory(
     conversationId: number,
@@ -46,6 +50,12 @@ export default class EnvoyeMessenger implements Messenger {
     const conversation = await this.prisma.conversation.create({
       data: {
         workspaceCode: workspaceCode,
+        participantSignature: this.conversationsService.participantSignature(
+          workspaceCode,
+          isSame(senderId, recipientTeammateId)
+            ? [senderId]
+            : [senderId, recipientTeammateId],
+        ),
       },
     });
 

@@ -15,9 +15,14 @@ import { ConversationStatus } from '@/generated/prisma/client';
 import { resetDb } from '@/test-helpers/rest-db';
 import { addMinutes } from 'date-fns/addMinutes';
 import { singeParticipantMessageHistory } from '@/test-helpers/messaging.helpers';
+import { ConversationsService } from '@/conversations/conversations.service';
+import { TestEmailClient } from '@/messaging/email/test-email-client';
+import { LinkService } from '@/common/link-service';
+import { mockConfigService } from '@/test-helpers/mocks';
 
 describe('EnvoyeMessenger', () => {
   let messenger: EnvoyeMessenger;
+  let conversationsService: ConversationsService;
   let app: INestApplication;
   let prismaService: PrismaService;
   let factory: PersistStrategy;
@@ -29,7 +34,13 @@ describe('EnvoyeMessenger', () => {
     }).compile();
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
-    messenger = new EnvoyeMessenger(prismaService);
+    const linkService = new LinkService(mockConfigService);
+    conversationsService = new ConversationsService(
+      prismaService,
+      new TestEmailClient(),
+      linkService,
+    );
+    messenger = new EnvoyeMessenger(prismaService, conversationsService);
 
     factory = Factory.createStrategy(prismaService);
   });
@@ -55,6 +66,9 @@ describe('EnvoyeMessenger', () => {
 
       expect(conversation.workspaceCode).toBe(workspace.code);
       expect(conversation.status).toBe(ConversationStatus.OPEN);
+      expect(conversation.participantSignature).toBe(
+        `${workspace.code}:${teammate.id}`,
+      );
 
       const participants = await prismaService.conversationParticipant.findMany(
         {
@@ -80,6 +94,13 @@ describe('EnvoyeMessenger', () => {
         new Date(),
       );
 
+      expect(conversation.participantSignature).toBe(
+        conversationsService.participantSignature(workspace.code, [
+          dan.id,
+          marvin.id,
+        ]),
+      );
+
       const participants = await prismaService.conversationParticipant.findMany(
         {
           where: { conversationId: conversation.id },
@@ -89,6 +110,28 @@ describe('EnvoyeMessenger', () => {
       expect(participants).toHaveLength(2);
       expect(participants[0].isOwner).toBe(true);
       expect(participants[0].teammateId).toBe(dan.id);
+    });
+
+    it('orders teammate ids numerically in participant signature', async () => {
+      const { workspace, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 4);
+
+      const [dan, marvin] = teammates.slice(2);
+      const [lowerTeammateId, higherTeammateId] = [dan.id, marvin.id].sort(
+        (leftId, rightId) => leftId - rightId,
+      );
+
+      const conversation = await messenger.sendOpeningTextMessage(
+        marvin.id,
+        dan.id,
+        workspace.code,
+        [],
+        new Date(),
+      );
+
+      expect(conversation.participantSignature).toBe(
+        `${workspace.code}:${lowerTeammateId},${higherTeammateId}`,
+      );
     });
   });
 

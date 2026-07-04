@@ -31,6 +31,7 @@ import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import FeatureFlagManager from '@/feature-flag/manager';
 import { mockConfigService } from '@/test-helpers/mocks';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 describe('SetupAdministrativeWorkspaceCommand', () => {
   let app: INestApplication;
@@ -56,7 +57,12 @@ describe('SetupAdministrativeWorkspaceCommand', () => {
     const linkService = new LinkService(mockConfigService);
     const featureFlagManager = new FeatureFlagManager(prismaService);
     const mockEmailClient = new TestEmailClient();
-    const messenger = new EnvoyeMessenger(prismaService);
+    const conversationsService = new ConversationsService(
+      prismaService,
+      mockEmailClient,
+      linkService,
+    );
+    const messenger = new EnvoyeMessenger(prismaService, conversationsService);
     const authService = new AuthService(
       mockSupabaseClient as unknown as SupabaseClient,
       new PasswordGenerator(),

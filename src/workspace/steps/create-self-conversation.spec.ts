@@ -11,6 +11,9 @@ import { setupWorkspaceWithMultipleTeammates } from '@/test-helpers/workspace-he
 import { resetDb } from '@/test-helpers/rest-db';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import { ConversationsService } from '@/conversations/conversations.service';
+import { LinkService } from '@/common/link-service';
+import { MessagingModule } from '@/messaging/messaging.module';
 
 describe('CreateSelfConversationStep', () => {
   let step: CreateSelfConversationStep;
@@ -33,8 +36,8 @@ describe('CreateSelfConversationStep', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), PrismaModule],
-      providers: [EnvoyeMessenger],
+      imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
+      providers: [EnvoyeMessenger, ConversationsService, LinkService],
     }).compile();
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
