@@ -14,6 +14,7 @@ import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { render } from '@react-email/render';
 import React from 'react';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import type BackfillTask from '@/backfill/task';
 import BackfillResponseDto, {
   toBackfillResponseDto,
 } from '@/backfill/dto/backfill-response.dto';
