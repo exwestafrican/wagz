@@ -16,6 +16,50 @@ export default class EnvoyeMessenger implements Messenger {
     private readonly conversationsService: ConversationsService,
   ) {}
 
+  async markAsRead(participantId: number, messageId: number) {
+    await this.prisma.conversationParticipant.update({
+      where: { id: participantId },
+      data: { lastReadMessage: messageId },
+    });
+  }
+
+  async loadUnReadMessages(
+    teammateId: number,
+    conversationId: number,
+  ): Promise<DomainMessage[]> {
+    const participantRow =
+      await this.prisma.conversationParticipant.findFirstOrThrow({
+        where: { teammateId, conversationId },
+        select: { lastReadMessage: true, id: true },
+      });
+
+    const lastReadMessage = participantRow.lastReadMessage;
+
+    const messages = await this.prisma.message.findMany({
+      orderBy: {
+        sentAt: 'desc',
+      },
+      where: {
+        conversationId,
+        ...(lastReadMessage != null && {
+          id: {
+            gt: lastReadMessage,
+          },
+        }),
+      },
+    });
+
+    if (!isEmpty(messages)) {
+      await this.markAsRead(participantRow.id, messages[0].id);
+    }
+
+    return messages.map((message) => toDomainMessage(message));
+  }
+
+  // TODO: add load previous messages.
+  // TODO: add load most recent messages.
+  // TODO: remove chat history.
+
   async chatHistory(
     conversationId: number,
     limit: number,
@@ -123,13 +167,13 @@ export default class EnvoyeMessenger implements Messenger {
     content: string[],
     sentAt: Date,
   ) {
-    const message = content.join('\n');
+    const messageContent = content.join('\n');
     return this.prisma.message.create({
       data: {
         workspaceCode: conversation.workspaceCode,
         conversationId: conversation.id,
         authorId: senderId,
-        content: message,
+        content: messageContent,
         sentAt,
       },
     });
