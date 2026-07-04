@@ -315,10 +315,6 @@ describe('EnvoyeMessenger', () => {
 
       expect(unreadMessages).toHaveLength(2);
       await assertLastReadMessageId(participantInfo.id, messages[5].id); // last read message is last sent.
-
-      // expect(unreadMessages.flatMap((msg) => msg.content)).toMatchObject([
-      //   'yeah men, e go be.',
-      // ]);
     });
   });
 });
