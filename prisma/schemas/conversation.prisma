@@ -19,5 +19,6 @@ model Conversation {
   messages                 Message[]
   conversationParticipants ConversationParticipant[]
 
+  @@index([workspaceCode, participant_signature])
   @@map("conversation")
 }
