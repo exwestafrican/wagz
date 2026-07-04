@@ -14,5 +14,6 @@ model ConversationParticipant {
 
   @@index([workspaceCode, teammateId])
   @@index([workspaceCode, conversationId])
+  @@index([conversationId, teammateId])
   @@map("conversation_participant")
 }
