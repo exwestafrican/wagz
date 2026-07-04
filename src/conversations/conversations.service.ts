@@ -101,7 +101,7 @@ export class ConversationsService {
   ) {
     const teammateIds = participants
       .map((participant) => participant.teammateId)
-      .sort();
+      .sort((a, b) => a - b); //ascending order
     return [workspaceCode, teammateIds].join(':');
   }
 }
