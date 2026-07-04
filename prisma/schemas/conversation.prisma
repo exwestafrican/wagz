@@ -7,6 +7,7 @@ enum ConversationStatus {
 
 model Conversation {
   id                       Int                       @id @default(autoincrement())
+  participant_signature    String?
   workspaceCode            String                    @db.VarChar(6)
   workspace                Workspace                 @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
   status                   ConversationStatus        @default(OPEN)
