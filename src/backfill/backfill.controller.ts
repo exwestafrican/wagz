@@ -87,7 +87,7 @@ export class BackfillController {
       async () => {
         let task: BackfillTask;
         try {
-          task = this.registry.get(jobId, this.prismaService);
+          task = this.registry.get(jobId);
         } catch {
           throw new NotFoundException(`Unknown backfill job: ${jobId}`);
         }

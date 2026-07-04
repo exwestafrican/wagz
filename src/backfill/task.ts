@@ -1,6 +1,4 @@
 import { Workspace } from '@/generated/prisma/client';
-import { PrismaService } from '@/prisma/prisma.service';
-import { NormalizeUsernames } from '@/backfill/tasks/normalize-username';
 
 export default interface BackfillTask {
   run(workspace: Workspace): Promise<void>;
@@ -9,7 +7,7 @@ export default interface BackfillTask {
 type TaskEntry = {
   name: string;
   description: string;
-  create: (prisma: PrismaService) => BackfillTask;
+  task: BackfillTask;
 };
 
 export type TaskDetails = {
@@ -25,21 +23,22 @@ export function createTaskRegistry() {
       name: string;
       description: string;
       key: string;
-      Task: new (prisma: PrismaService) => BackfillTask;
+      dateAdded: number;
+      task: BackfillTask;
     }) => {
       registeredTasks[detail.key] = {
         name: detail.name,
         description: detail.description,
-        create: (prisma: PrismaService) => new detail.Task(prisma),
+        task: detail.task,
       };
     },
 
-    get: (key: string, prisma: PrismaService) => {
-      const task = registeredTasks[key];
-      if (!task) {
+    get: (key: string) => {
+      const taskEntry = registeredTasks[key];
+      if (!taskEntry) {
         throw new Error('Task not registered');
       }
-      return task.create(prisma);
+      return taskEntry.task;
     },
 
     all: () => {
@@ -50,16 +49,4 @@ export function createTaskRegistry() {
       }));
     },
   };
-}
-
-export function registerBackfillTasks(
-  registry: ReturnType<typeof createTaskRegistry>,
-) {
-  registry.register({
-    name: 'Backfill Normalize Usernames',
-    description:
-      'Removes special characters from username and stores in normalized format',
-    key: 'normalize_usernames',
-    Task: NormalizeUsernames,
-  });
 }

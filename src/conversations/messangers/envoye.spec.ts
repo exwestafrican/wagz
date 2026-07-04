@@ -11,13 +11,10 @@ import {
   setupWorkspaceWithTeammate,
 } from '@/test-helpers/workspace-helpers';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
-import {
-  Conversation,
-  ConversationStatus,
-  Workspace,
-} from '@/generated/prisma/client';
+import { ConversationStatus } from '@/generated/prisma/client';
 import { resetDb } from '@/test-helpers/rest-db';
 import { addMinutes } from 'date-fns/addMinutes';
+import { singeParticipantMessageHistory } from '@/test-helpers/messaging.helpers';
 
 describe('EnvoyeMessenger', () => {
   let messenger: EnvoyeMessenger;
@@ -41,43 +38,6 @@ describe('EnvoyeMessenger', () => {
     await resetDb(prismaService);
     await app.close();
   });
-
-  type MessageHistory = {
-    senderId: number;
-    messages: string[];
-    sentAt: Date;
-  };
-
-  async function singeParticipantMessageHistory(
-    workspace: Workspace,
-    chatHistory: MessageHistory[],
-  ): Promise<Conversation> {
-    const openingMessage = chatHistory[0];
-    const otherMessages = chatHistory.slice(1);
-    const recipientReply: MessageHistory | undefined = chatHistory.find(
-      (h) => h.senderId !== openingMessage.senderId,
-    );
-
-    const recipientId = recipientReply?.senderId ?? 0;
-
-    const conversation = await messenger.sendOpeningTextMessage(
-      openingMessage.senderId,
-      recipientId,
-      workspace.code,
-      openingMessage.messages,
-      openingMessage.sentAt,
-    );
-
-    for (const history of otherMessages) {
-      await messenger.sendTextMessage(
-        conversation.id,
-        history.senderId,
-        history.messages,
-        history.sentAt,
-      );
-    }
-    return conversation;
-  }
 
   describe('sendOpeningTextMessage', () => {
     it('creates an open conversation with the teammate as sole owner participant', async () => {
@@ -216,6 +176,7 @@ describe('EnvoyeMessenger', () => {
 
       const conversation = await singeParticipantMessageHistory(
         workspace,
+        messenger,
         chatHistory,
       );
 
@@ -243,6 +204,7 @@ describe('EnvoyeMessenger', () => {
 
       const conversation = await singeParticipantMessageHistory(
         workspace,
+        messenger,
         chatHistory,
       );
 

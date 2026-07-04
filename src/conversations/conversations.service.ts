@@ -1,7 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { notInDbError } from '@/common/error-type';
-import { Teammate } from '@/generated/prisma/client';
+import { ConversationParticipant, Teammate } from '@/generated/prisma/client';
 import { render } from '@react-email/render';
 import NewMessageNotificationTemplate from '@/emails/templates/new-message-notification.template';
 import React from 'react';
@@ -93,5 +93,15 @@ export class ConversationsService {
         html: emailHtml,
       });
     }
+  }
+
+  participantSignature(
+    workspaceCode: string,
+    participants: ConversationParticipant[],
+  ) {
+    const teammateIds = participants
+      .map((participant) => participant.teammateId)
+      .sort((a, b) => a - b); //ascending order
+    return [workspaceCode, teammateIds].join(':');
   }
 }
