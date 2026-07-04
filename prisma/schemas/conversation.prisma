@@ -7,7 +7,7 @@ enum ConversationStatus {
 
 model Conversation {
   id                       Int                       @id @default(autoincrement())
-  participant_signature    String?
+  participantSignature     String?
   workspaceCode            String                    @db.VarChar(6)
   workspace                Workspace                 @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
   status                   ConversationStatus        @default(OPEN)
@@ -19,6 +19,6 @@ model Conversation {
   messages                 Message[]
   conversationParticipants ConversationParticipant[]
 
-  @@index([workspaceCode, participant_signature])
+  @@index([workspaceCode, participantSignature])
   @@map("conversation")
 }
