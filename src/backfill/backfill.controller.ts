@@ -14,6 +14,7 @@ import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { render } from '@react-email/render';
 import React from 'react';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import type BackfillTask from '@/backfill/task';
 import BackfillResponseDto, {
   toBackfillResponseDto,
 } from '@/backfill/dto/backfill-response.dto';
@@ -84,46 +85,48 @@ export class BackfillController {
       ENVOYE_WORKSPACE_CODE,
       PERMISSIONS.RUN_BACKFILL_TASK,
       async () => {
+        let task: BackfillTask;
         try {
-          const task = this.registry.get(jobId);
-          const workspaces = await this.prismaService.workspace.findMany({
-            orderBy: { id: 'asc' },
-          });
-
-          const failedWorkspaceCodes: string[] = [];
-          for (const workspace of workspaces) {
-            try {
-              await task.run(workspace);
-            } catch (error) {
-              failedWorkspaceCodes.push(workspace.code);
-              this.logger.error(
-                `Backfill job failed; jobId=${jobId} workspaceCode=${workspace.code}`,
-                error,
-              );
-            }
-          }
-
-          const jobSummary = buildJobRunSummary(
-            jobId,
-            workspaces,
-            failedWorkspaceCodes.length,
-          );
-
-          if (jobSummary.failed > 0) {
-            this.logger.error(
-              `Backfill job completed with failures; jobId=${jobId} failedWorkspaceCodes=[${failedWorkspaceCodes.join(', ')}]`,
-            );
-          }
-
-          const teammate = await this.teammateService.getMyTeammateProfile(
-            ENVOYE_WORKSPACE_CODE,
-            requestUser.email,
-          );
-          await this.sendCompletionEmail(teammate, jobSummary);
-          return toBackfillRunResponseDto(jobSummary);
+          task = this.registry.get(jobId);
         } catch {
           throw new NotFoundException(`Unknown backfill job: ${jobId}`);
         }
+
+        const workspaces = await this.prismaService.workspace.findMany({
+          orderBy: { id: 'asc' },
+        });
+
+        const failedWorkspaceCodes: string[] = [];
+        for (const workspace of workspaces) {
+          try {
+            await task.run(workspace);
+          } catch (error) {
+            failedWorkspaceCodes.push(workspace.code);
+            this.logger.error(
+              `Backfill job failed; jobId=${jobId} workspaceCode=${workspace.code}`,
+              error,
+            );
+          }
+        }
+
+        const jobSummary = buildJobRunSummary(
+          jobId,
+          workspaces,
+          failedWorkspaceCodes.length,
+        );
+
+        if (jobSummary.failed > 0) {
+          this.logger.error(
+            `Backfill job completed with failures; jobId=${jobId} failedWorkspaceCodes=[${failedWorkspaceCodes.join(', ')}]`,
+          );
+        }
+
+        const teammate = await this.teammateService.getMyTeammateProfile(
+          ENVOYE_WORKSPACE_CODE,
+          requestUser.email,
+        );
+        await this.sendCompletionEmail(teammate, jobSummary);
+        return toBackfillRunResponseDto(jobSummary);
       },
     );
   }
