@@ -278,7 +278,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         [],
         new Date(),
@@ -310,7 +310,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        dan.id,
+        [dan.id],
         koboMart.code,
         [],
         new Date(),
@@ -342,7 +342,7 @@ describe('ConversationsController', () => {
 
       await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         [],
         new Date(),
@@ -364,7 +364,7 @@ describe('ConversationsController', () => {
 
       await envoyeMessenger.sendOpeningTextMessage(
         danInZuriBakery.id,
-        marvinInZuriBakery.id,
+        [marvinInZuriBakery.id],
         zuriBakery.code,
         [],
         new Date(),
@@ -455,7 +455,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         [],
         new Date(),
@@ -500,7 +500,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         [],
         new Date(),
@@ -531,7 +531,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         [],
         new Date(),
@@ -562,7 +562,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         [],
         new Date(),
@@ -621,7 +621,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         ['Hey Marvin'],
         openingSentAt,
@@ -669,7 +669,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         [],
         openingSentAt,
@@ -698,7 +698,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         ['First message'],
         openingSentAt,
@@ -748,7 +748,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         ['Hey Marvin'],
         openingSentAt,
@@ -777,7 +777,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         ['Hey Marvin'],
         openingSentAt,
@@ -806,7 +806,7 @@ describe('ConversationsController', () => {
 
       const conversation = await envoyeMessenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         koboMart.code,
         ['Hey Marvin'],
         openingSentAt,

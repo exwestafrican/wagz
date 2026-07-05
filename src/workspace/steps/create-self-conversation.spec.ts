@@ -90,7 +90,7 @@ describe('CreateSelfConversationStep', () => {
     const [laura, tumise] = teammates;
     await messenger.sendOpeningTextMessage(
       laura.id,
-      tumise.id,
+      [tumise.id],
       workspace.code,
       [],
       new Date(),
