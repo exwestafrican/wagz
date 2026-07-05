@@ -6,7 +6,6 @@ import {
   IsDate,
   IsInt,
   IsNotEmpty,
-  IsNumber,
   IsOptional,
   IsString,
   MaxDate,

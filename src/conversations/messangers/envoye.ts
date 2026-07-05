@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import Messenger from '@/conversations/messangers/messenger';
 import { Conversation, Message } from '@/generated/prisma/client';
-import { isEmpty, isSame } from '@/common/utils';
+import { isEmpty } from '@/common/utils';
 import {
   type Message as DomainMessage,
   toDomainMessage,
