@@ -143,7 +143,7 @@ export class WorkspaceInviteService {
       // message self
       await this.messenger.sendOpeningTextMessage(
         teammate.id,
-        teammate.id,
+        [teammate.id],
         teammate.workspaceCode,
         [],
         new Date(),

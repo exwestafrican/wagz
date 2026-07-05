@@ -6,6 +6,8 @@ import {
   IsDate,
   IsInt,
   IsNotEmpty,
+  IsNumber,
+  IsOptional,
   IsString,
   MaxDate,
 } from 'class-validator';
@@ -20,8 +22,8 @@ export class CreateConversationDto {
 
   @ApiProperty({ description: 'Teammate ID of the recipient', example: 5 })
   @IsInt()
-  @IsNotEmpty()
-  recipientTeammateId: number;
+  @IsOptional()
+  recipientTeammateId?: number; // TODO take out this field
 
   @ApiProperty({
     description:
@@ -36,6 +38,18 @@ export class CreateConversationDto {
   @IsNotEmpty({ each: true })
   @MaxCharacterLimit(MAX_ENVOYE_MESSAGE_CHARACTERS)
   openingMessage: string[];
+
+  @ApiProperty({
+    description: 'Ids of recipient teammates',
+    example: [1, 5],
+    minItems: 1,
+    type: [Number],
+  })
+  @IsOptional()
+  @IsArray()
+  @Type(() => Number)
+  @IsInt({ each: true })
+  recipientTeammateIds?: number[]; //TODO: make this required
 
   @ApiProperty({
     type: String,

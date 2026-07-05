@@ -22,7 +22,7 @@ export class CreateSelfConversationStep implements PostSetupStep {
 
     const conversation = await this.messenger.sendOpeningTextMessage(
       admin.id,
-      admin.id,
+      [admin.id],
       admin.workspaceCode,
       [],
       new Date(),
