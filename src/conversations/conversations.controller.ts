@@ -32,7 +32,7 @@ import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
 import { ListConversationsQueryDto } from '@/conversations/dto/list-conversations-query.dto';
 import { ConversationMetadataResponseDto } from '@/conversations/dto/conversation-metadata-response.dto';
-import { Conversation } from '@/generated/prisma/client';
+import { Conversation, Teammate } from '@/generated/prisma/client';
 import { ChatHistoryQueryDto } from '@/conversations/dto/chat-history-query.dto';
 import {
   ChatHistoryDto,
@@ -115,29 +115,36 @@ export class ConversationsController {
       PERMISSIONS.MESSAGE_TEAMMATES,
       async (senderTeammate) => {
         try {
+          //TODO clean up only use recipientTeammateIds
+          const recipientTeammateIds: number[] = (
+            dto.recipientTeammateIds
+              ? dto.recipientTeammateIds
+              : [dto.recipientTeammateId]
+          ).filter((r) => r !== undefined);
+
           const conversation: Conversation =
             await this.teammatesService.runIfTeammatesInSameWorkspace(
               senderTeammate.id,
-              [dto.recipientTeammateId],
+              recipientTeammateIds,
               async (anchorTeammateId, teammateIds, workspaceCode) => {
                 // send text or open message
                 return await this.messenger.sendOpeningTextMessage(
                   anchorTeammateId,
-                  teammateIds[0],
+                  teammateIds,
                   workspaceCode,
                   dto.openingMessage,
                   dto.sentAt,
                 );
               },
             );
-          if (!isSame(senderTeammate.id, dto.recipientTeammateId)) {
-            await this.conversationsService.notifyRecipients(
-              dto.workspaceCode,
-              conversation.id,
-              senderTeammate,
-              dto.openingMessage[0],
-            );
-          }
+
+          await this.notifyRecipients(
+            dto.workspaceCode,
+            conversation.id,
+            senderTeammate,
+            recipientTeammateIds,
+            dto.openingMessage[0],
+          );
 
           return toConversationResponse(conversation);
         } catch (error) {
@@ -151,6 +158,29 @@ export class ConversationsController {
           throw error;
         }
       },
+    );
+  }
+
+  private async notifyRecipients(
+    workspaceCode: string,
+    conversationId: number,
+    senderTeammate: Teammate,
+    recipientTeammateIds: number[],
+    openingMessage: string,
+  ) {
+    const senderTeammateId = senderTeammate.id;
+    if (
+      recipientTeammateIds.length === 1 &&
+      isSame(senderTeammateId, recipientTeammateIds[0])
+    ) {
+      return;
+    }
+
+    await this.conversationsService.notifyRecipients(
+      workspaceCode,
+      conversationId,
+      senderTeammate,
+      openingMessage,
     );
   }
 

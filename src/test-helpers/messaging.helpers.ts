@@ -22,7 +22,7 @@ export async function singeParticipantMessageHistory(
 
   const conversation = await messenger.sendOpeningTextMessage(
     openingMessage.senderId,
-    recipientId,
+    [recipientId],
     workspace.code,
     openingMessage.messages,
     openingMessage.sentAt,

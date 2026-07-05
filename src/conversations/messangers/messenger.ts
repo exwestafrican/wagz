@@ -4,7 +4,7 @@ import { Conversation, type Message } from '@/generated/prisma/client';
 export default interface Messenger {
   sendOpeningTextMessage(
     senderId: number,
-    recipientTeammateId: number,
+    recipientTeammateId: number[],
     workspaceCode: string,
     openingMessage: string[],
     sentAt: Date,

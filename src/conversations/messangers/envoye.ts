@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import Messenger from '@/conversations/messangers/messenger';
 import { Conversation, Message } from '@/generated/prisma/client';
-import { isEmpty, isSame } from '@/common/utils';
+import { isEmpty } from '@/common/utils';
 import {
   type Message as DomainMessage,
   toDomainMessage,
@@ -86,24 +86,26 @@ export default class EnvoyeMessenger implements Messenger {
 
   async sendOpeningTextMessage(
     senderId: number,
-    recipientTeammateId: number,
+    recipientTeammateIds: number[],
     workspaceCode: string,
     openingMessage: string[],
     sentAt: Date,
   ): Promise<Conversation> {
+    const participantIds = Array.from(
+      new Set([senderId, ...recipientTeammateIds]),
+    );
     const conversation = await this.prisma.conversation.create({
       data: {
         workspaceCode: workspaceCode,
         participantSignature: this.conversationsService.participantSignature(
           workspaceCode,
-          isSame(senderId, recipientTeammateId)
-            ? [senderId]
-            : [senderId, recipientTeammateId],
+          participantIds,
         ),
       },
     });
 
-    if (isSame(senderId, recipientTeammateId)) {
+    if (participantIds.length === 1) {
+      // if only one participant, then participant is owner
       await this.prisma.conversationParticipant.create({
         data: {
           workspaceCode,
@@ -113,6 +115,18 @@ export default class EnvoyeMessenger implements Messenger {
         },
       });
     } else {
+      const counterParties = participantIds
+        .map((participantId) => {
+          if (participantId !== senderId) {
+            return {
+              workspaceCode: workspaceCode,
+              conversationId: conversation.id,
+              teammateId: participantId,
+            };
+          }
+        })
+        .filter((c) => c !== undefined);
+
       await this.prisma.conversationParticipant.createMany({
         data: [
           {
@@ -121,11 +135,7 @@ export default class EnvoyeMessenger implements Messenger {
             teammateId: senderId,
             isOwner: true,
           },
-          {
-            workspaceCode: workspaceCode,
-            conversationId: conversation.id,
-            teammateId: recipientTeammateId,
-          },
+          ...counterParties,
         ],
       });
     }
@@ -197,11 +207,8 @@ export default class EnvoyeMessenger implements Messenger {
       },
       take: limit,
     });
-    return conversations
-      .filter(
-        (conversation) => conversation.conversationParticipants.length <= 2,
-      )
-      .map(({ id: conversationId, conversationParticipants: participants }) => {
+    return conversations.map(
+      ({ id: conversationId, conversationParticipants: participants }) => {
         const owner = participants.find((participant) => participant.isOwner);
         const otherParticipants = participants.filter(
           (participant) => !participant.isOwner,
@@ -220,6 +227,7 @@ export default class EnvoyeMessenger implements Messenger {
             (participant) => participant.teammateId,
           ),
         };
-      });
+      },
+    );
   }
 }

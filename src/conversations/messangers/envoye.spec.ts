@@ -108,7 +108,7 @@ describe('EnvoyeMessenger', () => {
       );
       const conversation = await messenger.sendOpeningTextMessage(
         teammate.id,
-        teammate.id,
+        [teammate.id],
         workspace.code,
         [],
         new Date(),
@@ -138,7 +138,7 @@ describe('EnvoyeMessenger', () => {
       const [dan, marvin] = teammates.slice(2);
       const conversation = await messenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         workspace.code,
         [],
         new Date(),
@@ -173,7 +173,7 @@ describe('EnvoyeMessenger', () => {
 
       const conversation = await messenger.sendOpeningTextMessage(
         marvin.id,
-        dan.id,
+        [dan.id],
         workspace.code,
         [],
         new Date(),
@@ -194,7 +194,7 @@ describe('EnvoyeMessenger', () => {
 
       const conversation = await messenger.sendOpeningTextMessage(
         dan.id,
-        marvin.id,
+        [marvin.id],
         workspace.code,
         [],
         new Date(),
