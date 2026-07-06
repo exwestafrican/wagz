@@ -222,4 +222,30 @@ export class AuthService {
       //TODO: mark as faileed, add reason
     }
   }
+
+  async verifyOtpOrThrow(email: string, otp: string): Promise<any> {//not sure what domain object to return here, we need to return the access token and workspace code
+    const {
+      data: { session },
+      error,
+    } = await this.supabaseClient.auth.verifyOtp({
+      email,
+      token: otp,
+      type: 'email',
+    });
+
+    if (error) {
+      this.logger.error(error);
+      throw new UnauthorizedException();
+    } else if (!session) {
+      this.logger.error('No session returned after OTP verification');
+      throw new UnauthorizedException();
+    } else {
+      this.logger.log(`OTP verified successfully for email: ${email}`);
+      //TODO: Look into supporting refresh tokens in the future, for now we will just use the access token and not refresh it.
+      const { access_token} = session;
+      const primaryWorkspace =
+        await this.teammatesService.primaryWorkspace(email);
+      return { access_token, workspaceCode: primaryWorkspace.code };
+    }
+  }
 }

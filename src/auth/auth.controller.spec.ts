@@ -154,6 +154,50 @@ describe('AuthController', () => {
     });
   });
 
+  describe('otp verification', () => {
+    it('should return 400 if the email is invalid', async () => {
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email: 'invalid-email', otp: '123456' })
+        .set('Accept', 'application/json')
+        .expect(400);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['email']);
+    });
+
+    it('should return 400 if the OTP is invalid', async () => {
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email: 'test@example.com', otp: 'invalid-otp' })
+        .set('Accept', 'application/json')
+        .expect(400);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['otp']);
+    });
+
+    it('should return 200 if the email and otp is valid', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: 'test@example.com',
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.REQUEST_MAGIC_LINK)
+        .send({ email: "test@example.com'" })
+        .set('Accept', 'application/json')
+        .expect(200);
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+      const body = response.body;
+      expect(body).toBeTruthy();
+      //send otp verification
+      //assert the response
+    });
+  });
+
   describe('admin login', () => {
     const adminEmail = 'admin@useenvoye.com';
 

@@ -5,8 +5,17 @@ export interface MockSupabaseClient {
     admin: {
       createUser: jest.Mock;
     };
+    verifyOtp: jest.Mock;
   };
 }
+
+// export interface mockAuthSession {
+//   data
+// }
+//
+// export createMockAuthSession = () => {
+//
+// }
 
 export const createMockSupabaseClient = (): MockSupabaseClient => {
   return {
@@ -19,6 +28,7 @@ export const createMockSupabaseClient = (): MockSupabaseClient => {
           error: null,
         }),
       },
+      verifyOtp: jest.fn(),
     },
   };
 };
