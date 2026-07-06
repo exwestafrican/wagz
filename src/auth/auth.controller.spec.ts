@@ -16,6 +16,7 @@ import { AuthEndpoints } from './consts';
 import { Server } from 'http';
 import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
+import { OtpVerificationResponseDto } from './dto/otp-verification-response.dto';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
@@ -155,6 +156,15 @@ describe('AuthController', () => {
   });
 
   describe('otp verification', () => {
+    const email = 'test@example.com';
+
+    function mockVerifyOtpSuccess(accessToken = 'mock-access-token') {
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: { access_token: accessToken } },
+        error: null,
+      });
+    }
+
     it('should return 400 if the email is invalid', async () => {
       const response = await request(getHttpServer(app))
         .post(AuthEndpoints.VERIFY_OTP)
@@ -166,10 +176,10 @@ describe('AuthController', () => {
       expect(body.property).toMatchObject(['email']);
     });
 
-    it('should return 400 if the OTP is invalid', async () => {
+    it('should return 400 if the OTP is empty', async () => {
       const response = await request(getHttpServer(app))
         .post(AuthEndpoints.VERIFY_OTP)
-        .send({ email: 'test@example.com', otp: 'invalid-otp' })
+        .send({ email, otp: '' })
         .set('Accept', 'application/json')
         .expect(400);
 
@@ -177,24 +187,72 @@ describe('AuthController', () => {
       expect(body.property).toMatchObject(['otp']);
     });
 
-    it('should return 200 if the email and otp is valid', async () => {
-      await setupWorkspaceWithTeammate(
+    it('should return 200 with the workspace code and access token when the OTP is valid', async () => {
+      const { workspace } = await setupWorkspaceWithTeammate(
         factory,
         teammateFactory.build({
-          email: 'test@example.com',
+          email,
           groups: [ROLES.WorkspaceAdmin.code],
         }),
       );
+      mockVerifyOtpSuccess('a-valid-access-token');
+
       const response = await request(getHttpServer(app))
-        .post(AuthEndpoints.REQUEST_MAGIC_LINK)
-        .send({ email: "test@example.com'" })
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email, otp: '123456' })
         .set('Accept', 'application/json')
-        .expect(200);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
-      const body = response.body;
-      expect(body).toBeTruthy();
-      //send otp verification
-      //assert the response
+        .expect(HttpStatus.OK);
+
+      expect(mockSupabaseClient.auth.verifyOtp).toHaveBeenCalledWith({
+        email,
+        token: '123456',
+        type: 'email',
+      });
+      const body = response.body as OtpVerificationResponseDto;
+      expect(body).toEqual({
+        workspaceCode: workspace.code,
+        accessToken: 'a-valid-access-token',
+      });
+    });
+
+    it('should return 401 when supabase rejects the OTP', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: null },
+        error: { message: 'Token has expired or is invalid' },
+      });
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email, otp: 'wrong-otp' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('should return 401 when supabase returns no session and no error', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: null },
+        error: null,
+      });
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email, otp: '123456' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
     });
   });
 
