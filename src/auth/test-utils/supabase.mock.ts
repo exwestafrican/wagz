@@ -9,14 +9,6 @@ export interface MockSupabaseClient {
   };
 }
 
-// export interface mockAuthSession {
-//   data
-// }
-//
-// export createMockAuthSession = () => {
-//
-// }
-
 export const createMockSupabaseClient = (): MockSupabaseClient => {
   return {
     auth: {
