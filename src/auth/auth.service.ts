@@ -18,6 +18,7 @@ import { notInDbError } from '@/common/error-type';
 import { faker } from '@faker-js/faker';
 import { PermissionService } from '@/permission/permission.service';
 import RequestUser from '@/auth/domain/request-user';
+import OtpVerification from '@/auth/domain/otp-verification';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { PERMISSIONS } from '@/permission/types';
 
@@ -220,6 +221,35 @@ export class AuthService {
     if (error) {
       this.handleAuthError(error);
       //TODO: mark as faileed, add reason
+    }
+  }
+
+  async verifyOtpOrThrow(email: string, otp: string): Promise<OtpVerification> {
+    const {
+      data: { session },
+      error,
+    } = await this.supabaseClient.auth.verifyOtp({
+      email,
+      token: otp,
+      type: 'email',
+    });
+
+    if (error) {
+      this.logger.error(error);
+      throw new UnauthorizedException();
+    } else if (!session) {
+      this.logger.error('No session returned after OTP verification');
+      throw new ServiceUnavailableException();
+    } else {
+      this.logger.log(`OTP verified successfully for email: ${email}`);
+      //TODO: Look into supporting refresh tokens in the future, for now we will just use the access token and not refresh it.
+      const { access_token } = session;
+      const primaryWorkspace =
+        await this.teammatesService.primaryWorkspace(email);
+      return {
+        accessToken: access_token,
+        workspaceCode: primaryWorkspace.code,
+      };
     }
   }
 }
