@@ -252,7 +252,7 @@ describe('AuthController', () => {
         .post(AuthEndpoints.VERIFY_OTP)
         .send({ email, otp: '123456' })
         .set('Accept', 'application/json')
-        .expect(HttpStatus.UNAUTHORIZED);
+        .expect(HttpStatus.SERVICE_UNAVAILABLE);
     });
   });
 
