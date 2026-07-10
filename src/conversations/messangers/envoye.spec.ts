@@ -180,8 +180,25 @@ describe('EnvoyeMessenger', () => {
       );
 
       expect(conversation.participantSignature).toBe(
-        `${workspace.code}:${lowerTeammateId},${higherTeammateId}`,
+        `${workspace.code}:${lowerTeammateId}:${higherTeammateId}`,
       );
+    });
+
+    it('does not create signature when participants are more than 2', async () => {
+      const { workspace, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 4);
+
+      const [dan, marvin, tomisin] = teammates.slice(0, 3);
+
+      const conversation = await messenger.sendOpeningTextMessage(
+        marvin.id,
+        [dan.id, tomisin.id],
+        workspace.code,
+        [],
+        new Date(),
+      );
+
+      expect(conversation.participantSignature).toBe(null);
     });
   });
 
