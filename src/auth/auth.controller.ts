@@ -16,9 +16,7 @@ import { SignupEmailDto } from './dto/signup.dto';
 import { AccountExistsException } from './exceptions/account.exists';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { OtpVerificationDto } from './dto/otp-verification.dto';
-import {
-  OtpVerificationResponseDto,
-} from '@/auth/dto/otp-verification-response.dto';
+import { OtpVerificationResponseDto } from '@/auth/dto/otp-verification-response.dto';
 
 @Controller('auth')
 @ApiTags('auth')

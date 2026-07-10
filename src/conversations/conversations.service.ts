@@ -97,6 +97,6 @@ export class ConversationsService {
 
   participantSignature(workspaceCode: string, teammateIds: number[]) {
     const sortedTeammateIDs = teammateIds.sort((a, b) => a - b); //ascending order
-    return [workspaceCode, sortedTeammateIDs].join(':');
+    return [workspaceCode, ...sortedTeammateIDs].join(':');
   }
 }
