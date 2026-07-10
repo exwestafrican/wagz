@@ -124,7 +124,8 @@ $ make setup-ssl
 $ pnpx prisma migrate deploy
 $ pnpm start:container-dev
 $ docker exec -it  envoye-nest-app  node dist/src/cli.js setup --email <yourEmail>
-```
+``` 
+**Ensure you copy the supa base keys before running the docker exec command.**
 
 while running $make setup-ssl, password requested is your system password.
 
