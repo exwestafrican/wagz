@@ -12,6 +12,7 @@ services:
   nginx:
     container_name: envoye-nginx
     image: nginx:latest
+    restart: always
     ports:
       - '80:80'
       - '443:443'
