@@ -6,7 +6,6 @@ import {
   IsDate,
   IsInt,
   IsNotEmpty,
-  IsOptional,
   IsString,
   MaxDate,
 } from 'class-validator';
@@ -18,11 +17,6 @@ export class CreateConversationDto {
   @IsString()
   @IsNotEmpty()
   workspaceCode: string;
-
-  @ApiProperty({ description: 'Teammate ID of the recipient', example: 5 })
-  @IsInt()
-  @IsOptional()
-  recipientTeammateId?: number; // TODO take out this field
 
   @ApiProperty({
     description:
@@ -44,11 +38,10 @@ export class CreateConversationDto {
     minItems: 1,
     type: [Number],
   })
-  @IsOptional()
-  @IsArray()
+  @ArrayNotEmpty()
   @Type(() => Number)
   @IsInt({ each: true })
-  recipientTeammateIds?: number[]; //TODO: make this required
+  recipientTeammateIds: number[];
 
   @ApiProperty({
     type: String,
