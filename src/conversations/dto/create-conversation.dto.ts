@@ -19,11 +19,6 @@ export class CreateConversationDto {
   @IsNotEmpty()
   workspaceCode: string;
 
-  @ApiProperty({ description: 'Teammate ID of the recipient', example: 5 })
-  @IsInt()
-  @IsOptional()
-  recipientTeammateId?: number; // TODO take out this field
-
   @ApiProperty({
     description:
       'Messages to send when the conversation is created (max 2000 characters total)',
@@ -44,11 +39,10 @@ export class CreateConversationDto {
     minItems: 1,
     type: [Number],
   })
-  @IsOptional()
-  @IsArray()
+  @ArrayNotEmpty()
   @Type(() => Number)
   @IsInt({ each: true })
-  recipientTeammateIds?: number[]; //TODO: make this required
+  recipientTeammateIds: number[]; //TODO: make this required
 
   @ApiProperty({
     type: String,

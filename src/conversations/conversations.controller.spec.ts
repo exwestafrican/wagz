@@ -94,7 +94,7 @@ describe('ConversationsController', () => {
 
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
-        recipientTeammateId: marvin.id,
+        recipientTeammateIds: [marvin.id],
         openingMessage: ['Hey, how are you feeling.'],
         sentAt: validSentAt,
       });
@@ -125,7 +125,7 @@ describe('ConversationsController', () => {
 
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
-        recipientTeammateId: dan.id,
+        recipientTeammateIds: [dan.id],
         openingMessage: ['in the office today?'],
         sentAt: validSentAt,
       });
@@ -163,7 +163,7 @@ describe('ConversationsController', () => {
       await expect(
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
-          recipientTeammateId: marvinInZuriBakery.id,
+          recipientTeammateIds: [marvinInZuriBakery.id],
           openingMessage: ['wagwan G!'],
           sentAt: validSentAt,
         }),
@@ -187,7 +187,7 @@ describe('ConversationsController', () => {
       await expect(
         controller.createDirectMessage(requestUser, {
           workspaceCode: '345dv5',
-          recipientTeammateId: marvin.id,
+          recipientTeammateIds: [marvin.id],
           openingMessage: ['Welcome to Envoye!'],
           sentAt: validSentAt,
         }),
@@ -206,7 +206,7 @@ describe('ConversationsController', () => {
       await expect(
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
-          recipientTeammateId: marvin.id,
+          recipientTeammateIds: [marvin.id],
           openingMessage: ['Lets sync a bit later'],
           sentAt: validSentAt,
         }),
@@ -227,7 +227,7 @@ describe('ConversationsController', () => {
       await expect(
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
-          recipientTeammateId: 999999,
+          recipientTeammateIds: [999999],
           openingMessage: ['Note to self'],
           sentAt: validSentAt,
         }),
@@ -248,7 +248,7 @@ describe('ConversationsController', () => {
 
       const directMessagePayload = {
         workspaceCode: koboMart.code,
-        recipientTeammateId: marvin.id,
+        recipientTeammateIds: [marvin.id],
         openingMessage: ['Hey, how are you feeling.'],
         sentAt: validSentAt,
       };
@@ -280,7 +280,7 @@ describe('ConversationsController', () => {
 
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
-        recipientTeammateId: marvin.id,
+        recipientTeammateIds: [marvin.id],
         openingMessage: ['Hey there'],
         sentAt: validSentAt,
       });

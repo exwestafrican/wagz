@@ -120,17 +120,10 @@ export class ConversationsController {
       PERMISSIONS.MESSAGE_TEAMMATES,
       async (senderTeammate) => {
         try {
-          //TODO clean up only use recipientTeammateIds
-          const recipientTeammateIds: number[] = (
-            dto.recipientTeammateIds
-              ? dto.recipientTeammateIds
-              : [dto.recipientTeammateId]
-          ).filter((r) => r !== undefined);
-
           const conversation: Conversation =
             await this.teammatesService.runIfTeammatesInSameWorkspace(
               senderTeammate.id,
-              recipientTeammateIds,
+              dto.recipientTeammateIds,
               async (anchorTeammateId, teammateIds, workspaceCode) => {
                 // send text or open message
                 return await this.messenger.sendOpeningTextMessage(
@@ -147,7 +140,7 @@ export class ConversationsController {
             dto.workspaceCode,
             conversation.id,
             senderTeammate,
-            recipientTeammateIds,
+            dto.recipientTeammateIds,
             dto.openingMessage[0],
           );
 
