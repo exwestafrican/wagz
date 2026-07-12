@@ -87,6 +87,7 @@ export class ConversationsController {
           query.workspaceCode,
           teammate.id,
           query.conversationType || ConversationType.ALL,
+          100
         ),
     );
   }
@@ -275,12 +276,12 @@ export class ConversationsController {
             async () =>
               await this.messenger.chatHistory(
                 query.conversationId,
-                20,
+                1000,
                 query.lastMessageSentAt,
               ),
           );
         },
-      );
+      ); //TODO: make chat history scrollable
     return history.map((msg) => toChatHistoryDto(msg));
   }
 
