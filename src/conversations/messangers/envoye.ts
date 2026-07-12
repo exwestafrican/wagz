@@ -8,6 +8,7 @@ import {
   toDomainMessage,
 } from '@/conversations/domain/message';
 import { ConversationsService } from '@/conversations/conversations.service';
+import { ConversationType } from '@/conversations/const';
 
 @Injectable()
 export default class EnvoyeMessenger implements Messenger {
@@ -225,10 +226,36 @@ export default class EnvoyeMessenger implements Messenger {
     });
   }
 
-  async conversations(workspaceCode: string, teammateId: number, limit = 7) {
+  private participantSignatureQuery(conversationType: string) {
+    switch (conversationType) {
+      case ConversationType.COLLABORATIVE:
+        return {
+          participantSignature: {
+            in: null,
+          },
+        };
+
+      case ConversationType.PRIVATE:
+        return {
+          participantSignature: {
+            not: null,
+          },
+        };
+      case ConversationType.ALL:
+        return {};
+    }
+  }
+
+  async conversations(
+    workspaceCode: string,
+    teammateId: number,
+    conversationType: string,
+    limit = 7,
+  ) {
     const conversations = await this.prisma.conversation.findMany({
       where: {
         workspaceCode,
+        ...this.participantSignatureQuery(conversationType),
         conversationParticipants: {
           some: {
             teammateId: teammateId,

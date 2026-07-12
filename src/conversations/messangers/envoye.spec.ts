@@ -19,6 +19,7 @@ import { ConversationsService } from '@/conversations/conversations.service';
 import { TestEmailClient } from '@/messaging/email/test-email-client';
 import { LinkService } from '@/common/link-service';
 import { mockConfigService } from '@/test-helpers/mocks';
+import { ConversationType } from '@/conversations/const';
 
 describe('EnvoyeMessenger', () => {
   let messenger: EnvoyeMessenger;
@@ -393,6 +394,110 @@ describe('EnvoyeMessenger', () => {
 
       expect(unreadMessages).toHaveLength(2);
       await assertLastReadMessageId(participantInfo.id, messages[5].id); // last read message is last sent.
+    });
+  });
+
+  describe('load conversations', () => {
+    async function setupMixedConversationTypes() {
+      const { workspace, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 10);
+
+      const [dami, jess, amara, wole] = teammates.slice(4);
+
+      const collaborativeConversation = await messenger.sendOpeningTextMessage(
+        amara.id,
+        [jess.id, dami.id],
+        workspace.code,
+        [],
+        new Date(),
+      );
+
+      const directMessaging = await messenger.sendOpeningTextMessage(
+        amara.id,
+        [wole.id],
+        workspace.code,
+        [],
+        new Date(),
+      );
+
+      const selfConversation = await messenger.sendOpeningTextMessage(
+        amara.id,
+        [],
+        workspace.code,
+        [],
+        new Date(),
+      );
+
+      return {
+        workspace,
+        amara,
+        collaborativeConversation,
+        directMessaging,
+        selfConversation,
+      };
+    }
+
+    it('returns only collaborative conversations when conversationType is group', async () => {
+      const { workspace, amara, collaborativeConversation } =
+        await setupMixedConversationTypes();
+
+      const conversations = await messenger.conversations(
+        workspace.code,
+        amara.id,
+        ConversationType.COLLABORATIVE,
+      );
+
+      expect(conversations.map((conversation) => conversation.id)).toEqual([
+        collaborativeConversation.id,
+      ]);
+    });
+
+    it('returns only private conversations when conversationType is dm', async () => {
+      const {
+        workspace,
+        amara,
+        collaborativeConversation,
+        directMessaging,
+        selfConversation,
+      } = await setupMixedConversationTypes();
+
+      const conversations = await messenger.conversations(
+        workspace.code,
+        amara.id,
+        ConversationType.PRIVATE,
+      );
+
+      expect(conversations.map((conversation) => conversation.id)).toEqual(
+        expect.arrayContaining([directMessaging.id, selfConversation.id]),
+      );
+      expect(
+        conversations.map((conversation) => conversation.id),
+      ).not.toContain(collaborativeConversation.id);
+    });
+
+    it('returns all conversations when conversationType is all', async () => {
+      const {
+        workspace,
+        amara,
+        collaborativeConversation,
+        directMessaging,
+        selfConversation,
+      } = await setupMixedConversationTypes();
+
+      const conversations = await messenger.conversations(
+        workspace.code,
+        amara.id,
+        ConversationType.ALL,
+      );
+
+      expect(conversations.map((conversation) => conversation.id)).toEqual(
+        expect.arrayContaining([
+          directMessaging.id,
+          selfConversation.id,
+          collaborativeConversation.id,
+        ]),
+      );
+      expect(conversations).toHaveLength(3);
     });
   });
 });
