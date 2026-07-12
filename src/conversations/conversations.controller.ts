@@ -87,7 +87,7 @@ export class ConversationsController {
           query.workspaceCode,
           teammate.id,
           query.conversationType || ConversationType.ALL,
-          100
+          100,
         ),
     );
   }
