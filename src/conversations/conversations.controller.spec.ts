@@ -5,6 +5,7 @@ import RequestUser from '@/auth/domain/request-user';
 import {
   BadRequestException,
   ForbiddenException,
+  HttpStatus,
   INestApplication,
   NotFoundException,
 } from '@nestjs/common';
@@ -231,6 +232,38 @@ describe('ConversationsController', () => {
           sentAt: validSentAt,
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ConflictException when an ongoing conversation already exists', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const directMessagePayload = {
+        workspaceCode: koboMart.code,
+        recipientTeammateId: marvin.id,
+        openingMessage: ['Hey, how are you feeling.'],
+        sentAt: validSentAt,
+      };
+
+      await controller.createDirectMessage(requestUser, directMessagePayload);
+
+      await expect(
+        controller.createDirectMessage(requestUser, directMessagePayload),
+      ).rejects.toMatchObject({ status: HttpStatus.CONFLICT });
+
+      expect(
+        await prismaService.conversation.count({
+          where: { workspaceCode: koboMart.code },
+        }),
+      ).toBe(1);
     });
 
     it('persists opening message with client-provided sentAt', async () => {
