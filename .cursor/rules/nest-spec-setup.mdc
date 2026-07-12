@@ -38,6 +38,29 @@ controller = new ConversationsController(
 - Listing service classes in `providers: [ConversationsService, TeammatesService, ...]`
 - Two-phase module compiles just to wire `useValue` providers
 - `TestControllerModuleWithAuthUser` when testing controller/service logic directly
+- Spying on internal call order or method invocation (e.g. `jest.spyOn(prismaService.*, 'findFirst')` + `invocationCallOrder`) when behavioral tests already cover the outcome
+
+## Prefer behavioral assertions
+
+Test observable outcomes — thrown exceptions, persisted state, returned values — not how the implementation reaches them.
+
+```typescript
+// ❌ BAD — asserts implementation detail; duplicates behavioral coverage
+const findFirstSpy = jest.spyOn(prismaService.conversation, 'findFirst');
+const createSpy = jest.spyOn(prismaService.conversation, 'create');
+await messenger.sendOpeningTextMessage(...);
+expect(findFirstSpy.mock.invocationCallOrder[0]).toBeLessThan(
+  createSpy.mock.invocationCallOrder[0],
+);
+
+// ✅ GOOD — asserts the behavior users depend on
+await expect(messenger.sendOpeningTextMessage(...)).rejects.toBeInstanceOf(
+  ConflictException,
+);
+expect(await prismaService.conversation.count({ where: { workspaceCode } })).toBe(1);
+```
+
+Reserve spies/mocks for isolating external boundaries (email clients, HTTP, third-party SDKs), not for verifying that one internal method ran before another.
 
 ## Invoke the unit under test directly
 
