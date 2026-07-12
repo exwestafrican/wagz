@@ -45,6 +45,10 @@ export class ConversationParticipantsSignature implements BackfillTask {
           `updated conversation signature; conversationId=${conversation.id} participantSignature=${signature} `,
         );
       } else {
+        await this.prismaService.conversation.update({
+          where: { id: conversation.id },
+          data: { participantSignature: null },
+        });
         this.logger.log(
           `skipping conversation with more than 2 participants; conversationId=${conversation.id} participantCount=${participants.length}`,
         );
