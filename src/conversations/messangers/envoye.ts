@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import Messenger from '@/conversations/messangers/messenger';
 import { Conversation, Message } from '@/generated/prisma/client';
@@ -11,6 +11,8 @@ import { ConversationsService } from '@/conversations/conversations.service';
 
 @Injectable()
 export default class EnvoyeMessenger implements Messenger {
+  logger = new Logger(EnvoyeMessenger.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly conversationsService: ConversationsService,
@@ -84,6 +86,28 @@ export default class EnvoyeMessenger implements Messenger {
     return messages.map((message) => toDomainMessage(message)).reverse();
   }
 
+  private async enforceNoOngoingConversation(
+    workspaceCode: string,
+    senderId: number,
+    participantIds: number[],
+  ) {
+    const signature = this.conversationsService.participantSignature(
+      workspaceCode,
+      participantIds,
+    );
+
+    const conversationExists = await this.prisma.conversation.findFirst({
+      where: { participantSignature: signature },
+    });
+
+    if (conversationExists) {
+      this.logger.warn(
+        `attempt to start new conversation when ongoing exists; workspaceCode=${workspaceCode}, senderId=${senderId}, participantIds=${participantIds.join(',')} `,
+      );
+      throw new ConflictException('Ongoing conversation exists');
+    }
+  }
+
   async sendOpeningTextMessage(
     senderId: number,
     recipientTeammateIds: number[],
@@ -94,6 +118,14 @@ export default class EnvoyeMessenger implements Messenger {
     const participantIds = Array.from(
       new Set([senderId, ...recipientTeammateIds]),
     );
+    //TODO: check that participants are less
+    if (participantIds.length <= 2) {
+      await this.enforceNoOngoingConversation(
+        workspaceCode,
+        senderId,
+        participantIds,
+      );
+    }
     const participantSignature =
       participantIds.length <= 2
         ? this.conversationsService.participantSignature(

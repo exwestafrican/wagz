@@ -5,6 +5,7 @@ import RequestUser from '@/auth/domain/request-user';
 import {
   BadRequestException,
   ForbiddenException,
+  HttpStatus,
   INestApplication,
   NotFoundException,
 } from '@nestjs/common';
@@ -93,7 +94,7 @@ describe('ConversationsController', () => {
 
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
-        recipientTeammateId: marvin.id,
+        recipientTeammateIds: [marvin.id],
         openingMessage: ['Hey, how are you feeling.'],
         sentAt: validSentAt,
       });
@@ -124,7 +125,7 @@ describe('ConversationsController', () => {
 
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
-        recipientTeammateId: dan.id,
+        recipientTeammateIds: [dan.id],
         openingMessage: ['in the office today?'],
         sentAt: validSentAt,
       });
@@ -162,7 +163,7 @@ describe('ConversationsController', () => {
       await expect(
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
-          recipientTeammateId: marvinInZuriBakery.id,
+          recipientTeammateIds: [marvinInZuriBakery.id],
           openingMessage: ['wagwan G!'],
           sentAt: validSentAt,
         }),
@@ -186,7 +187,7 @@ describe('ConversationsController', () => {
       await expect(
         controller.createDirectMessage(requestUser, {
           workspaceCode: '345dv5',
-          recipientTeammateId: marvin.id,
+          recipientTeammateIds: [marvin.id],
           openingMessage: ['Welcome to Envoye!'],
           sentAt: validSentAt,
         }),
@@ -205,7 +206,7 @@ describe('ConversationsController', () => {
       await expect(
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
-          recipientTeammateId: marvin.id,
+          recipientTeammateIds: [marvin.id],
           openingMessage: ['Lets sync a bit later'],
           sentAt: validSentAt,
         }),
@@ -226,11 +227,43 @@ describe('ConversationsController', () => {
       await expect(
         controller.createDirectMessage(requestUser, {
           workspaceCode: koboMart.code,
-          recipientTeammateId: 999999,
+          recipientTeammateIds: [999999],
           openingMessage: ['Note to self'],
           sentAt: validSentAt,
         }),
       ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ConflictException when an ongoing conversation already exists', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const directMessagePayload = {
+        workspaceCode: koboMart.code,
+        recipientTeammateIds: [marvin.id],
+        openingMessage: ['Hey, how are you feeling.'],
+        sentAt: validSentAt,
+      };
+
+      await controller.createDirectMessage(requestUser, directMessagePayload);
+
+      await expect(
+        controller.createDirectMessage(requestUser, directMessagePayload),
+      ).rejects.toMatchObject({ status: HttpStatus.CONFLICT });
+
+      expect(
+        await prismaService.conversation.count({
+          where: { workspaceCode: koboMart.code },
+        }),
+      ).toBe(1);
     });
 
     it('persists opening message with client-provided sentAt', async () => {
@@ -247,7 +280,7 @@ describe('ConversationsController', () => {
 
       const body = await controller.createDirectMessage(requestUser, {
         workspaceCode: koboMart.code,
-        recipientTeammateId: marvin.id,
+        recipientTeammateIds: [marvin.id],
         openingMessage: ['Hey there'],
         sentAt: validSentAt,
       });

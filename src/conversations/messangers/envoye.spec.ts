@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { INestApplication } from '@nestjs/common';
+import { ConflictException, INestApplication } from '@nestjs/common';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { PrismaService } from '@/prisma/prisma.service';
 import { createTestApp } from '@/test-helpers/test-app';
@@ -199,6 +199,67 @@ describe('EnvoyeMessenger', () => {
       );
 
       expect(conversation.participantSignature).toBe(null);
+    });
+
+    it('throws ConflictException when an ongoing two-participant conversation already exists', async () => {
+      const { workspace, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+      const [dan, marvin] = teammates;
+
+      await messenger.sendOpeningTextMessage(
+        dan.id,
+        [marvin.id],
+        workspace.code,
+        [],
+        new Date(),
+      );
+
+      await expect(
+        messenger.sendOpeningTextMessage(
+          marvin.id,
+          [dan.id],
+          workspace.code,
+          [],
+          new Date(),
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(
+        await prismaService.conversation.count({
+          where: { workspaceCode: workspace.code },
+        }),
+      ).toBe(1);
+    });
+
+    it('throws ConflictException when a self-conversation already exists', async () => {
+      const { workspace, teammate } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({ email: 'owner@useenvoye.com' }),
+      );
+
+      await messenger.sendOpeningTextMessage(
+        teammate.id,
+        [teammate.id],
+        workspace.code,
+        [],
+        new Date(),
+      );
+
+      await expect(
+        messenger.sendOpeningTextMessage(
+          teammate.id,
+          [teammate.id],
+          workspace.code,
+          [],
+          new Date(),
+        ),
+      ).rejects.toBeInstanceOf(ConflictException);
+
+      expect(
+        await prismaService.conversation.count({
+          where: { workspaceCode: workspace.code },
+        }),
+      ).toBe(1);
     });
   });
 
