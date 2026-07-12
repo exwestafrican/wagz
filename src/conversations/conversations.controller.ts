@@ -40,6 +40,7 @@ import {
 } from '@/conversations/dto/chat-history.dto';
 import { isSame } from '@/common/utils';
 import { UnreadMessageQueryDto } from '@/conversations/dto/unread-message-query.dto';
+import { ConversationType } from '@/conversations/const';
 
 @Controller('conversations')
 export class ConversationsController {
@@ -82,7 +83,11 @@ export class ConversationsController {
       query.workspaceCode,
       PERMISSIONS.MESSAGE_TEAMMATES,
       (teammate) =>
-        this.messenger.conversations(query.workspaceCode, teammate.id),
+        this.messenger.conversations(
+          query.workspaceCode,
+          teammate.id,
+          query.conversationType || ConversationType.ALL,
+        ),
     );
   }
 
