@@ -42,7 +42,7 @@ export class CreateConversationDto {
   @ArrayNotEmpty()
   @Type(() => Number)
   @IsInt({ each: true })
-  recipientTeammateIds: number[]; //TODO: make this required
+  recipientTeammateIds: number[];
 
   @ApiProperty({
     type: String,
