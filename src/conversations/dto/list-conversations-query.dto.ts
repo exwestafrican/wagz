@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { ConversationType } from '@/conversations/const';
-import { Transform } from 'class-transformer';
 
 export class ListConversationsQueryDto {
   @ApiProperty({ description: 'Workspace code', example: '12er56' })
