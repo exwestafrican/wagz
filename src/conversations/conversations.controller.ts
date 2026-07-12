@@ -104,6 +104,11 @@ export class ConversationsController {
     status: HttpStatus.NOT_FOUND,
     description: 'Recipient teammate not found',
   })
+  @ApiResponse({
+    status: HttpStatus.CONFLICT,
+    description:
+      'An ongoing conversation with these participants already exists',
+  })
   @UseGuards(SupabaseAuthGuard)
   async createDirectMessage(
     @User() requestUser: RequestUser,
