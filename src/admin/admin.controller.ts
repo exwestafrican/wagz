@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -39,6 +40,14 @@ import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { PERMISSIONS } from '@/permission/types';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import { WorkspaceManager } from '@/workspace/workspace-manager.service';
+import { ImpersonationService } from '@/impersonation/impersonation.service';
+import { StartImpersonationDto } from '@/impersonation/dto/start-impersonation.dto';
+import {
+  ImpersonationSessionDto,
+  toImpersonationSessionDto,
+} from '@/impersonation/dto/impersonation-session.dto';
+import { PrismaService } from '@/prisma/prisma.service';
+import { notInDbError } from '@/common/error-type';
 
 @Controller('admin')
 export class AdminController {
@@ -46,6 +55,8 @@ export class AdminController {
     private readonly featureFlagManager: FeatureFlagManager,
     private readonly permissionService: PermissionService,
     private readonly workspaceManager: WorkspaceManager,
+    private readonly impersonationService: ImpersonationService,
+    private readonly prismaService: PrismaService,
   ) {}
   @Get('/feature-flag')
   @ApiOperation({ summary: 'Get all features' })
@@ -339,5 +350,97 @@ export class AdminController {
       );
 
     return workspaces.map(toAppDto);
+  }
+
+  @Post('/impersonate')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Start impersonating a teammate' })
+  @ApiBody({ type: StartImpersonationDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Impersonation session started',
+    type: ImpersonationSessionDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or invalid impersonation target',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Teammate not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async startImpersonation(
+    @User() requestUser: RequestUser,
+    @Body() body: StartImpersonationDto,
+  ): Promise<ImpersonationSessionDto> {
+    const { session, subjectTeammate } =
+      await this.impersonationService.startSession(
+        requestUser.email,
+        body.teammateId,
+      );
+
+    return toImpersonationSessionDto(session, subjectTeammate);
+  }
+
+  @Delete('/impersonate/:sessionId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'End an impersonation session' })
+  @ApiParam({
+    name: 'sessionId',
+    description: 'Impersonation session id',
+  })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Impersonation session ended',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Session not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async endImpersonation(
+    @User() requestUser: RequestUser,
+    @Param('sessionId') sessionId: string,
+  ): Promise<void> {
+    await this.impersonationService.endSession(requestUser.email, sessionId);
+  }
+
+  @Get('/impersonate/active')
+  @ApiOperation({ summary: 'Get active impersonation session for the actor' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Active impersonation session',
+    type: ImpersonationSessionDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'No active impersonation session',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async getActiveImpersonation(
+    @User() requestUser: RequestUser,
+  ): Promise<ImpersonationSessionDto> {
+    const activeSession = await this.impersonationService.getActiveSession(
+      requestUser.email,
+    );
+
+    if (!activeSession) {
+      throw new NotFoundException();
+    }
+
+    try {
+      const subjectTeammate =
+        await this.prismaService.teammate.findUniqueOrThrow({
+          where: { id: activeSession.subjectTeammateId },
+        });
+
+      return toImpersonationSessionDto(activeSession, subjectTeammate);
+    } catch (error) {
+      if (notInDbError(error)) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
   }
 }

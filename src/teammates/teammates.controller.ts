@@ -1,6 +1,7 @@
 import {
   ConflictException,
   Controller,
+  ForbiddenException,
   Get,
   HttpStatus,
   Logger,
@@ -97,10 +98,13 @@ export class TeammatesController {
     @User() requestUser: RequestUser,
     @Query('workspaceCode') workspaceCode: string,
   ): Promise<TeammateResponseDto> {
-    const teammate = await this.teammatesService.getMyTeammateProfile(
+    const teammate = await this.permissionService.resolveActingTeammate(
+      requestUser,
       workspaceCode,
-      requestUser.email,
     );
+    if (!teammate) {
+      throw new ForbiddenException();
+    }
     return toTeammateResponse(teammate);
   }
 

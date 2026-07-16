@@ -1,0 +1,12 @@
+model ImpersonationSession {
+  id                String    @id @default(uuid())
+  actorEmail        String    @db.VarChar(255)
+  subjectTeammateId Int
+  workspaceCode     String    @db.VarChar(6)
+  startedAt         DateTime  @default(now())
+  expiresAt         DateTime
+  endedAt           DateTime?
+
+  @@index([actorEmail, endedAt])
+  @@map("impersonation_session")
+}

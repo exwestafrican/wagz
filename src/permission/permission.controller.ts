@@ -29,7 +29,7 @@ export class PermissionController {
     @Query('workspaceCode') workspaceCode: string,
   ): Promise<string[]> {
     return this.permissionService.teammatePermissions(
-      requestUser.email,
+      requestUser,
       workspaceCode,
     );
   }

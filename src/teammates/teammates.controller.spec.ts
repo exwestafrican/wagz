@@ -19,6 +19,9 @@ import getHttpServer from '@/test-helpers/get-http-server';
 import { TeammatesEndpoints } from '@/common/const';
 import { Teammate, Workspace } from '@/generated/prisma/client';
 import { resetDb } from '@/test-helpers/rest-db';
+import { ImpersonationService } from '@/impersonation/impersonation.service';
+import { IMPERSONATION_SESSION_HEADER } from '@/impersonation/consts';
+import { setupSuperAdmin } from '@/test-helpers/workspace-helpers';
 
 describe('TeammatesController', () => {
   let requestUser: RequestUser;
@@ -30,7 +33,7 @@ describe('TeammatesController', () => {
     requestUser = RequestUser.of('laura@useEnvoye.com');
     const module = await TestControllerModuleWithAuthUser({
       controllers: [TeammatesController],
-      providers: [TeammatesService, PermissionService, RoleService],
+      providers: [TeammatesService, PermissionService, RoleService, ImpersonationService],
     }).with(requestUser);
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
@@ -133,6 +136,48 @@ describe('TeammatesController', () => {
         .query({ workspaceCode: 'abc123' })
         .set('Accept', 'application/json')
         .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('should return subject profile when impersonating', async () => {
+      const actorEmail = 'admin@useEnvoye.co';
+      requestUser = RequestUser.of(actorEmail);
+      const module = await TestControllerModuleWithAuthUser({
+        controllers: [TeammatesController],
+        providers: [
+          TeammatesService,
+          PermissionService,
+          RoleService,
+          ImpersonationService,
+        ],
+      }).with(requestUser);
+      await app.close();
+      app = await createTestApp(module);
+      prismaService = app.get<PrismaService>(PrismaService);
+      factory = Factory.createStrategy(prismaService);
+
+      await setupSuperAdmin(factory, actorEmail);
+      const { workspace, teammate: subjectTeammate } =
+        await setupWorkspaceWithTeammate(factory, teammateFactory.build());
+
+      const impersonationService = app.get<ImpersonationService>(
+        ImpersonationService,
+      );
+      const { session } = await impersonationService.startSession(
+        actorEmail,
+        subjectTeammate.id,
+      );
+
+      const response = await request(getHttpServer(app))
+        .get(TeammatesEndpoints.MY_PROFILE)
+        .query({ workspaceCode: workspace.code })
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .set(IMPERSONATION_SESSION_HEADER, session.id)
+        .expect(HttpStatus.OK);
+
+      const body = response.body as TeammateResponseDto;
+      expect(body.id).toBe(subjectTeammate.id);
+      expect(body.email).toBe(subjectTeammate.email);
     });
   });
 
