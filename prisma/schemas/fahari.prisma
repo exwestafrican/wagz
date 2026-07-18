@@ -16,10 +16,12 @@ model Booking {
   client         Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
   tripType       String           @db.VarChar(50)
   status         String           @db.VarChar(50)
-  amount         Int
+  amount         BigInt
   currency       String           @db.VarChar(4)
   bookingDetails BookingDetails[]
+  invoices       Invoice[]
 
+  @@index([clientId])
   @@map("booking")
 }
 
@@ -38,6 +40,24 @@ model BookingDetails {
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
 
+  @@index([bookingId])
   @@map("booking_details")
 }
 
+model Invoice {
+  id                 Int       @id @default(autoincrement())
+  bookingId          Int
+  booking            Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  type               String    @db.VarChar(50)
+  amount             BigInt
+  currency           String    @db.VarChar(4)
+  status             String    @db.VarChar(50)
+  paymentLink        String?    @db.VarChar(800)
+  issuedAt           DateTime  @default(now())
+  paidAt             DateTime?
+  gatewayReference   String?   @db.VarChar(255)
+  additional_details String?   @db.VarChar(5000)
+
+  @@index([bookingId])
+  @@map("invoice")
+}
