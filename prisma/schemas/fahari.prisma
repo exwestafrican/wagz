@@ -45,18 +45,18 @@ model BookingDetails {
 }
 
 model Invoice {
-  id                 Int       @id @default(autoincrement())
-  bookingId          Int
-  booking            Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  type               String    @db.VarChar(50)
-  amount             BigInt
-  currency           String    @db.VarChar(4)
-  status             String    @db.VarChar(50)
-  paymentLink        String?    @db.VarChar(800)
-  issuedAt           DateTime  @default(now())
-  paidAt             DateTime?
-  gatewayReference   String?   @db.VarChar(255)
-  additional_details String?   @db.VarChar(5000)
+  id                Int       @id @default(autoincrement())
+  bookingId         Int
+  booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  type              String    @db.VarChar(50)
+  amount            BigInt
+  currency          String    @db.VarChar(4)
+  status            String    @db.VarChar(50)
+  paymentLink       String?   @db.VarChar(800)
+  issuedAt          DateTime  @default(now())
+  paidAt            DateTime?
+  gatewayReference  String?   @unique @db.VarChar(1000)
+  additionalDetails String?   @db.VarChar(5000)
 
   @@index([bookingId])
   @@map("invoice")
