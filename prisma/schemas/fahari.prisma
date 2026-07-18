@@ -1,0 +1,63 @@
+model Client {
+  id        Int       @id @default(autoincrement())
+  email     String    @unique @db.VarChar(255)
+  firstName String    @db.VarChar(100)
+  lastName  String    @db.VarChar(100)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  bookings  Booking[]
+
+  @@map("client")
+}
+
+model Booking {
+  id             Int              @id @default(autoincrement())
+  clientId       Int
+  client         Client           @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tripType       String           @db.VarChar(50)
+  status         String           @db.VarChar(50)
+  amount         BigInt
+  currency       String           @db.VarChar(4)
+  bookingDetails BookingDetails[]
+  invoices       Invoice[]
+
+  @@index([clientId])
+  @@map("booking")
+}
+
+model BookingDetails {
+  id                        Int      @id @default(autoincrement())
+  bookingId                 Int
+  booking                   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  pickup_location           String   @db.VarChar(5000)
+  pickup_location_map_link  String   @db.VarChar(800)
+  dropoff_location          String   @db.VarChar(5000)
+  dropoff_location_map_link String   @db.VarChar(800)
+  scheduled_time            DateTime
+  status                    String   @db.VarChar(50)
+  sequence                  Int
+  additional_details        String   @db.VarChar(5000)
+  createdAt                 DateTime @default(now())
+  updatedAt                 DateTime @updatedAt
+
+  @@index([bookingId])
+  @@map("booking_details")
+}
+
+model Invoice {
+  id                Int       @id @default(autoincrement())
+  bookingId         Int
+  booking           Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  type              String    @db.VarChar(50)
+  amount            BigInt
+  currency          String    @db.VarChar(4)
+  status            String    @db.VarChar(50)
+  paymentLink       String?   @db.VarChar(800)
+  issuedAt          DateTime  @default(now())
+  paidAt            DateTime?
+  gatewayReference  String?   @unique @db.VarChar(1000)
+  additionalDetails String?   @db.VarChar(5000)
+
+  @@index([bookingId])
+  @@map("invoice")
+}
