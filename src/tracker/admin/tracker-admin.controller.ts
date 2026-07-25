@@ -23,7 +23,7 @@ import { PermissionService } from '@/permission/permission.service';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { PERMISSIONS } from '@/permission/types';
 
-@Controller('tracker/admin')
+@Controller('admin/tracker')
 export class TrackerAdminController {
   constructor(
     private readonly trackerService: TrackerService,
