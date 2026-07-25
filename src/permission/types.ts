@@ -52,6 +52,11 @@ export const PERMISSIONS = {
     'Allows user to list workspaces in the admin panel',
     'workspace',
   ),
+  MANAGE_DEVICES: Permission.of(
+    'Manage Devices',
+    'Allows user to register and manage tracking devices',
+    'manage_devices',
+  ),
 } as const;
 
 export const ROLES: Record<string, Role> = {
@@ -67,6 +72,7 @@ export const ROLES: Record<string, Role> = {
     PERMISSIONS.MANAGE_FEATURE_FLAGS,
     PERMISSIONS.ACCESS_ADMIN,
     PERMISSIONS.WORKSPACE,
+    PERMISSIONS.MANAGE_DEVICES,
   ]),
   WorkspaceAdmin: Role.of('WorkspaceAdmin', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
