@@ -131,7 +131,7 @@ describe('TrackerAdminController', () => {
       ]);
     });
 
-    it('throws ForbiddenException when user lacks manage_devices permission', async () => {
+    it('throws NotFoundException when user lacks manage_devices permission', async () => {
       await setupWorkspaceWithTeammate(
         factory,
         teammateFactory.build({
@@ -142,7 +142,7 @@ describe('TrackerAdminController', () => {
       );
 
       await expect(adminController.listDevices(requestUser)).rejects.toThrow(
-        ForbiddenException,
+        NotFoundException,
       );
     });
   });

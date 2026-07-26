@@ -2,9 +2,11 @@ import {
   Body,
   ConflictException,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
+  NotFoundException,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -39,21 +41,28 @@ export class TrackerAdminController {
     type: [DeviceResponseDto],
   })
   @ApiResponse({
-    status: HttpStatus.FORBIDDEN,
+    status: HttpStatus.NOT_FOUND,
     description: 'Missing permission or not an active Envoye workspace member',
   })
   @UseGuards(SupabaseAuthGuard)
   async listDevices(
     @User() requestUser: RequestUser,
   ): Promise<DeviceResponseDto[]> {
-    const devices =
-      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
-        requestUser,
-        ENVOYE_WORKSPACE_CODE,
-        PERMISSIONS.MANAGE_DEVICES,
-        () => this.trackerService.listDevices(),
-      );
-    return devices.map(toDeviceResponse);
+    try {
+      const devices =
+        await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+          requestUser,
+          ENVOYE_WORKSPACE_CODE,
+          PERMISSIONS.MANAGE_DEVICES,
+          () => this.trackerService.listDevices(),
+        );
+      return devices.map(toDeviceResponse);
+    } catch (error) {
+      if (error instanceof ForbiddenException) {
+        throw new NotFoundException();
+      }
+      throw error;
+    }
   }
 
   @Post('devices')
