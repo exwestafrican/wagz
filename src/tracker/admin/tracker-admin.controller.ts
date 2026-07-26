@@ -2,7 +2,6 @@ import {
   Body,
   ConflictException,
   Controller,
-  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -48,21 +47,15 @@ export class TrackerAdminController {
   async listDevices(
     @User() requestUser: RequestUser,
   ): Promise<DeviceResponseDto[]> {
-    try {
-      const devices =
-        await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
-          requestUser,
-          ENVOYE_WORKSPACE_CODE,
-          PERMISSIONS.MANAGE_DEVICES,
-          () => this.trackerService.listDevices(),
-        );
-      return devices.map(toDeviceResponse);
-    } catch (error) {
-      if (error instanceof ForbiddenException) {
-        throw new NotFoundException();
-      }
-      throw error;
-    }
+    const devices =
+      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+        requestUser,
+        ENVOYE_WORKSPACE_CODE,
+        PERMISSIONS.MANAGE_DEVICES,
+        () => this.trackerService.listDevices(),
+        NotFoundException,
+      );
+    return devices.map(toDeviceResponse);
   }
 
   @Post('devices')

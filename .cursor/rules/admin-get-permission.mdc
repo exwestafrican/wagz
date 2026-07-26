@@ -1,0 +1,40 @@
+---
+description: On GET endpoints, pass NotFoundException as the permission denial exception so missing access does not reveal the resource.
+globs: src/**/*.controller.ts
+alwaysApply: false
+---
+
+# GET permission denial → NotFound
+
+When a **GET** (read) endpoint uses `runIfActiveWorkspaceMemberAndPermitted` or `runIfPermitted`, pass `NotFoundException` as the denial exception so lacking permission (or not being an active workspace member) does not reveal that the resource exists.
+
+Mutating endpoints (`POST` / `PATCH` / `DELETE` / etc.) keep the default (`ForbiddenException`).
+
+## Example
+
+See `listDevices` in [`TrackerAdminController`](src/tracker/admin/tracker-admin.controller.ts):
+
+```typescript
+const devices =
+  await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+    requestUser,
+    ENVOYE_WORKSPACE_CODE,
+    PERMISSIONS.MANAGE_DEVICES,
+    () => this.trackerService.listDevices(),
+    NotFoundException,
+  );
+```
+
+## Avoid
+
+```typescript
+// ❌ BAD — remap ForbiddenException in the controller
+try {
+  await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(...);
+} catch (error) {
+  if (error instanceof ForbiddenException) {
+    throw new NotFoundException();
+  }
+  throw error;
+}
+```
