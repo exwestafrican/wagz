@@ -6,6 +6,8 @@ import RequestUser from '@/auth/domain/request-user';
 import { Teammate, TeammateStatus } from '@/generated/prisma/client';
 import { Permission } from '@/permission/domain/permission';
 
+export type DenialException = new () => Error;
+
 @Injectable()
 export class PermissionService {
   logger = new Logger(PermissionService.name);
@@ -45,6 +47,7 @@ export class PermissionService {
     workspaceCode: string,
     requiredPermission: Permission,
     authorizedAction: (teammate: Teammate) => T,
+    DenialException: DenialException = ForbiddenException,
   ): Promise<T> {
     const teammate = await this.prismaService.teammate.findUniqueOrThrow({
       where: {
@@ -59,7 +62,7 @@ export class PermissionService {
     if (this.roleService.hasPermission(roleCodes, requiredPermission)) {
       return authorizedAction(teammate);
     } else {
-      throw new ForbiddenException();
+      throw new DenialException();
     }
   }
 
@@ -81,6 +84,7 @@ export class PermissionService {
     workspaceCode: string,
     requiredPermission: Permission,
     authorizedAction: (teammate: Teammate) => T,
+    DenialException: DenialException = ForbiddenException,
   ) {
     const workspaceMember = await this.findActiveWorkspaceMember(
       requestUser.email,
@@ -92,6 +96,7 @@ export class PermissionService {
         workspaceCode,
         requiredPermission,
         authorizedAction,
+        DenialException,
       );
     } else {
       //TODO: add metric here or envoye alert to message us
@@ -99,7 +104,7 @@ export class PermissionService {
       this.logger.warn(
         `Attempt to access data in workspace not a member of workspaceCode=${workspaceCode}`,
       );
-      throw new ForbiddenException();
+      throw new DenialException();
     }
   }
 

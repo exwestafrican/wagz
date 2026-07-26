@@ -115,6 +115,38 @@ describe('TrackerAdminController', () => {
     await app.close();
   });
 
+  describe('listDevices', () => {
+    it('returns registered devices for SuperAdmin', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const firstImei = faker.string.numeric(15);
+      const secondImei = faker.string.numeric(15);
+      await adminController.registerDevice(requestUser, { imei: firstImei });
+      await adminController.registerDevice(requestUser, { imei: secondImei });
+
+      const devices = await adminController.listDevices(requestUser);
+
+      expect(devices.map((device) => device.imei)).toEqual([
+        secondImei,
+        firstImei,
+      ]);
+    });
+
+    it('throws NotFoundException when user lacks manage_devices permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+
+      await expect(adminController.listDevices(requestUser)).rejects.toThrow(
+        NotFoundException,
+      );
+    });
+  });
+
   describe('registerDevice', () => {
     it('returns the registered device for SuperAdmin', async () => {
       await setupSuperAdmin(factory, requestUser.email);

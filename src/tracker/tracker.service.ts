@@ -28,6 +28,12 @@ export class TrackerService {
     }
   }
 
+  async listDevices(): Promise<Device[]> {
+    return this.prismaService.device.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async recordLocation(
     deviceId: string,
     latitude: number,
@@ -48,9 +54,7 @@ export class TrackerService {
         timestamp: new Date(),
       },
     });
-    this.logger.log(
-      `recorded location id=${location.id} deviceId=${deviceId}`,
-    );
+    this.logger.log(`recorded location id=${location.id} deviceId=${deviceId}`);
     return location;
   }
 }
