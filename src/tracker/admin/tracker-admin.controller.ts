@@ -2,6 +2,7 @@ import {
   Body,
   ConflictException,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -29,6 +30,31 @@ export class TrackerAdminController {
     private readonly trackerService: TrackerService,
     private readonly permissionService: PermissionService,
   ) {}
+
+  @Get('devices')
+  @ApiOperation({ summary: 'List all tracking devices' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'All devices returned',
+    type: [DeviceResponseDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or not an active Envoye workspace member',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async listDevices(
+    @User() requestUser: RequestUser,
+  ): Promise<DeviceResponseDto[]> {
+    const devices =
+      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+        requestUser,
+        ENVOYE_WORKSPACE_CODE,
+        PERMISSIONS.MANAGE_DEVICES,
+        () => this.trackerService.listDevices(),
+      );
+    return devices.map(toDeviceResponse);
+  }
 
   @Post('devices')
   @HttpCode(HttpStatus.CREATED)

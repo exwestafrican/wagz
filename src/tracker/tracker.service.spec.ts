@@ -55,6 +55,28 @@ describe('TrackerService', () => {
     });
   });
 
+  describe('listDevices', () => {
+    it('returns registered devices newest first', async () => {
+      const olderDevice = await trackerService.registerDevice(
+        faker.string.numeric(15),
+      );
+      const newerDevice = await trackerService.registerDevice(
+        faker.string.numeric(15),
+      );
+
+      const devices = await trackerService.listDevices();
+
+      expect(devices.map((device) => device.id)).toEqual([
+        newerDevice.id,
+        olderDevice.id,
+      ]);
+    });
+
+    it('returns an empty list when no devices are registered', async () => {
+      await expect(trackerService.listDevices()).resolves.toEqual([]);
+    });
+  });
+
   describe('recordLocation', () => {
     it('appends a location for a registered device', async () => {
       const device = await trackerService.registerDevice(
