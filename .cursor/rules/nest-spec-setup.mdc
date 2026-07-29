@@ -64,7 +64,10 @@ Reserve spies/mocks for isolating external boundaries (email clients, HTTP, thir
 
 ## Invoke the unit under test directly
 
-Call methods on the manually constructed instance (e.g. `controller.createDirectMessage(...)`). Assert thrown Nest exceptions with `rejects.toThrow(ForbiddenException)`.
+Call methods on the manually constructed instance (e.g. `controller.createDirectMessage(...)`). Assert thrown Nest exceptions with `rejects.toThrow(...)`.
+
+- GET / list permission denials → assert `NotFoundException` (callers pass `NotFoundException` as the denial exception).
+- Mutations → assert `ForbiddenException` (default denial exception), unless the endpoint maps otherwise.
 
 ## HTTP / auth guard tests
 
