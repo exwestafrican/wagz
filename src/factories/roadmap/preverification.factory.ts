@@ -5,15 +5,19 @@ import {
 } from '@/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 import { PrismaService } from '@/prisma/prisma.service';
+import buildUsername from '@/common/build-username';
 
 const preVerificationFactory = Factory.define<PreVerification>(() => {
+  const firstName = faker.person.firstName();
+  const lastName = faker.person.lastName();
+  const username = buildUsername(firstName, lastName);
   return {
     id: faker.string.uuid(),
     email: faker.internet.email(),
-    firstName: faker.person.firstName(),
-    lastName: faker.person.lastName(),
+    firstName: firstName,
+    lastName: lastName,
     companyName: faker.company.name(),
-    username: faker.internet.username(),
+    username: username,
     phoneCountryCode: '+234',
     phoneNumber: '8169098834',
     status: PreVerificationStatus.PENDING,
