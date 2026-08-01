@@ -76,6 +76,9 @@ describe('CreateWorkspaceAdminStep', () => {
     expect(createdTeammate.username).toBe(
       `${workspaceDetails.pointOfContact.firstName.toLowerCase()}.${workspaceDetails.pointOfContact.lastName.toLowerCase()}`,
     );
+    expect(createdTeammate.normalizedUsername).toBe(
+      `${workspaceDetails.pointOfContact.firstName.toLowerCase()}${workspaceDetails.pointOfContact.lastName.toLowerCase()}`,
+    );
 
     await step.compensate(workspaceDetails);
 

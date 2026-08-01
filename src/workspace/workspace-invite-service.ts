@@ -14,6 +14,7 @@ import { render } from '@react-email/render';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { fullName } from '@/teammates/utils/full-name';
 import FeatureFlagManager from '@/feature-flag/manager';
+import normalizeUsername from '@/common/normalize-username';
 
 export interface TeammateDetails {
   firstName: string;
@@ -119,6 +120,7 @@ export class WorkspaceInviteService {
           firstName: teammateDetails.firstName,
           lastName: teammateDetails.lastName,
           username: teammateDetails.username,
+          normalizedUsername: normalizeUsername(teammateDetails.username),
           groups: [invite.recipientRole],
         },
       });

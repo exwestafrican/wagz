@@ -4,23 +4,25 @@ import { faker } from '@faker-js/faker';
 import { ROLES } from '@/permission/types';
 import { PrismaService } from '@/prisma/prisma.service';
 import { sixCharHumanFriendlyCode } from '@/factories/code-generator';
+import normalizeUsername from '@/common/normalize-username';
 
 class TeammateFactory extends Factory<Teammate> {
   adminTeammate() {
     return this.build({ groups: [ROLES.WorkspaceAdmin.code] });
   }
 }
-const teammateFactory = TeammateFactory.define(({ sequence }) => {
-  const firstName = faker.person.firstName();
-  const lastName = faker.person.lastName();
-  const username = `${firstName}.${lastName}`;
+const teammateFactory = TeammateFactory.define(({ sequence, params }) => {
+  const firstName = params.firstName ?? faker.person.firstName();
+  const lastName = params.lastName ?? faker.person.lastName();
+  const username = params.username ?? `${firstName}.${lastName}`;
   return {
     id: sequence,
     email: faker.internet.email(),
     firstName: firstName,
     lastName: lastName,
     username: username,
-    normalizedUsername: username.split('.').join(''),
+    normalizedUsername:
+      params.normalizedUsername ?? normalizeUsername(username),
     workspaceCode: sixCharHumanFriendlyCode(),
     status: TeammateStatus.ACTIVE,
     avatarUrl: faker.internet.url(),

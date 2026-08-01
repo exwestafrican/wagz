@@ -2,6 +2,7 @@ import { Teammate, Workspace } from '@/generated/prisma/client';
 import BackfillTask from '@/backfill/task';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Logger } from '@nestjs/common';
+import normalizeUsername from '@/common/normalize-username';
 
 export class NormalizeUsernames implements BackfillTask {
   logger = new Logger(NormalizeUsernames.name);
@@ -23,7 +24,7 @@ export class NormalizeUsernames implements BackfillTask {
         await this.prismaService.teammate.update({
           where: { id: teammate.id },
           data: {
-            normalizedUsername: this.normalizeUsername(teammate.username),
+            normalizedUsername: normalizeUsername(teammate.username),
           },
         });
         this.logger.log(
@@ -33,9 +34,5 @@ export class NormalizeUsernames implements BackfillTask {
         this.logger.warn(`Teammate has no username; id=${teammate.id}`);
       }
     }
-  }
-
-  private normalizeUsername(username: string) {
-    return username.split('.').join('');
   }
 }

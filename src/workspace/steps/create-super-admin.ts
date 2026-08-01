@@ -3,26 +3,26 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
 import { ROLES } from '@/permission/types';
-import { PointOfContact } from '../domain/point-of-contact';
+import buildUsername from '@/common/build-username';
+import normalizeUsername from '@/common/normalize-username';
 
 export class CreateSuperAdminStep implements PostSetupStep {
   logger = new Logger(CreateSuperAdminStep.name);
   constructor(private readonly prismaService: PrismaService) {}
 
-  private username(pointOfContact: PointOfContact) {
-    return [pointOfContact.firstName, pointOfContact.lastName]
-      .map((name) => name.toLowerCase())
-      .join('.');
-  }
-
   async execute(workspaceDetails: WorkspaceDetails): Promise<void> {
     const pointOfContact = workspaceDetails.pointOfContact;
+    const username = buildUsername(
+      pointOfContact.firstName,
+      pointOfContact.lastName,
+    );
     await this.prismaService.teammate.create({
       data: {
         email: pointOfContact.email,
         firstName: pointOfContact.firstName,
         lastName: pointOfContact.lastName,
-        username: this.username(pointOfContact),
+        username,
+        normalizedUsername: normalizeUsername(username),
         workspaceCode: workspaceDetails.code,
         groups: [ROLES.SuperAdmin.code],
       },
