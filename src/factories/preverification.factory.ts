@@ -13,6 +13,7 @@ const preVerificationFactory = Factory.define<PreVerification>(() => {
     firstName: faker.person.firstName(),
     lastName: faker.person.lastName(),
     companyName: faker.company.name(),
+    username: faker.internet.username(),
     phoneCountryCode: '+234',
     phoneNumber: '8169098834',
     status: PreVerificationStatus.PENDING,
