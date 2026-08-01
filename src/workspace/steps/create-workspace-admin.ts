@@ -3,6 +3,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
 import { PostSetupStep } from '@/workspace/steps/postsetup-step';
 import { ROLES } from '@/permission/types';
+import normalizeUsername from '@/common/normalize-username';
 
 export class CreateWorkspaceAdminStep implements PostSetupStep {
   logger = new Logger(CreateWorkspaceAdminStep.name);
@@ -16,6 +17,7 @@ export class CreateWorkspaceAdminStep implements PostSetupStep {
         firstName: pointOfContact.firstName,
         lastName: pointOfContact.lastName,
         username: pointOfContact.username,
+        normalizedUsername: normalizeUsername(pointOfContact.username),
         workspaceCode: workspaceDetails.code,
         groups: [ROLES.WorkspaceAdmin.code],
       },

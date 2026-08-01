@@ -437,10 +437,11 @@ describe('WorkspaceController', () => {
 
       const createdTeammate = await prismaService.teammate.findFirstOrThrow({
         where: { workspaceCode: '9Jk076', email: 'laura@useenvoye.co' },
-        select: { groups: true, username: true },
+        select: { groups: true, username: true, normalizedUsername: true },
       });
       expect(createdTeammate.groups).toEqual([ROLES.SupportStaff.code]);
       expect(createdTeammate.username).toBe('laura.smith');
+      expect(createdTeammate.normalizedUsername).toBe('laurasmith');
 
       const invite = await prismaService.workspaceInvite.findFirstOrThrow({
         where: {

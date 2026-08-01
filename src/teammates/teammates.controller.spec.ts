@@ -169,6 +169,22 @@ describe('TeammatesController', () => {
         .expect(HttpStatus.CONFLICT);
     });
 
+    it('should return 409 when the normalized form of the username is already taken', async () => {
+      const { workspace } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          username: 'laura.smith',
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .get(TeammatesEndpoints.CHECK_USERNAME)
+        .query({ workspaceCode: workspace.code, username: 'laurasmith' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.CONFLICT);
+    });
+
     test.each([
       ['90-...jky', 'starts with digit and has consecutive separators'],
       ['laura smith', 'contains a space'],

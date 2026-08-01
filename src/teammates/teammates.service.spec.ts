@@ -177,7 +177,11 @@ describe('TeammatesService', () => {
         await setupWorkspaceWithMultipleTeammates(factory, 1);
       await prismaService.teammate.update({
         where: { id: teammates[0].id },
-        data: { email: requestUser.email, username: 'laura.smith' },
+        data: {
+          email: requestUser.email,
+          username: 'laura.smith',
+          normalizedUsername: 'laurasmith',
+        },
       });
 
       const usernameTaken = await service.usernameAlreadyExistsInWorkspace(
@@ -188,12 +192,36 @@ describe('TeammatesService', () => {
       expect(usernameTaken).toBe(true);
     });
 
+    it('should return true when the normalized form of the username is already taken', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 1);
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          username: 'laura.smith',
+          normalizedUsername: 'laurasmith',
+        },
+      });
+
+      const usernameTaken = await service.usernameAlreadyExistsInWorkspace(
+        koboMart.code,
+        'laurasmith',
+      );
+
+      expect(usernameTaken).toBe(true);
+    });
+
     it('should return false when no teammate with that username exists in the workspace', async () => {
       const { workspace: koboMart, teammates } =
         await setupWorkspaceWithMultipleTeammates(factory, 1);
       await prismaService.teammate.update({
         where: { id: teammates[0].id },
-        data: { email: requestUser.email, username: 'laura.smith' },
+        data: {
+          email: requestUser.email,
+          username: 'laura.smith',
+          normalizedUsername: 'laurasmith',
+        },
       });
 
       const usernameTaken = await service.usernameAlreadyExistsInWorkspace(
