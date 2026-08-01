@@ -21,6 +21,7 @@ import RequestUser from '@/auth/domain/request-user';
 import OtpVerification from '@/auth/domain/otp-verification';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { PERMISSIONS } from '@/permission/types';
+import buildUsername from '@/common/build-username';
 
 @Injectable()
 export class AuthService {
@@ -100,13 +101,16 @@ export class AuthService {
   async signupAutoVerifiedForWorkspace(
     email: string,
   ): Promise<PreVerification> {
-    const signupDetails = new SignupDetails(
-      email.trim().toLowerCase(),
-      faker.person.firstName(),
-      faker.person.lastName(),
-      'Envoye',
-      'UTC',
-    );
+    const firstname = faker.person.firstName();
+    const lastname = faker.person.lastName();
+    const signupDetails = {
+      email: email.trim().toLowerCase(),
+      firstName: firstname,
+      lastName: lastname,
+      companyName: 'Envoye',
+      username: buildUsername(firstname, lastname),
+      timezone: 'UTC',
+    };
 
     const preverificationDetails =
       await this.storePreverificationDetails(signupDetails);
@@ -147,6 +151,7 @@ export class AuthService {
           email: signupDetails.email,
           firstName: signupDetails.firstName,
           lastName: signupDetails.lastName,
+          username: signupDetails.username,
           companyName: signupDetails.companyName,
           timezone: signupDetails.timezone,
         },
