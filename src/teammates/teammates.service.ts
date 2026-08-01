@@ -4,7 +4,6 @@ import { TeammateStatus } from '@/generated/prisma/enums';
 import { Teammate } from '@/generated/prisma/client';
 import { TeammatesNotInSameWorkspace } from '@/common/exceptions/teammates-not-in-same-workspace';
 import NotFoundInDb from '@/common/exceptions/not-found';
-import normalizeUsername from '@/common/normalize-username';
 
 @Injectable()
 export class TeammatesService {
