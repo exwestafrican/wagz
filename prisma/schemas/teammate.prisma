@@ -23,6 +23,6 @@ model Teammate {
   messages                 Message[]
 
   @@unique([workspaceCode, email])
-  @@unique([workspaceCode, username])
+  @@unique([workspaceCode, normalizedUsername])
   @@map("teammate")
 }
