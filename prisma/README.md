@@ -17,4 +17,4 @@
 
 
 ### Known issues:
-1. Adding a new column fails CI: The happen because fields in factory are not in sync fields in prisma ci. Go to the factory class of entity and update. 
+1. Adding a new column fails CI: The happen because fields in factory are not in sync fields in prisma ci. Go to the factory class of entity and update. Example [PR](https://github.com/exwestafrican/wagz/pull/287)
