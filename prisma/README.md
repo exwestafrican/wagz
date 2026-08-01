@@ -14,3 +14,7 @@
 
 ### Generate client with command:
 1. `pnpx prisma generate`
+
+
+### Known issues:
+1. Adding a new column fails CI: The happen because fields in factory are not in sync fields in prisma ci. Go to the factory class of entity and update. 
