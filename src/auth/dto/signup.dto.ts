@@ -13,7 +13,6 @@ import { PhoneNumberDto } from '@/auth/dto/phone-number.dto';
 import { Transform, Type } from 'class-transformer';
 import { IsValidPhoneNumberConstraint } from '@/auth/validators/phone-number';
 import { IsValidIANATimezoneConstraint } from '../validators/timezone-iana';
-import { PointOfContact } from '@/workspace/domain/point-of-contact';
 import buildUsername from '@/common/build-username';
 
 export class SignupEmailDto {
