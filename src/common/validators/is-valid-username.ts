@@ -8,11 +8,11 @@ import {
   Matches,
 } from 'class-validator';
 
-export const USERNAME_REGEX = '^[a-z][a-z0-9]*(?:[._-][a-z0-9]+)*$';
+export const USERNAME_REGEX = '^[a-z][a-z0-9]*(?:\\.[a-z0-9]+)*$';
 export const USERNAME_MIN_LENGTH = 2;
 export const USERNAME_MAX_LENGTH = 50;
 export const USERNAME_REGEX_ERROR_MESSAGE =
-  'Username must start with a letter and may include ".", "_" or "-" between characters. It cannot end with a symbol or contain consecutive symbols.';
+  'Username must start with a letter and may include "." between characters. It cannot end with a symbol or contain consecutive symbols.';
 
 export function IsValidUsername() {
   return applyDecorators(
