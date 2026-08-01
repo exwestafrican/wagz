@@ -53,12 +53,10 @@ export class TeammatesService {
     workspaceCode: string,
     username: string,
   ) {
-    const exists = await this.prismaService.teammate.findUnique({
+    const exists = await this.prismaService.teammate.findFirst({
       where: {
-        workspaceCode_normalizedUsername: {
-          workspaceCode,
-          normalizedUsername: normalizeUsername(username),
-        },
+        workspaceCode,
+        normalizedUsername: normalizeUsername(username),
       },
       select: { id: true },
     });
