@@ -24,5 +24,6 @@ model Teammate {
 
   @@unique([workspaceCode, email])
   @@unique([workspaceCode, username])
+  @@unique([workspaceCode, normalizedUsername])
   @@map("teammate")
 }
