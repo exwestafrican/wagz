@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
   IsString,
   Validate,
   ValidateIf,
@@ -82,7 +83,7 @@ export class SignupEmailDto {
   })
   @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsString()
-  @IsNotEmpty()
+  @IsOptional()
   username?: string;
 
   static toSignupDetails(signupDto: SignupEmailDto): SignupDetails {
