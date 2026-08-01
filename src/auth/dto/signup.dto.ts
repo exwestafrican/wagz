@@ -2,6 +2,8 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
+  IsOptional,
+  IsString,
   Validate,
   ValidateIf,
   ValidateNested,
@@ -12,6 +14,7 @@ import { PhoneNumberDto } from '@/auth/dto/phone-number.dto';
 import { Transform, Type } from 'class-transformer';
 import { IsValidPhoneNumberConstraint } from '@/auth/validators/phone-number';
 import { IsValidIANATimezoneConstraint } from '../validators/timezone-iana';
+import buildUsername from '@/common/build-username';
 
 export class SignupEmailDto {
   @ApiProperty({
@@ -74,13 +77,27 @@ export class SignupEmailDto {
   @Validate(IsValidIANATimezoneConstraint)
   timezone: string;
 
+  @ApiProperty({
+    description: 'Username of teammate',
+    example: 'laura.smith',
+  })
+  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
+  @IsString()
+  @IsOptional()
+  username?: string;
+
   static toSignupDetails(signupDto: SignupEmailDto): SignupDetails {
-    return new SignupDetails(
-      signupDto.email,
-      signupDto.firstName,
-      signupDto.lastName,
-      signupDto.companyName,
-      signupDto.timezone,
-    );
+    //TODO: https://github.com/exwestafrican/wagz/issues/286 remove buildusername logic
+    const username = signupDto.username
+      ? signupDto.username
+      : buildUsername(signupDto.firstName, signupDto.lastName);
+    return {
+      email: signupDto.email,
+      firstName: signupDto.firstName,
+      lastName: signupDto.lastName,
+      username: username,
+      companyName: signupDto.companyName,
+      timezone: signupDto.timezone,
+    };
   }
 }
