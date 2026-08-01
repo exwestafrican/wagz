@@ -14,6 +14,7 @@ import { PermissionEndpoints } from '@/common/const';
 import request from 'supertest';
 import { RoleService } from './role/role.service';
 import teammateFactory from '@/factories/teammate.factory';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('PermissionController', () => {
   let requestUser: RequestUser;
@@ -33,7 +34,7 @@ describe('PermissionController', () => {
   });
 
   afterEach(async () => {
-    await prismaService.companyProfile.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 

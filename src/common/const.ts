@@ -24,10 +24,17 @@ export const URIPaths = {
   INVITE_TEAMMATES: '/workspace/invite-teammates',
   VERIFY_INVITE: '/workspace/verify-invite',
   ACCEPT_INVITE: '/workspace/accept-invite',
+  LIST_TASKS: '/backfill/tasks',
+  RUN_TASK: '/backfill/tasks/:jobId/run',
 };
 
 export const TeammatesEndpoints = {
   TEAMMATES: '/teammates',
   MY_PROFILE: '/teammates/me',
   CHECK_USERNAME: '/teammates/check-username',
+  RANDOM: '',
+};
+
+export const ConversationsEndpoints = {
+  DIRECT_MESSAGE: '/conversations/direct-message',
 };

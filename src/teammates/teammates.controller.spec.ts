@@ -18,6 +18,7 @@ import request from 'supertest';
 import getHttpServer from '@/test-helpers/get-http-server';
 import { TeammatesEndpoints } from '@/common/const';
 import { Teammate, Workspace } from '@/generated/prisma/client';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('TeammatesController', () => {
   let requestUser: RequestUser;
@@ -37,9 +38,7 @@ describe('TeammatesController', () => {
   });
 
   afterEach(async () => {
-    await prismaService.teammate.deleteMany();
-    await prismaService.workspace.deleteMany();
-    await prismaService.companyProfile.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 

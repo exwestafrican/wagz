@@ -15,6 +15,8 @@ import { MagicLinkAuthDto } from './dto/magic-link-auth';
 import { SignupEmailDto } from './dto/signup.dto';
 import { AccountExistsException } from './exceptions/account.exists';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
+import { OtpVerificationDto } from './dto/otp-verification.dto';
+import { OtpVerificationResponseDto } from '@/auth/dto/otp-verification-response.dto';
 
 @Controller('auth')
 @ApiTags('auth')
@@ -37,6 +39,47 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   requestMagicLink(@Body() magicLinkAuthDto: MagicLinkAuthDto): Promise<void> {
     return this.authService.requestMagicLinkOrThrow(magicLinkAuthDto.email);
+  }
+
+  @Post('verify-otp')
+  @ApiOperation({ summary: 'Allow user to verify OTP' })
+  @ApiBody({ type: OtpVerificationDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'OTP verified successfully',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid OTP',
+  })
+  @HttpCode(HttpStatus.OK)
+  async verifyOtp(
+    @Body() otpVerificationDto: OtpVerificationDto,
+  ): Promise<OtpVerificationResponseDto> {
+    const response = (await this.authService.verifyOtpOrThrow(
+      otpVerificationDto.email,
+      otpVerificationDto.otp,
+    )) as OtpVerificationResponseDto;
+    return {
+      workspaceCode: response.workspaceCode,
+      accessToken: response.accessToken,
+    };
+  }
+
+  @Post('admin/login')
+  @ApiOperation({ summary: 'Login as an admin' })
+  @ApiBody({ type: MagicLinkAuthDto })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Admin magic link sent',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'Invalid credentials',
+  })
+  @HttpCode(HttpStatus.OK)
+  requestAdminMagicLink(@Body() dto: MagicLinkAuthDto): Promise<void> {
+    return this.authService.requestAdminMagicLinkOrThrow(dto.email);
   }
 
   @Post('signup/email-only')

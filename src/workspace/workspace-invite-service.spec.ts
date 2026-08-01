@@ -12,7 +12,10 @@ import {
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
 import { INestApplication } from '@nestjs/common';
 import { InviteStatus } from '@/generated/prisma/enums';
-import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import {
+  setupWorkspaceWithMultipleTeammates,
+  setupWorkspaceWithTeammate,
+} from '@/test-helpers/workspace-helpers';
 import teammateFactory from '@/factories/teammate.factory';
 import workspaceInviteFactory from '@/factories/workspace-invite.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
@@ -23,6 +26,9 @@ import { AuthService } from '@/auth/auth.service';
 import { Teammate, Workspace } from '@/generated/prisma/client';
 import { mockAuthService } from '@/test-helpers/mocks';
 import { LinkService } from '@/common/link-service';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import FeatureFlagManager from '@/feature-flag/manager';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 describe('WorkspaceInviteService', () => {
   let app: INestApplication;
@@ -56,6 +62,9 @@ describe('WorkspaceInviteService', () => {
         RoleService,
         WorkspaceInviteService,
         LinkService,
+        EnvoyeMessenger,
+        FeatureFlagManager,
+        ConversationsService,
         {
           provide: AuthService,
           useValue: mockAuthService as unknown as AuthService,
@@ -229,6 +238,44 @@ describe('WorkspaceInviteService', () => {
           },
         ),
       ).rejects.toThrow(InvalidInviteCode);
+    });
+
+    it('Creates conversation with self when invite is accepted', async () => {
+      const { workspace, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 4);
+
+      await inviteTeammate(
+        teammates[0],
+        'new.teammate@useenvoye.co',
+        workspace,
+      );
+      await workspaceInviteService.tryAcceptInviteAndRequestMagicLink(
+        workspace.code,
+        'ap7ol0',
+        {
+          email: 'new.teammate@useenvoye.co',
+          firstName: 'New',
+          lastName: 'Teammate',
+          username: 'new.teammate',
+        },
+      );
+      const conversations = await prismaService.conversation.findMany({
+        where: { workspaceCode: workspace.code },
+        include: {
+          conversationParticipants: {
+            include: { teammate: true },
+          },
+        },
+      });
+
+      const selfConversations = conversations.filter(
+        (c) => c.conversationParticipants.length === 1,
+      );
+
+      expect(selfConversations).toHaveLength(1);
+      expect(
+        selfConversations[0].conversationParticipants[0].teammate.email,
+      ).toBe('new.teammate@useenvoye.co');
     });
   });
 

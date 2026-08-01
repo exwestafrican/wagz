@@ -27,9 +27,53 @@ export const PERMISSIONS = {
     'Allows user to connect supported messaging platforms, like whatsapp etc',
     'manage_channels',
   ),
+  VIEW_BACKFILL_TASK: Permission.of(
+    'Can See All Backfill Tasks',
+    'Allows user to see all Backfill Tasks',
+    'view_backfill_tasks',
+  ),
+  RUN_BACKFILL_TASK: Permission.of(
+    'Can Trigger Run for Backfill',
+    'Allows user to trigger run for Backfill',
+    'run_backfill_tasks',
+  ),
+  MANAGE_FEATURE_FLAGS: Permission.of(
+    'Manage Feature Flags',
+    'Allows user to list, create, update, and delete feature flags',
+    'manage_feature_flags',
+  ),
+  ACCESS_ADMIN: Permission.of(
+    'Access Admin Panel',
+    'Allows user to log in to the admin panel',
+    'access_admin',
+  ),
+  WORKSPACE: Permission.of(
+    'Manage Workspaces',
+    'Allows user to list workspaces in the admin panel',
+    'workspace',
+  ),
+  MANAGE_DEVICES: Permission.of(
+    'Manage Devices',
+    'Allows user to register and manage tracking devices',
+    'manage_devices',
+  ),
 } as const;
 
 export const ROLES: Record<string, Role> = {
+  SuperAdmin: Role.of('SuperAdmin', [
+    PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
+    PERMISSIONS.REPLY_SUPPORT_CONVERSATIONS,
+    PERMISSIONS.MESSAGE_TEAMMATES,
+    PERMISSIONS.MANAGE_TEAMMATES,
+    PERMISSIONS.MANAGE_CHANNELS,
+    //special permission
+    PERMISSIONS.VIEW_BACKFILL_TASK,
+    PERMISSIONS.RUN_BACKFILL_TASK,
+    PERMISSIONS.MANAGE_FEATURE_FLAGS,
+    PERMISSIONS.ACCESS_ADMIN,
+    PERMISSIONS.WORKSPACE,
+    PERMISSIONS.MANAGE_DEVICES,
+  ]),
   WorkspaceAdmin: Role.of('WorkspaceAdmin', [
     PERMISSIONS.READ_SUPPORT_CONVERSATIONS,
     PERMISSIONS.REPLY_SUPPORT_CONVERSATIONS,

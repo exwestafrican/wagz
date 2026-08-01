@@ -1,9 +1,8 @@
 services:
   app:
     container_name: envoye-nest-app
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: exwestafrican/waggz:${IMAGE_TAG}
+    restart: always
     ports:
       - '3001:3001'
     environment:
@@ -13,6 +12,7 @@ services:
   nginx:
     container_name: envoye-nginx
     image: nginx:latest
+    restart: always
     ports:
       - '80:80'
       - '443:443'

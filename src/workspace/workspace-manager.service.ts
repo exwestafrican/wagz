@@ -29,10 +29,13 @@ import { RoleService } from '@/permission/role/role.service';
 import { ConcurrentLimit } from '@/common/concurrent-runner';
 import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { LinkService } from '@/common/link-service';
+import { CreateSelfConversationStep } from '@/workspace/steps/create-self-conversation';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
 
 @Injectable()
 export class WorkspaceManager {
   private static readonly INVITE_CONCURRENCY = 3;
+  private static readonly LIST_APPS_LIMIT = 100;
   logger = new Logger(WorkspaceManager.name);
 
   constructor(
@@ -41,24 +44,15 @@ export class WorkspaceManager {
     private readonly linkService: LinkService,
     private readonly roleService: RoleService,
     private readonly workspaceInviteService: WorkspaceInviteService,
+    private readonly messenger: EnvoyeMessenger,
   ) {}
 
-  async setup(
-    ownerEmail: string,
-    preVerificationId: string,
-  ): Promise<WorkspaceDetails> {
-    const postWorkspaceSetupSteps: PostSetupStep[] = [
-      new CreateWorkspaceAdminStep(this.prismaService),
-    ];
+  async runPostWorkspaceCreationSteps(
+    workspaceDetails: WorkspaceDetails,
+    preverificationDetails: PreVerification,
+    postWorkspaceSetupSteps: PostSetupStep[],
+  ): Promise<void> {
     const completedSteps: PostSetupStep[] = [];
-    const preverificationDetails = await this.getDetailsOrThrow(
-      ownerEmail,
-      preVerificationId,
-    );
-
-    const workspaceDetails = await this.runPreWorkspaceCreationSteps(
-      preverificationDetails,
-    );
 
     try {
       for (const step of postWorkspaceSetupSteps) {
@@ -66,12 +60,11 @@ export class WorkspaceManager {
         completedSteps.push(step);
       }
       await this.prismaService.preVerification.update({
-        where: { id: preVerificationId },
+        where: { id: preverificationDetails.id },
         data: {
           status: PreVerificationStatus.VERIFIED,
         },
       });
-      return workspaceDetails;
     } catch (error) {
       this.logger.error(
         `Workspace setup failed, rolling back completed steps; steps=[${completedSteps.map((step) => step.constructor.name).join(', ')}] preverificationId=${preverificationDetails.id} `,
@@ -86,6 +79,32 @@ export class WorkspaceManager {
     }
   }
 
+  async setup(
+    ownerEmail: string,
+    preVerificationId: string,
+  ): Promise<WorkspaceDetails> {
+    const preverificationDetails = await this.getDetailsOrThrow(
+      ownerEmail,
+      preVerificationId,
+    );
+
+    const workspaceDetails = await this.runPreWorkspaceCreationSteps(
+      preverificationDetails,
+      this.generateCode(),
+    );
+
+    await this.runPostWorkspaceCreationSteps(
+      workspaceDetails,
+      preverificationDetails,
+      [
+        new CreateWorkspaceAdminStep(this.prismaService),
+        new CreateSelfConversationStep(this.messenger, this.prismaService),
+      ],
+    );
+
+    return workspaceDetails;
+  }
+
   async details(code: string): Promise<Workspace> {
     const workspace = await this.prismaService.workspace.findUnique({
       where: { code },
@@ -98,6 +117,13 @@ export class WorkspaceManager {
       status: workspace.status,
       name: workspace.name,
     };
+  }
+
+  async listApps(): Promise<PrismaWorkspace[]> {
+    return this.prismaService.workspace.findMany({
+      take: WorkspaceManager.LIST_APPS_LIMIT,
+      orderBy: { id: 'asc' },
+    });
   }
 
   async inviteTeammateIfEligible(
@@ -158,8 +184,9 @@ export class WorkspaceManager {
     );
   }
 
-  private async runPreWorkspaceCreationSteps(
+  async runPreWorkspaceCreationSteps(
     preVerification: PreVerification,
+    workspaceCode: string,
   ): Promise<WorkspaceDetails> {
     return this.prismaService.$transaction(async (tx) => {
       const companyProfile: CompanyProfile = await tx.companyProfile.create({
@@ -168,6 +195,7 @@ export class WorkspaceManager {
           pointOfContactEmail: preVerification.email,
           phoneCountryCode: preVerification.phoneCountryCode,
           phoneNumber: preVerification.phoneNumber,
+          preVerificationId: preVerification.id,
         },
       });
       const pointOfContact = PointOfContact.from(preVerification);
@@ -179,7 +207,7 @@ export class WorkspaceManager {
         data: {
           name: companyProfile.companyName,
           ownedById: companyProfile.id,
-          code: this.generateCode(),
+          code: workspaceCode,
           timezone: preVerification.timezone,
         },
       });

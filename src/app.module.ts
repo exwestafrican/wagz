@@ -13,6 +13,11 @@ import { MessagingModule } from './messaging/messaging.module';
 import { FeatureFlagModule } from './feature-flag/feature-flag.module';
 import { TeammatesModule } from './teammates/teammates.module';
 import { CommonModule } from '@/common/common.module';
+import { BackfillModule } from './backfill/backfill.module';
+import { CommandsModule } from '@/commands/commands.module';
+import { AdminModule } from './admin/admin.module';
+import { ConversationsModule } from './conversations/conversations.module';
+import { TrackerModule } from './tracker/tracker.module';
 
 @Module({
   imports: [
@@ -30,6 +35,11 @@ import { CommonModule } from '@/common/common.module';
     FeatureFlagModule,
     TeammatesModule,
     CommonModule,
+    BackfillModule,
+    CommandsModule,
+    AdminModule,
+    ConversationsModule,
+    TrackerModule,
   ],
   controllers: [AppController],
   providers: [AppService],

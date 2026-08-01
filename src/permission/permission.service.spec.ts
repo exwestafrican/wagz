@@ -3,7 +3,11 @@ import { PermissionService } from './permission.service';
 import { PrismaModule } from '@/prisma/prisma.module';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { PrismaService } from '@/prisma/prisma.service';
-import { ForbiddenException, INestApplication } from '@nestjs/common';
+import {
+  ForbiddenException,
+  INestApplication,
+  NotFoundException,
+} from '@nestjs/common';
 import RequestUser from '@/auth/domain/request-user';
 import { createTestApp } from '@/test-helpers/test-app';
 import { Role } from './domain/role';
@@ -11,6 +15,7 @@ import { PERMISSIONS, ROLES } from './types';
 import { RoleService } from './role/role.service';
 import { Permission } from './domain/permission';
 import { setupWorkspaceWithTeammateRole } from '@/test-helpers/workspace-helpers';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('PermissionService', () => {
   let service: PermissionService;
@@ -32,11 +37,7 @@ describe('PermissionService', () => {
   });
 
   afterEach(async () => {
-    await prismaService.workspace.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-  });
-
-  afterAll(async () => {
+    await resetDb(prismaService);
     await app.close();
   });
 
@@ -202,6 +203,40 @@ describe('PermissionService', () => {
           () => 'should not run',
         ),
       ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('throws DenialException when provided and teammate lacks permission', async () => {
+      const teammate = await setupWorkspaceWithTeammateRole(factory, [
+        ROLES.WorkspaceMember.code,
+      ]);
+      const requestUser = RequestUser.of(teammate.email);
+      await expect(
+        service.runIfPermitted(
+          requestUser,
+          teammate.workspaceCode,
+          PERMISSIONS.MANAGE_TEAMMATES,
+          () => 'should not run',
+          NotFoundException,
+        ),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
+
+  describe('runIfActiveWorkspaceMemberAndPermitted', () => {
+    it('throws DenialException when provided and teammate lacks permission', async () => {
+      const teammate = await setupWorkspaceWithTeammateRole(factory, [
+        ROLES.WorkspaceMember.code,
+      ]);
+      const requestUser = RequestUser.of(teammate.email);
+      await expect(
+        service.runIfActiveWorkspaceMemberAndPermitted(
+          requestUser,
+          teammate.workspaceCode,
+          PERMISSIONS.MANAGE_TEAMMATES,
+          () => 'should not run',
+          NotFoundException,
+        ),
+      ).rejects.toThrow(NotFoundException);
     });
   });
 });

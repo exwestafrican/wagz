@@ -7,10 +7,25 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { MessagingModule } from '@/messaging/messaging.module';
 import { LinkService } from '@/common/link-service';
 import { AuthModule } from '@/auth/auth.module';
+import { DebounceServiceProvider } from '@/common/debounce.service';
+import { ConversationsModule } from '@/conversations/conversations.module';
+import FeatureFlagManager from '@/feature-flag/manager';
 
 @Module({
-  imports: [PermissionModule, PrismaModule, MessagingModule, AuthModule],
-  providers: [WorkspaceManager, LinkService, WorkspaceInviteService],
+  imports: [
+    PermissionModule,
+    PrismaModule,
+    MessagingModule,
+    AuthModule,
+    ConversationsModule,
+  ],
+  providers: [
+    WorkspaceManager,
+    LinkService,
+    WorkspaceInviteService,
+    FeatureFlagManager,
+    DebounceServiceProvider,
+  ],
   controllers: [WorkspaceController],
   exports: [WorkspaceManager],
 })

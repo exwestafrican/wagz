@@ -10,17 +10,22 @@ export const Time = {
     milliseconds(value: number) {
       return value;
     },
-    seconds(value) {
+    seconds(value: number) {
       return value * 1000;
     },
-    minutes(value) {
+    minutes(value: number) {
       return value * 60 * 1000;
     },
-    hours(value) {
+    hours(value: number) {
       return value * 60 * 60 * 1000;
     },
-    days(value) {
+    days(value: number) {
       return value * 24 * 60 * 60 * 1000;
+    },
+  },
+  durationInSeconds: {
+    minutes(value: number) {
+      return value * 60;
     },
   },
 };
@@ -30,22 +35,36 @@ export function isEmpty(obj: object | null | undefined): boolean {
   return Object.keys(obj).length === 0;
 }
 
-export function groupBy<T>(
-  array: T[],
-  getKey: (item: T) => string,
-): Map<string, T[]> {
-  return array.reduce((acc: Map<string, T[]>, item) => {
+export function groupBy<T, V>(array: T[], getKey: (item: T) => V): Map<V, T[]> {
+  return array.reduce((acc: Map<V, T[]>, item) => {
     const key = getKey(item);
     if (!acc.has(key)) {
       acc.set(key, []);
     }
     acc.get(key)!.push(item);
     return acc;
-  }, new Map<string, T[]>());
+  }, new Map<V, T[]>());
 }
 
 export function sentenceCase(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return trimmed;
   return trimmed[0].toUpperCase() + trimmed.slice(1).toLowerCase();
+}
+
+export function repeat(n: number, fn: () => void): void {
+  for (let i = 0; i < n; i++) {
+    fn();
+  }
+}
+
+export function repeatFn<T>(
+  n: number,
+  fn: () => Promise<T>,
+): (() => Promise<T>)[] {
+  return Array.from({ length: n }, () => fn);
+}
+
+export function isSame<T>(left: T, right: T): boolean {
+  return left === right;
 }

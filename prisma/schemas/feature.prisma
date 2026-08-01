@@ -69,3 +69,36 @@ model FeatureFeedback {
   feature   Feature @relation(fields: [featureId], references: [id], onDelete: Cascade)
   featureId String  @db.Uuid
 }
+
+enum FeatureFlagStatus {
+  GLOBAL   @map("global")
+  PARTIAL  @map("partial")
+  DISABLED @map("disabled")
+}
+
+model FeatureFlag {
+  id                Int                @id @default(autoincrement())
+  key               String             @unique @db.VarChar(100)
+  name              String             @db.VarChar(100)
+  description       String             @db.VarChar(225)
+  status            FeatureFlagStatus  @default(DISABLED)
+  addedBy           String             @db.VarChar(255) //email of admin that created feature flag
+  enabledAt         DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  workspaceFeatures WorkspaceFeature[]
+
+  @@map("feature_flags")
+}
+
+model WorkspaceFeature {
+  featureFlagId Int
+  workspaceCode String      @db.VarChar(6)
+  featureFlag   FeatureFlag @relation(fields: [featureFlagId], references: [id], onDelete: Cascade)
+  workspace     Workspace   @relation(fields: [workspaceCode], references: [code], onDelete: Cascade)
+  createdAt     DateTime    @default(now())
+
+  @@id([featureFlagId, workspaceCode])
+  @@index([workspaceCode])
+  @@map("workspace_features")
+}

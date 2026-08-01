@@ -1,10 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
 import { PrismaService } from '@/prisma/prisma.service';
 import { isEmpty } from '@/common/utils';
 import { InviteStatus } from '@/generated/prisma/enums';
 import { AuthService } from '@/auth/auth.service';
-import { WorkspaceInvite } from '@/generated/prisma/client';
+import { WorkspaceInvite, Teammate } from '@/generated/prisma/client';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import cleanWorkspaceName from './utils/CleanWorkspaceName';
+import { LinkService } from '@/common/link-service';
+import React from 'react';
+import { InviteAcceptedNotificationTemplate } from '@/emails/templates/invite-accepted-notification-template';
+import { render } from '@react-email/render';
+import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
+import { fullName } from '@/teammates/utils/full-name';
+import FeatureFlagManager from '@/feature-flag/manager';
 
 export interface TeammateDetails {
   firstName: string;
@@ -26,6 +35,10 @@ export class WorkspaceInviteService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly authService: AuthService,
+    private readonly messenger: EnvoyeMessenger,
+    private readonly linkService: LinkService,
+    private readonly featureFlagManager: FeatureFlagManager,
+    @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
   ) {}
 
   encodeInvite(
@@ -97,8 +110,9 @@ export class WorkspaceInviteService {
       throw new InvalidInviteCode('Invalid invite code');
     }
 
-    await this.prismaService.$transaction(async (tx) => {
-      await tx.teammate.create({
+    //TODO: use step pattern here
+    const teammate = await this.prismaService.$transaction(async (tx) => {
+      const teammate = await tx.teammate.create({
         data: {
           workspaceCode: workspaceCode,
           email: teammateDetails.email,
@@ -121,8 +135,81 @@ export class WorkspaceInviteService {
         invite.recipientEmail,
         invite.workspaceCode,
       );
+
+      return teammate;
     });
+
+    try {
+      // message self
+      await this.messenger.sendOpeningTextMessage(
+        teammate.id,
+        [teammate.id],
+        teammate.workspaceCode,
+        [],
+        new Date(),
+      );
+
+      const isInviteAcceptedNotificationEnabled =
+        await this.featureFlagManager.enabled(
+          workspaceCode,
+          'invite-accepted-notification',
+        );
+
+      if (isInviteAcceptedNotificationEnabled) {
+        const inviter = await this.prismaService.teammate.findFirstOrThrow({
+          where: {
+            id: invite.senderId,
+          },
+        });
+        await this.notifyInviteAccepted(workspaceCode, teammate, inviter);
+      }
+    } catch (error) {
+      this.logger.error(
+        `Failed to set up onboarding direct messages; workspaceCode=${teammate.workspaceCode} teammateId=${teammate.id}`,
+        error,
+      );
+    }
+
     return invite;
+  }
+
+  async notifyInviteAccepted(
+    workspaceCode: string,
+    accepter: Teammate,
+    inviter: Teammate,
+  ) {
+    const workspace = await this.prismaService.workspace.findFirstOrThrow({
+      where: {
+        code: workspaceCode,
+      },
+    });
+    const workspaceName = cleanWorkspaceName(workspace);
+    //TODO: Change url to route new conversation template page /workspace/:workspaceCode/conversations/:conversationId/template/:templateId
+    const workspaceUrl = this.linkService.loadWorkspaceUrl(workspaceCode);
+
+    const emailHtml = await render(
+      React.createElement(InviteAcceptedNotificationTemplate, {
+        workspaceName: workspaceName,
+        accepterName: accepter.firstName,
+        workspaceLink: workspaceUrl,
+      }),
+    );
+
+    await this.emailClient.send({
+      from: {
+        email: `${workspaceName.toLowerCase()}+notifications@envoye.co`,
+        name: workspaceName,
+      },
+      to: {
+        email: inviter.email,
+        name: fullName(inviter),
+      },
+      subject: `${accepter.firstName} joined ${workspaceName} 🎉`,
+      html: emailHtml,
+    });
+    this.logger.log(
+      `notify invite accepted; workspaceCode=${workspaceCode} accepterId=${accepter.id} inviterId=${inviter.id}`,
+    );
   }
 
   private decodedValue(inviteCode: string): string {

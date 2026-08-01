@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="color-scheme" content="light" />
+  <meta name="supported-color-schemes" content="light" />
+  <title>Your sign-in link</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f4f5f7; -webkit-font-smoothing:antialiased; font-family:'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <!-- Preheader (hidden preview text) -->
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent; height:0; width:0;">
+    Use the link or the one-time code below to sign in to Envoye.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f5f7;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:480px; background-color:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #e6e8eb;">
+          <!-- Header -->
+          <tr>
+            <td align="center" style="padding:32px 40px 8px 40px;">
+              <span style="font-size:22px; font-weight:700; color:#111827; letter-spacing:-0.02em;">Envoye</span>
+            </td>
+          </tr>
+
+          <!-- Title -->
+          <tr>
+            <td align="center" style="padding:8px 40px 0 40px;">
+              <h1 style="margin:0; font-size:20px; line-height:1.4; font-weight:600; color:#111827;">Sign in to your account</h1>
+            </td>
+          </tr>
+
+          <!-- Body copy -->
+          <tr>
+            <td align="center" style="padding:12px 40px 0 40px;">
+              <p style="margin:0; font-size:15px; line-height:1.6; color:#4b5563;">
+                Click the button below to securely sign in. This link will expire shortly and can only be used once.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Magic link button -->
+          <tr>
+            <td align="center" style="padding:28px 40px 8px 40px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="border-radius:8px; background-color:#111827;">
+                    <a href="{{ .ConfirmationURL }}" target="_blank"
+                       style="display:inline-block; padding:14px 32px; font-size:15px; font-weight:600; color:#ffffff; text-decoration:none; border-radius:8px;">
+                      Sign in to Envoye
+                    </a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Fallback URL -->
+          <tr>
+            <td align="center" style="padding:12px 40px 0 40px;">
+              <p style="margin:0; font-size:13px; line-height:1.6; color:#9ca3af;">
+                Or copy and paste this URL into your browser:
+              </p>
+              <p style="margin:6px 0 0 0; font-size:13px; line-height:1.6; word-break:break-all;">
+                <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#2563eb; text-decoration:underline;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Divider -->
+          <tr>
+            <td style="padding:28px 40px 0 40px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="border-top:1px solid #e6e8eb; font-size:0; line-height:0;">&nbsp;</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- OTP code -->
+          <tr>
+            <td align="center" style="padding:24px 40px 0 40px;">
+              <p style="margin:0; font-size:14px; line-height:1.6; color:#4b5563;">
+                Prefer a code? Enter this one-time password instead:
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:16px 40px 0 40px;">
+              <table role="presentation" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="background-color:#f4f5f7; border:1px solid #e6e8eb; border-radius:8px; padding:14px 28px;">
+                    <span style="font-size:28px; font-weight:700; letter-spacing:0.35em; color:#111827; font-family:'Courier New', Courier, monospace;">{{ .Token }}</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td align="center" style="padding:12px 40px 0 40px;">
+              <p style="margin:0; font-size:13px; line-height:1.6; color:#9ca3af;">
+                This code expires in 1 hour.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Security note -->
+          <tr>
+            <td align="center" style="padding:28px 40px 0 40px;">
+              <p style="margin:0; font-size:13px; line-height:1.6; color:#9ca3af;">
+                If you didn't request this email, you can safely ignore it. Someone may have entered your address by mistake.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding:32px 40px 32px 40px;">
+              <p style="margin:0; font-size:12px; line-height:1.6; color:#b0b6bd;">
+                &copy; Envoye. All rights reserved.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

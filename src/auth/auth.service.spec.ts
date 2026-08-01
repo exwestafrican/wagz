@@ -10,6 +10,8 @@ import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';
 import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/teammates/teammates.service';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -29,6 +31,8 @@ describe('AuthService', () => {
         PrismaService,
         LinkService,
         TeammatesService,
+        PermissionService,
+        RoleService,
       ],
     }).compile();
 

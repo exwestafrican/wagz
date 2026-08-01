@@ -28,6 +28,11 @@ import { WorkspaceInviteService } from '@/workspace/workspace-invite-service';
 import { LinkService } from '@/common/link-service';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
+import CompanyProfileFactory from '@/factories/company-profile.factory';
+import { resetDb } from '@/test-helpers/rest-db';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import FeatureFlagManager from '@/feature-flag/manager';
+import { ConversationsService } from '@/conversations/conversations.service';
 
 describe('WorkspaceService', () => {
   let service: WorkspaceManager;
@@ -37,6 +42,7 @@ describe('WorkspaceService', () => {
   let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
   let workspaceInviteService: WorkspaceInviteService;
+  let messenger: EnvoyeMessenger;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -46,6 +52,9 @@ describe('WorkspaceService', () => {
         LinkService,
         RoleService,
         WorkspaceInviteService,
+        EnvoyeMessenger,
+        FeatureFlagManager,
+        ConversationsService,
         {
           provide: AuthService,
           useValue: mockAuthService as unknown as AuthService,
@@ -59,6 +68,7 @@ describe('WorkspaceService', () => {
     workspaceInviteService = app.get<WorkspaceInviteService>(
       WorkspaceInviteService,
     );
+    messenger = app.get<EnvoyeMessenger>(EnvoyeMessenger);
     factory = Factory.createStrategy(prismaService);
     preVerificationDetails = await factory.persist('preverification', () =>
       preVerificationFactory.build(),
@@ -66,12 +76,7 @@ describe('WorkspaceService', () => {
   });
 
   afterEach(async () => {
-    await prismaService.preVerification.deleteMany();
-    await prismaService.companyProfile.deleteMany();
-    await prismaService.workspace.deleteMany();
-  });
-
-  afterAll(async () => {
+    await resetDb(prismaService);
     await app.close();
   });
 
@@ -257,6 +262,61 @@ describe('WorkspaceService', () => {
         ).rejects.toThrow('Database error');
 
         await assertRollbackHappened(preVerificationDetails);
+      });
+    });
+
+    describe('SelfConversation', () => {
+      it('creates a self-conversation for the new admin', async () => {
+        await service.setup(
+          preVerificationDetails.email,
+          preVerificationDetails.id,
+        );
+
+        const admin = await prismaService.teammate.findFirstOrThrow({
+          where: { email: preVerificationDetails.email },
+        });
+        const participants =
+          await prismaService.conversationParticipant.findMany({
+            where: { teammateId: admin.id },
+          });
+        expect(participants).toHaveLength(1);
+        expect(participants[0].isOwner).toBe(true);
+      });
+
+      it('rolls everything back when self-conversation creation fails', async () => {
+        jest
+          .spyOn(messenger, 'sendOpeningTextMessage')
+          .mockRejectedValue(new Error('Database error'));
+
+        await expect(
+          service.setup(
+            preVerificationDetails.email,
+            preVerificationDetails.id,
+          ),
+        ).rejects.toThrow('Database error');
+
+        await assertRollbackHappened(preVerificationDetails);
+        expect(await prismaService.conversation.count()).toBe(0);
+      });
+
+      it('keeps the conversation from a successful setup when a later setup fails', async () => {
+        await service.setup(
+          preVerificationDetails.email,
+          preVerificationDetails.id,
+        );
+
+        const failingDetails = await factory.persist('preverification', () =>
+          preVerificationFactory.build(),
+        );
+        jest
+          .spyOn(messenger, 'sendOpeningTextMessage')
+          .mockRejectedValue(new Error('Database error'));
+
+        await expect(
+          service.setup(failingDetails.email, failingDetails.id),
+        ).rejects.toThrow('Database error');
+
+        expect(await prismaService.conversation.count()).toBe(1);
       });
     });
   });
@@ -491,6 +551,24 @@ describe('WorkspaceService', () => {
           },
         }),
       ).toBe(2);
+    });
+  });
+
+  describe('listApps', () => {
+    it('returns up to 100 workspaces ordered by id', async () => {
+      const preverification = await factory.persist('preverification', () =>
+        preVerificationFactory.build(),
+      );
+      const companyProfile = await factory.persist('companyProfile', () =>
+        CompanyProfileFactory.build({ preVerificationId: preverification.id }),
+      );
+      await prismaService.workspace.createMany({
+        data: workspaceFactory.buildList(200, { ownedById: companyProfile.id }),
+      });
+
+      const listedWorkspaces = await service.listApps();
+
+      expect(listedWorkspaces).toHaveLength(100);
     });
   });
 });

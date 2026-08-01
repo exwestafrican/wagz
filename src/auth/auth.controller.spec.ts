@@ -16,6 +16,7 @@ import { AuthEndpoints } from './consts';
 import { Server } from 'http';
 import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
+import { OtpVerificationResponseDto } from './dto/otp-verification-response.dto';
 import preVerificationFactory from '@/factories/roadmap/preverification.factory';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
@@ -24,6 +25,10 @@ import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/teammates/teammates.service';
 import { TeammateStatus } from '@/generated/prisma/client';
 import { ROLES } from '@/permission/types';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
+import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -57,6 +62,8 @@ describe('AuthController', () => {
         PrismaService,
         LinkService,
         TeammatesService,
+        PermissionService,
+        RoleService,
       ],
     }).compile();
 
@@ -66,8 +73,7 @@ describe('AuthController', () => {
   });
 
   afterEach(async () => {
-    await prismaService.preVerification.deleteMany();
-    await prismaService.companyProfile.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 
@@ -144,6 +150,173 @@ describe('AuthController', () => {
       return request(getHttpServer(app))
         .post(AuthEndpoints.REQUEST_MAGIC_LINK)
         .send({ email: 'test@example.com' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+  });
+
+  describe('otp verification', () => {
+    const email = 'test@example.com';
+
+    function mockVerifyOtpSuccess(accessToken = 'mock-access-token') {
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: { access_token: accessToken } },
+        error: null,
+      });
+    }
+
+    it('should return 400 if the email is invalid', async () => {
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email: 'invalid-email', otp: '123456' })
+        .set('Accept', 'application/json')
+        .expect(400);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['email']);
+    });
+
+    it('should return 400 if the OTP is empty', async () => {
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email, otp: '' })
+        .set('Accept', 'application/json')
+        .expect(400);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['otp']);
+    });
+
+    it('should return 200 with the workspace code and access token when the OTP is valid', async () => {
+      const { workspace } = await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      mockVerifyOtpSuccess('a-valid-access-token');
+
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email, otp: '123456' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.OK);
+
+      expect(mockSupabaseClient.auth.verifyOtp).toHaveBeenCalledWith({
+        email,
+        token: '123456',
+        type: 'email',
+      });
+      const body = response.body as OtpVerificationResponseDto;
+      expect(body).toEqual({
+        workspaceCode: workspace.code,
+        accessToken: 'a-valid-access-token',
+      });
+    });
+
+    it('should return 401 when supabase rejects the OTP', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: null },
+        error: { message: 'Token has expired or is invalid' },
+      });
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email, otp: 'wrong-otp' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('should return 401 when supabase returns no session and no error', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: null },
+        error: null,
+      });
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email, otp: '123456' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE);
+    });
+  });
+
+  describe('admin login', () => {
+    const adminEmail = 'admin@useenvoye.com';
+
+    it('should return 400 if the email is invalid', async () => {
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.ADMIN_LOGIN)
+        .send({ email: 'invalid-email' })
+        .set('Accept', 'application/json')
+        .expect(400);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['email']);
+    });
+
+    it('should return 200 when user is SuperAdmin in Envoye workspace', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: adminEmail,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.SuperAdmin.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.ADMIN_LOGIN)
+        .send({ email: adminEmail })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.OK);
+
+      expect(mockSupabaseClient.auth.signInWithOtp).toHaveBeenCalledWith({
+        email: adminEmail,
+        options: {
+          shouldCreateUser: false,
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+          emailRedirectTo: expect.stringMatching(/\/admin$/),
+        },
+      });
+    });
+
+    it('should return 401 when user lacks ACCESS_ADMIN in Envoye workspace', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: adminEmail,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.ADMIN_LOGIN)
+        .send({ email: adminEmail })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('should return 401 when email has no teammate in Envoye workspace', async () => {
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.ADMIN_LOGIN)
+        .send({ email: adminEmail })
         .set('Accept', 'application/json')
         .expect(HttpStatus.UNAUTHORIZED);
     });

@@ -17,6 +17,14 @@ export class LinkService {
     return `${this.siteUrl}/setup/${preverificationId}/workspace`;
   }
 
+  adminLoginUrl(): string {
+    return `${this.siteUrl}/admin`;
+  }
+
+  conversationUrl(workspaceCode: string, conversationId: number): string {
+    return `${this.siteUrl}/workspace/conversation?code=${workspaceCode}&conversationId=${conversationId}`;
+  }
+
   private get siteUrl(): string {
     return this.configService.get<string>('SITE_URL', '');
   }

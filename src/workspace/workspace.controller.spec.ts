@@ -34,6 +34,12 @@ import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import { AuthService } from '@/auth/auth.service';
 import { mockAuthService } from '@/test-helpers/mocks';
 import { LinkService } from '@/common/link-service';
+import DebounceService, { DEBOUNCE_SERVICE } from '@/common/debounce.service';
+import { Time } from '@/common/utils';
+import { ConversationsService } from '@/conversations/conversations.service';
+import { resetDb } from '@/test-helpers/rest-db';
+import EnvoyeMessenger from '@/conversations/messangers/envoye';
+import FeatureFlagManager from '@/feature-flag/manager';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -41,6 +47,7 @@ describe('WorkspaceController', () => {
   let prismaService: PrismaService;
   let factory: PersistStrategy;
   let preVerificationDetails: PreVerification;
+  let debounceService: DebounceService;
 
   beforeEach(async () => {
     requestUser = RequestUser.of('sam@useEnvoye.co');
@@ -53,6 +60,13 @@ describe('WorkspaceController', () => {
         RoleService,
         PermissionService,
         WorkspaceInviteService,
+        ConversationsService,
+        EnvoyeMessenger,
+        FeatureFlagManager,
+        {
+          provide: DEBOUNCE_SERVICE,
+          useClass: DebounceService,
+        },
         {
           provide: AuthService,
           useValue: mockAuthService as unknown as AuthService,
@@ -62,12 +76,11 @@ describe('WorkspaceController', () => {
     app = await createTestApp(module);
     prismaService = app.get<PrismaService>(PrismaService);
     factory = Factory.createStrategy(prismaService);
+    debounceService = app.get<DebounceService>(DEBOUNCE_SERVICE);
   });
 
   afterEach(async () => {
-    await prismaService.preVerification.deleteMany();
-    await prismaService.workspace.deleteMany();
-    await prismaService.companyProfile.deleteMany();
+    await resetDb(prismaService);
     await app.close();
   });
 
@@ -91,6 +104,7 @@ describe('WorkspaceController', () => {
 
   describe('Setup', () => {
     it('returns 201 for  successful preverification', async () => {
+      const decodeRunOrThrowSpy = jest.spyOn(debounceService, 'runOrThrow');
       preVerificationDetails = await factory.persist('preverification', () =>
         preVerificationFactory.build({
           email: requestUser.email,
@@ -104,6 +118,12 @@ describe('WorkspaceController', () => {
         .set('Authorization', 'Bearer test-token')
         .send({ id: preVerificationDetails.id })
         .expect(HttpStatus.CREATED);
+
+      expect(decodeRunOrThrowSpy).toHaveBeenCalledWith(
+        preVerificationDetails.id,
+        Time.durationInSeconds.minutes(1),
+        expect.any(Function),
+      );
     });
 
     it('it throws conflict when verification is verified', async () => {
