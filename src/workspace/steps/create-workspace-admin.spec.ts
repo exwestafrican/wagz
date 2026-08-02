@@ -30,6 +30,7 @@ describe('CreateWorkspaceAdminStep', () => {
           pointOfContactEmail: details.email,
           phoneCountryCode: details.phoneCountryCode,
           phoneNumber: details.phoneNumber,
+          preVerificationId: details.id,
         },
       });
     const workspace: Workspace = await prismaService.workspace.create({
