@@ -40,6 +40,7 @@ import { ConversationsService } from '@/conversations/conversations.service';
 import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import FeatureFlagManager from '@/feature-flag/manager';
+import DebounceException from '@/common/exceptions/debounce';
 
 describe('WorkspaceController', () => {
   let requestUser: RequestUser;
@@ -156,6 +157,51 @@ describe('WorkspaceController', () => {
         .set('Authorization', 'Bearer test-token')
         .send({ id: anotherUsersPreverification.id })
         .expect(HttpStatus.NOT_FOUND);
+    });
+
+    it('returns existing workspace details when debounced', async () => {
+      jest
+        .spyOn(debounceService, 'runOrThrow')
+        .mockRejectedValue(new DebounceException('cool off'));
+
+      const verifiedPreverification = await factory.persist(
+        'preverification',
+        () =>
+          preVerificationFactory.build({
+            email: requestUser.email,
+            status: PreVerificationStatus.VERIFIED,
+          }),
+      );
+
+      const koboMartProfile = await prismaService.companyProfile.create({
+        data: {
+          companyName: 'Kobo Mart',
+          pointOfContactEmail: requestUser.email,
+          preVerificationId: verifiedPreverification.id,
+        },
+      });
+
+      const koboMartWorkspace = await prismaService.workspace.create({
+        data: {
+          name: 'Kobo Mart',
+          ownedById: koboMartProfile.id,
+          code: 'kob001',
+        },
+      });
+
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.SETUP_WORKSPACE)
+        .set('Accept', 'application/json')
+        .set('Authorization', 'Bearer test-token')
+        .send({ id: verifiedPreverification.id })
+        .expect(HttpStatus.CREATED);
+
+      expect(response.body).toMatchObject({
+        workspaceId: koboMartWorkspace.id,
+        ownedByCompanyId: koboMartProfile.id,
+        name: koboMartWorkspace.name,
+        code: koboMartWorkspace.code,
+      });
     });
   });
 
