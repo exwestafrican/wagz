@@ -1,6 +1,7 @@
 import { createTaskRegistry } from '@/backfill/task';
 import { NormalizeUsernames } from '@/backfill/tasks/normalize-username';
 import { ConversationParticipantsSignature } from '@/backfill/tasks/participants-signature';
+import { BackfillCompanyProfilePreverification } from '@/backfill/tasks/company-profile-preverification';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ConversationsService } from '@/conversations/conversations.service';
 import { PrismaModule } from '@/prisma/prisma.module';
@@ -37,6 +38,14 @@ export const BackfillRegistryProvider = {
         ConversationsService,
       ),
       dateAdded: 1783166035, // 4th july 2026
+    });
+    registry.register({
+      name: 'Backfill Company Profile Preverification',
+      description:
+        'Links company profiles to PreVerification using email and company name',
+      key: 'company_profile_preverification',
+      task: new BackfillCompanyProfilePreverification(prismaService),
+      dateAdded: 1785671635, // 2nd august 2026
     });
     return registry;
   },

@@ -75,7 +75,7 @@ describe('BackfillController', () => {
         .send()
         .expect(HttpStatus.OK);
       const body = response.body as BackfillResponseDto[];
-      expect(body.length).toBe(2);
+      expect(body.length).toBe(3);
     });
 
     it('should return 403 for when user is not super admin', async () => {
