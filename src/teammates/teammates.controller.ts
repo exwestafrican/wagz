@@ -119,6 +119,8 @@ export class TeammatesController {
   async checkIfUsernameExists(
     @Query() query: CheckUsernameQueryDto,
   ): Promise<void> {
+    // means user just wants to check the pattern
+    if (!query.workspaceCode) return;
     const exists = await this.teammatesService.usernameAlreadyExistsInWorkspace(
       query.workspaceCode,
       query.username,

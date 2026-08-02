@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import {
   IsValidUsername,
   USERNAME_MAX_LENGTH,
@@ -20,6 +20,6 @@ export class CheckUsernameQueryDto {
 
   @ApiProperty({ description: 'Workspace code', example: '9Jk076' })
   @IsString()
-  @IsNotEmpty()
-  workspaceCode: string;
+  @IsOptional()
+  workspaceCode?: string;
 }
