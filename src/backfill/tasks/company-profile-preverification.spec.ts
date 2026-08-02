@@ -72,7 +72,7 @@ describe('Backfill Company Profile Preverification Task', () => {
       data: {
         pointOfContactEmail: 'poc@example.com',
         companyName: 'Kobo Mart',
-        preVerificationId: null,
+        preVerificationId: matchingPreVerification.id,
       },
     });
 
