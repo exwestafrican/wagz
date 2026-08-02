@@ -60,9 +60,9 @@ describe('CreateWorkspaceAdminStep', () => {
   });
 
   it('can create and roll back teammate creation', async () => {
-    const workspaceDetails = await miniWorkspaceSetup(
-      preVerificationFactory.build(),
-    );
+    const preverificationData = preVerificationFactory.build();
+    await prismaService.preVerification.create({ data: preverificationData });
+    const workspaceDetails = await miniWorkspaceSetup(preverificationData);
     await step.execute(workspaceDetails);
 
     const createdTeammate = await prismaService.teammate.findUniqueOrThrow({
