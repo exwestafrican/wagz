@@ -51,7 +51,7 @@ export const BackfillRegistryProvider = {
     registry.register({
       name: 'Backfill Preverification Username',
       description:
-        'Copies teammate username onto linked PreVerification when username is missing',
+        'Copies teammate username to correct preverification record. So all preverification have username of teammate that created them',
       key: 'preverification_username',
       task: new BackfillPreverificationUsername(prismaService),
       dateAdded: 1785671635, // 2nd august 2026
