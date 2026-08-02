@@ -40,6 +40,10 @@ import VerifyInviteCodeQueryDto from '@/workspace/dto/verify-invite-code-query.d
 import AcceptWorkspaceInviteDto from '@/workspace/dto/accept-workspace-invite.dto';
 import DebounceService, { DEBOUNCE_SERVICE } from '@/common/debounce.service';
 import { Time } from '@/common/utils';
+import { WorkspaceDetails } from '@/workspace/domain/workspace-details';
+import { PrismaService } from '@/prisma/prisma.service';
+import { PointOfContact } from '@/workspace/domain/point-of-contact';
+import DebounceException from '@/common/exceptions/debounce';
 
 @Controller('workspace')
 export class WorkspaceController {
@@ -50,6 +54,7 @@ export class WorkspaceController {
     private readonly permissionService: PermissionService,
     private readonly workspaceInviteService: WorkspaceInviteService,
     @Inject(DEBOUNCE_SERVICE) private readonly debounceService: DebounceService,
+    private readonly prismaService: PrismaService,
   ) {}
 
   @Post('/setup')
@@ -91,10 +96,44 @@ export class WorkspaceController {
         throw new ConflictException();
       } else if (error instanceof NotFoundInDb) {
         throw new NotFoundException();
-      } else if (error instanceof DebounceService) {
-        //TODO: after issue https://github.com/exwestafrican/wagz/issues/155 we can use the pre verification id to fetch
-        // workspace details and return to user.
-        throw error;
+      } else if (error instanceof DebounceException) {
+        // because one preverification can point to many company profiles and many company profiles can point to many workspaces
+        // we assume that on error the latest is what the user wants.
+        // i'm begging to question this DB relational model, but there's no reason to change it now
+        // what does it mean for an admin to own multiple workspaces , maybe a better relation is for the admin to have multiple pre verifications.
+        // which is what happens in app
+        const preverification =
+          await this.prismaService.preVerification.findFirstOrThrow({
+            where: { id: dto.id },
+            include: {
+              companyProfiles: {
+                orderBy: { createdAt: 'desc' },
+                take: 1,
+                include: {
+                  workspaces: {
+                    orderBy: { createdAt: 'desc' },
+                    take: 1,
+                  },
+                },
+              },
+            },
+          });
+
+        const companyProfile = preverification.companyProfiles.at(0);
+        const workspace = companyProfile?.workspaces.at(0);
+        if (!workspace) {
+          this.logger.error(
+            `Cannot find workspace for debounce fallback preverificationId=${dto.id}`,
+          );
+          throw new NotFoundException();
+        }
+
+        const workspaceDetails = WorkspaceDetails.from(
+          workspace,
+          PointOfContact.from(preverification),
+        );
+
+        return toWorkspaceDetailsResponse(workspaceDetails);
       }
       throw error;
     }
