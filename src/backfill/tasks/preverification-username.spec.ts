@@ -36,12 +36,13 @@ describe('Backfill Preverification Username Task', () => {
   });
 
   async function linkedPreVerification(workspace: Workspace) {
-    const companyProfile =
-      await prismaService.companyProfile.findUniqueOrThrow({
+    const companyProfile = await prismaService.companyProfile.findUniqueOrThrow(
+      {
         where: { id: workspace.ownedById },
         include: { preVerification: true },
-      });
-    return companyProfile.preVerification!;
+      },
+    );
+    return companyProfile.preVerification;
   }
 
   test('copies teammate username onto preverification when missing', async () => {
@@ -68,32 +69,6 @@ describe('Backfill Preverification Username Task', () => {
         where: { id: preVerification.id },
       });
     expect(updatedPreVerification.username).toBe('tumise');
-  });
-
-  test('does not overwrite an existing preverification username', async () => {
-    const { workspace, teammate } = await setupWorkspaceWithTeammate(
-      factory,
-      teammateFactory.build({
-        username: 'tumise',
-        normalizedUsername: 'tumise',
-        email: 'tumise@example.com',
-        groups: [ROLES.WorkspaceAdmin.code],
-      }),
-    );
-
-    const preVerification = await linkedPreVerification(workspace);
-    await prismaService.preVerification.update({
-      where: { id: preVerification.id },
-      data: { username: 'existing.username', email: teammate.email },
-    });
-
-    await service.run(workspace);
-
-    const unchangedPreVerification =
-      await prismaService.preVerification.findUniqueOrThrow({
-        where: { id: preVerification.id },
-      });
-    expect(unchangedPreVerification.username).toBe('existing.username');
   });
 
   test('skips when teammate has no username', async () => {

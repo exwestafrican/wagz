@@ -16,19 +16,6 @@ export class BackfillPreverificationUsername implements BackfillTask {
       });
 
     const preVerification = workspaceWithOwner.ownedBy.preVerification;
-    if (!preVerification) {
-      this.logger.warn(
-        `Workspace has no linked preverification; workspaceCode=${workspace.code}`,
-      );
-      return;
-    }
-
-    if (preVerification.username) {
-      this.logger.log(
-        `Preverification already has username; preVerificationId=${preVerification.id}`,
-      );
-      return;
-    }
 
     const teammate = await this.prismaService.teammate.findFirst({
       where: {
