@@ -116,9 +116,11 @@ export class TeammatesController {
     status: HttpStatus.CONFLICT,
     description: 'Username is already taken in this workspace',
   })
-  async checkIfUsernameExists(
+  async checkIfUsernameIsValid(
     @Query() query: CheckUsernameQueryDto,
   ): Promise<void> {
+    // means user just wants to check the pattern
+    if (!query.workspaceCode) return;
     const exists = await this.teammatesService.usernameAlreadyExistsInWorkspace(
       query.workspaceCode,
       query.username,
