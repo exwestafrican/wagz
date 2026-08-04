@@ -39,8 +39,8 @@ import {
   toChatHistoryDto,
 } from '@/conversations/dto/chat-history.dto';
 import { isSame } from '@/common/utils';
-import { UnreadMessageQueryDto } from '@/conversations/dto/unread-message-query.dto';
 import { MessagesSinceQueryDto } from '@/conversations/dto/messages-since-query.dto';
+import { MarkAsReadDto } from '@/conversations/dto/mark-as-read.dto';
 import { ConversationType } from '@/conversations/const';
 
 @Controller('conversations')
@@ -238,6 +238,52 @@ export class ConversationsController {
     );
   }
 
+  @Post('mark-as-read')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Mark conversation messages as read up to a message id',
+    description:
+      'Advances the participant lastReadMessage cursor to mostRecentMessageId only when it is greater than the stored value (or the cursor is null).',
+  })
+  @ApiResponse({
+    status: HttpStatus.NO_CONTENT,
+    description: 'Read cursor updated or already at or past mostRecentMessageId',
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User is unauthorized to make this request',
+  })
+  @ApiBadRequestResponse()
+  @ApiForbiddenResponse()
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Conversation not found or requester is not a participant',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async markAsRead(
+    @User() requestUser: RequestUser,
+    @Body() dto: MarkAsReadDto,
+  ) {
+    await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+      requestUser,
+      dto.workspaceCode,
+      PERMISSIONS.MESSAGE_TEAMMATES,
+      async (requestTeammate) => {
+        await this.conversationsService.runIfConversationParticipant(
+          dto.conversationId,
+          requestTeammate.id,
+          async () => {
+            await this.messenger.markAsRead(
+              requestTeammate.id,
+              dto.conversationId,
+              dto.mostRecentMessageId,
+            );
+          },
+        );
+      },
+    );
+  }
+
   @Get('chat-history')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -330,45 +376,5 @@ export class ConversationsController {
         },
       );
     return messagesSinceCursor.map((msg) => toChatHistoryDto(msg));
-  }
-
-  @Get('unread-messages')
-  @HttpCode(HttpStatus.OK)
-  @ApiOperation({
-    summary: 'Fetch all unread messages for teammate for a given conversation',
-    deprecated: true,
-    description:
-      'Deprecated: use GET /conversations/messages-since with a client-owned lastReadMessageId instead. ' +
-      'This endpoint advances a shared server-side read cursor and is not safe for multi-client use.',
-  })
-  @ApiBadRequestResponse()
-  @ApiForbiddenResponse()
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Conversation not found or requester is not a participant',
-  })
-  @UseGuards(SupabaseAuthGuard)
-  async unreadMessages(
-    @User() requestUser: RequestUser,
-    @Query() query: UnreadMessageQueryDto,
-  ): Promise<ChatHistoryDto[]> {
-    const unreadMsgHistory =
-      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
-        requestUser,
-        query.workspaceCode,
-        PERMISSIONS.MESSAGE_TEAMMATES,
-        async (requestTeammate) => {
-          return this.conversationsService.runIfConversationParticipant(
-            query.conversationId,
-            requestTeammate.id,
-            async () =>
-              await this.messenger.loadUnReadMessages(
-                requestTeammate.id,
-                query.conversationId,
-              ),
-          );
-        },
-      );
-    return unreadMsgHistory.map((msg) => toChatHistoryDto(msg));
   }
 }
