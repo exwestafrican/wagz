@@ -59,7 +59,7 @@ describe('Backfill Preverification Username Task', () => {
     const preVerification = await linkedPreVerification(workspace);
     await prismaService.preVerification.update({
       where: { id: preVerification.id },
-      data: { username: null, email: teammate.email },
+      data: { username: teammate.username, email: teammate.email },
     });
 
     await service.run(workspace);
@@ -75,8 +75,8 @@ describe('Backfill Preverification Username Task', () => {
     const { workspace, teammate } = await setupWorkspaceWithTeammate(
       factory,
       teammateFactory.build({
-        username: null,
-        normalizedUsername: null,
+        username: 'tumise',
+        normalizedUsername: 'tumise',
         email: 'tumise@example.com',
         groups: [ROLES.WorkspaceAdmin.code],
       }),
@@ -85,7 +85,7 @@ describe('Backfill Preverification Username Task', () => {
     const preVerification = await linkedPreVerification(workspace);
     await prismaService.preVerification.update({
       where: { id: preVerification.id },
-      data: { username: null, email: teammate.email },
+      data: { username: teammate.username, email: teammate.email },
     });
 
     await service.run(workspace);
@@ -112,7 +112,7 @@ describe('Backfill Preverification Username Task', () => {
     await prismaService.preVerification.update({
       where: { id: preVerification.id },
       data: {
-        username: null,
+        username: 'unmatched',
         email: 'unmatched@example.com',
       },
     });
