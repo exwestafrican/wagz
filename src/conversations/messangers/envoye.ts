@@ -19,44 +19,22 @@ export default class EnvoyeMessenger implements Messenger {
     private readonly conversationsService: ConversationsService,
   ) {}
 
-  async markAsRead(participantId: number, messageId: number) {
-    await this.prisma.conversationParticipant.update({
-      where: { id: participantId },
-      data: { lastReadMessage: messageId },
-    });
-  }
-
-  async loadUnReadMessages(
+  async markAsRead(
     teammateId: number,
     conversationId: number,
-  ): Promise<DomainMessage[]> {
-    const participantRow =
-      await this.prisma.conversationParticipant.findFirstOrThrow({
-        where: { teammateId, conversationId },
-        select: { lastReadMessage: true, id: true },
-      });
-
-    const lastReadMessage = participantRow.lastReadMessage;
-
-    const messages = await this.prisma.message.findMany({
-      orderBy: {
-        sentAt: 'desc',
-      },
+    mostRecentMessageId: number,
+  ) {
+    await this.prisma.conversationParticipant.updateMany({
       where: {
+        teammateId,
         conversationId,
-        ...(lastReadMessage != null && {
-          id: {
-            gt: lastReadMessage,
-          },
-        }),
+        OR: [
+          { lastReadMessage: null },
+          { lastReadMessage: { lt: mostRecentMessageId } },
+        ],
       },
+      data: { lastReadMessage: mostRecentMessageId },
     });
-
-    if (!isEmpty(messages)) {
-      await this.markAsRead(participantRow.id, messages[0].id);
-    }
-
-    return messages.map((message) => toDomainMessage(message));
   }
 
   async loadMessagesSince(

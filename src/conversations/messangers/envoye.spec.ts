@@ -346,54 +346,82 @@ describe('EnvoyeMessenger', () => {
     });
   });
 
-  describe('load new messages', () => {
+  describe('markAsRead', () => {
     async function assertLastReadMessageId(
-      participantId: number,
-      messageId: number,
+      teammateId: number,
+      conversationId: number,
+      messageId: number | null,
     ) {
       const participantInfo =
         await prismaService.conversationParticipant.findFirstOrThrow({
-          where: { id: participantId },
+          where: { teammateId, conversationId },
         });
       expect(participantInfo.lastReadMessage).toBe(messageId);
     }
 
-    it('loads new messages from last read', async () => {
-      const { workspace, chatHistory, sender, recipient } =
+    it('advances lastReadMessage from null', async () => {
+      const { workspace, chatHistory, sender } =
         await mockWorkspaceWithConversationHistory();
 
       const conversation = await singeParticipantMessageHistory(
         workspace,
         messenger,
-        [
-          ...chatHistory,
-          {
-            senderId: recipient.id,
-            messages: ['talk later'],
-            sentAt: addMinutes(chatHistory[4].sentAt, 5),
-          },
-        ],
+        chatHistory,
       );
 
       const messages = await prismaService.message.findMany({
-        where: { conversationId: conversation.id, workspace: workspace },
+        where: { conversationId: conversation.id },
+        orderBy: { sentAt: 'asc' },
       });
 
-      const participantInfo =
-        await prismaService.conversationParticipant.findFirstOrThrow({
-          where: { teammateId: sender.id, conversationId: conversation.id },
-        });
+      await assertLastReadMessageId(sender.id, conversation.id, null);
 
-      await messenger.markAsRead(participantInfo.id, messages[3].id);
-      await assertLastReadMessageId(participantInfo.id, messages[3].id);
+      await messenger.markAsRead(sender.id, conversation.id, messages[2].id);
 
-      const unreadMessages = await messenger.loadUnReadMessages(
-        messages[3].authorId,
-        conversation.id,
+      await assertLastReadMessageId(sender.id, conversation.id, messages[2].id);
+    });
+
+    it('advances lastReadMessage when the new id is greater', async () => {
+      const { workspace, chatHistory, sender } =
+        await mockWorkspaceWithConversationHistory();
+
+      const conversation = await singeParticipantMessageHistory(
+        workspace,
+        messenger,
+        chatHistory,
       );
 
-      expect(unreadMessages).toHaveLength(2);
-      await assertLastReadMessageId(participantInfo.id, messages[5].id); // last read message is last sent.
+      const messages = await prismaService.message.findMany({
+        where: { conversationId: conversation.id },
+        orderBy: { sentAt: 'asc' },
+      });
+
+      await messenger.markAsRead(sender.id, conversation.id, messages[1].id);
+      await messenger.markAsRead(sender.id, conversation.id, messages[3].id);
+
+      await assertLastReadMessageId(sender.id, conversation.id, messages[3].id);
+    });
+
+    it('does not move the cursor when the given id is less than or equal to stored', async () => {
+      const { workspace, chatHistory, sender } =
+        await mockWorkspaceWithConversationHistory();
+
+      const conversation = await singeParticipantMessageHistory(
+        workspace,
+        messenger,
+        chatHistory,
+      );
+
+      const messages = await prismaService.message.findMany({
+        where: { conversationId: conversation.id },
+        orderBy: { sentAt: 'asc' },
+      });
+
+      await messenger.markAsRead(sender.id, conversation.id, messages[3].id);
+      await messenger.markAsRead(sender.id, conversation.id, messages[1].id);
+      await messenger.markAsRead(sender.id, conversation.id, messages[3].id);
+
+      await assertLastReadMessageId(sender.id, conversation.id, messages[3].id);
     });
   });
 
