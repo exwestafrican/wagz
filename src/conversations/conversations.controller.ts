@@ -40,6 +40,7 @@ import {
 } from '@/conversations/dto/chat-history.dto';
 import { isSame } from '@/common/utils';
 import { UnreadMessageQueryDto } from '@/conversations/dto/unread-message-query.dto';
+import { MessagesSinceQueryDto } from '@/conversations/dto/messages-since-query.dto';
 import { ConversationType } from '@/conversations/const';
 
 @Controller('conversations')
@@ -285,10 +286,60 @@ export class ConversationsController {
     return history.map((msg) => toChatHistoryDto(msg));
   }
 
+  @Get('messages-since')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Fetch messages since a client-owned cursor',
+    description:
+      'Returns up to 100 messages with id greater than lastReadMessageId, ordered oldest to newest. ' +
+      'Does not mark messages as read. Each client should track its own lastReadMessageId. ' +
+      'Bootstrap via chat-history first, then poll with the max message id.',
+  })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Messages since the cursor in chronological order',
+    type: ChatHistoryDto,
+    isArray: true,
+  })
+  @ApiBadRequestResponse()
+  @ApiForbiddenResponse()
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Conversation not found or requester is not a participant',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async messagesSince(
+    @User() requestUser: RequestUser,
+    @Query() query: MessagesSinceQueryDto,
+  ): Promise<ChatHistoryDto[]> {
+    const messagesSinceCursor =
+      await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+        requestUser,
+        query.workspaceCode,
+        PERMISSIONS.MESSAGE_TEAMMATES,
+        async (requestTeammate) => {
+          return this.conversationsService.runIfConversationParticipant(
+            query.conversationId,
+            requestTeammate.id,
+            async () =>
+              await this.messenger.loadMessagesSince(
+                query.conversationId,
+                query.lastReadMessageId,
+              ),
+          );
+        },
+      );
+    return messagesSinceCursor.map((msg) => toChatHistoryDto(msg));
+  }
+
   @Get('unread-messages')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Fetch all unread messages for teammate for a given conversation',
+    deprecated: true,
+    description:
+      'Deprecated: use GET /conversations/messages-since with a client-owned lastReadMessageId instead. ' +
+      'This endpoint advances a shared server-side read cursor and is not safe for multi-client use.',
   })
   @ApiBadRequestResponse()
   @ApiForbiddenResponse()

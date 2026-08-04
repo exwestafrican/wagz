@@ -397,6 +397,117 @@ describe('EnvoyeMessenger', () => {
     });
   });
 
+  describe('loadMessagesSince', () => {
+    it('returns messages since lastReadMessageId without advancing the DB cursor', async () => {
+      const { workspace, chatHistory, sender, recipient } =
+        await mockWorkspaceWithConversationHistory();
+
+      const conversation = await singeParticipantMessageHistory(
+        workspace,
+        messenger,
+        [
+          ...chatHistory,
+          {
+            senderId: recipient.id,
+            messages: ['talk later'],
+            sentAt: addMinutes(chatHistory[4].sentAt, 5),
+          },
+        ],
+      );
+
+      const messages = await prismaService.message.findMany({
+        where: { conversationId: conversation.id },
+        orderBy: { sentAt: 'asc' },
+      });
+
+      const participantInfo =
+        await prismaService.conversationParticipant.findFirstOrThrow({
+          where: { teammateId: sender.id, conversationId: conversation.id },
+        });
+
+      expect(participantInfo.lastReadMessage).toBeNull();
+
+      const messagesSinceCursor = await messenger.loadMessagesSince(
+        conversation.id,
+        messages[3].id,
+      );
+
+      expect(messagesSinceCursor.map((msg) => msg.id)).toEqual([
+        messages[4].id,
+        messages[5].id,
+      ]);
+
+      const participantAfterFetch =
+        await prismaService.conversationParticipant.findFirstOrThrow({
+          where: { id: participantInfo.id },
+        });
+      expect(participantAfterFetch.lastReadMessage).toBeNull();
+    });
+
+    it('returns the same messages for repeated calls with the same cursor', async () => {
+      const { workspace, chatHistory, recipient } =
+        await mockWorkspaceWithConversationHistory();
+
+      const conversation = await singeParticipantMessageHistory(
+        workspace,
+        messenger,
+        [
+          ...chatHistory,
+          {
+            senderId: recipient.id,
+            messages: ['talk later'],
+            sentAt: addMinutes(chatHistory[4].sentAt, 5),
+          },
+        ],
+      );
+
+      const messages = await prismaService.message.findMany({
+        where: { conversationId: conversation.id },
+        orderBy: { sentAt: 'asc' },
+      });
+
+      const firstFetch = await messenger.loadMessagesSince(
+        conversation.id,
+        messages[3].id,
+      );
+      const secondFetch = await messenger.loadMessagesSince(
+        conversation.id,
+        messages[3].id,
+      );
+
+      expect(firstFetch.map((msg) => msg.id)).toEqual([
+        messages[4].id,
+        messages[5].id,
+      ]);
+      expect(secondFetch.map((msg) => msg.id)).toEqual(
+        firstFetch.map((msg) => msg.id),
+      );
+    });
+
+    it('returns an empty list when there are no messages after the cursor', async () => {
+      const { workspace, chatHistory } =
+        await mockWorkspaceWithConversationHistory();
+
+      const conversation = await singeParticipantMessageHistory(
+        workspace,
+        messenger,
+        chatHistory,
+      );
+
+      const messages = await prismaService.message.findMany({
+        where: { conversationId: conversation.id },
+        orderBy: { sentAt: 'asc' },
+      });
+
+      const messagesSinceCursor = await messenger.loadMessagesSince(
+        conversation.id,
+        messages[messages.length - 1].id,
+      );
+
+      expect(messagesSinceCursor).toEqual([]);
+    });
+  });
+
   describe('load conversations', () => {
     async function setupMixedConversationTypes() {
       const { workspace, teammates } =

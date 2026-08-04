@@ -27,6 +27,7 @@ import { resetDb } from '@/test-helpers/rest-db';
 import { ROLES } from '@/permission/types';
 import { CreateConversationDto } from '@/conversations/dto/create-conversation.dto';
 import { SendTextMessageDto } from '@/conversations/dto/send-message.dto';
+import { MessagesSinceQueryDto } from '@/conversations/dto/messages-since-query.dto';
 import { TestEmailClient } from '@/messaging/email/test-email-client';
 import { LinkService } from '@/common/link-service';
 import { mockConfigService } from '@/test-helpers/mocks';
@@ -874,7 +875,232 @@ describe('ConversationsController', () => {
     });
   });
 
+  describe('messagesSince', () => {
+    const openingSentAt = new Date('2026-06-20T10:00:00.000Z');
+    const replySentAt = new Date('2026-06-20T10:01:00.000Z');
+    const followUpSentAt = new Date('2026-06-20T10:02:00.000Z');
+
+    it('returns messages since lastReadMessageId without advancing the DB cursor', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
+        dan.id,
+        [marvin.id],
+        koboMart.code,
+        ['First message'],
+        openingSentAt,
+      );
+
+      await envoyeMessenger.sendTextMessage(
+        conversation.id,
+        marvin.id,
+        ['Second message'],
+        replySentAt,
+      );
+
+      await envoyeMessenger.sendTextMessage(
+        conversation.id,
+        dan.id,
+        ['Third message'],
+        followUpSentAt,
+      );
+
+      const messages = await prismaService.message.findMany({
+        where: { conversationId: conversation.id },
+        orderBy: { sentAt: 'asc' },
+      });
+
+      const messagesSince = await controller.messagesSince(requestUser, {
+        workspaceCode: koboMart.code,
+        conversationId: conversation.id,
+        lastReadMessageId: messages[0].id,
+      });
+
+      expect(messagesSince).toHaveLength(2);
+      expect(messagesSince.map((message) => message.content)).toEqual([
+        ['Second message'],
+        ['Third message'],
+      ]);
+
+      const participantInfo =
+        await prismaService.conversationParticipant.findFirstOrThrow({
+          where: { teammateId: dan.id, conversationId: conversation.id },
+        });
+      expect(participantInfo.lastReadMessage).toBeNull();
+    });
+
+    it('returns an empty list when there are no messages after the cursor', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
+        dan.id,
+        [marvin.id],
+        koboMart.code,
+        ['Hey Marvin'],
+        openingSentAt,
+      );
+
+      const messages = await prismaService.message.findMany({
+        where: { conversationId: conversation.id },
+        orderBy: { sentAt: 'asc' },
+      });
+
+      const messagesSince = await controller.messagesSince(requestUser, {
+        workspaceCode: koboMart.code,
+        conversationId: conversation.id,
+        lastReadMessageId: messages[0].id,
+      });
+
+      expect(messagesSince).toEqual([]);
+    });
+
+    it('returns the same messages for repeated calls with the same cursor', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
+        dan.id,
+        [marvin.id],
+        koboMart.code,
+        ['First message'],
+        openingSentAt,
+      );
+
+      await envoyeMessenger.sendTextMessage(
+        conversation.id,
+        marvin.id,
+        ['Second message'],
+        replySentAt,
+      );
+
+      const messages = await prismaService.message.findMany({
+        where: { conversationId: conversation.id },
+        orderBy: { sentAt: 'asc' },
+      });
+
+      const firstFetch = await controller.messagesSince(requestUser, {
+        workspaceCode: koboMart.code,
+        conversationId: conversation.id,
+        lastReadMessageId: messages[0].id,
+      });
+      const secondFetch = await controller.messagesSince(requestUser, {
+        workspaceCode: koboMart.code,
+        conversationId: conversation.id,
+        lastReadMessageId: messages[0].id,
+      });
+
+      expect(firstFetch.map((message) => message.id)).toEqual([messages[1].id]);
+      expect(secondFetch.map((message) => message.id)).toEqual(
+        firstFetch.map((message) => message.id),
+      );
+    });
+
+    it('throws NotFoundException when requester is not a participant', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 3);
+
+      await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [ROLES.WorkspaceMember.code],
+        },
+      });
+
+      const dan = teammates[1];
+      const marvin = teammates[2];
+
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
+        dan.id,
+        [marvin.id],
+        koboMart.code,
+        ['Hey Marvin'],
+        openingSentAt,
+      );
+
+      await expect(
+        controller.messagesSince(requestUser, {
+          workspaceCode: koboMart.code,
+          conversationId: conversation.id,
+          lastReadMessageId: 1,
+        }),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ForbiddenException when requester lacks message_teammates permission', async () => {
+      const { workspace: koboMart, teammates } =
+        await setupWorkspaceWithMultipleTeammates(factory, 2);
+
+      const dan = await prismaService.teammate.update({
+        where: { id: teammates[0].id },
+        data: {
+          email: requestUser.email,
+          groups: [],
+        },
+      });
+      const marvin = teammates[1];
+
+      const conversation = await envoyeMessenger.sendOpeningTextMessage(
+        dan.id,
+        [marvin.id],
+        koboMart.code,
+        ['Hey Marvin'],
+        openingSentAt,
+      );
+
+      await expect(
+        controller.messagesSince(requestUser, {
+          workspaceCode: koboMart.code,
+          conversationId: conversation.id,
+          lastReadMessageId: 1,
+        }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
   describe('sentAt validation', () => {
+    it('rejects MessagesSinceQueryDto when lastReadMessageId is omitted', async () => {
+      const dto = plainToInstance(MessagesSinceQueryDto, {
+        workspaceCode: '12er56',
+        conversationId: 1,
+      });
+
+      const errors = await validate(dto);
+
+      expect(errors.map((error) => error.property)).toContain(
+        'lastReadMessageId',
+      );
+    });
+
     it('rejects SendTextMessageDto when sentAt is omitted', async () => {
       const dto = plainToInstance(SendTextMessageDto, {
         workspaceCode: '12er56',
