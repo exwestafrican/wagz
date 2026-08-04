@@ -41,6 +41,7 @@ describe('AuthController', () => {
       email: 'test@example.com',
       firstName: 'Test',
       lastName: 'Example',
+      username: 'dee',
       companyName: 'Example Inc.',
       timezone: 'Africa/Lagos',
     };
