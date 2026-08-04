@@ -14,7 +14,6 @@ import EnvoyeMessenger from '@/conversations/messangers/envoye';
 import { ConversationsService } from '@/conversations/conversations.service';
 import { LinkService } from '@/common/link-service';
 import { MessagingModule } from '@/messaging/messaging.module';
-import buildUsername from '@/common/build-username';
 
 describe('CreateSelfConversationStep', () => {
   let step: CreateSelfConversationStep;
@@ -35,9 +34,7 @@ describe('CreateSelfConversationStep', () => {
         owner.firstName,
         owner.lastName,
         owner.email,
-        owner.username
-          ? owner.username
-          : buildUsername(owner.firstName, owner.lastName),
+        owner.username,
       ),
     );
   }

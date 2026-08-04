@@ -1,5 +1,4 @@
 import { PreVerification } from '@/generated/prisma/client';
-import buildUsername from '@/common/build-username';
 
 export class PointOfContact {
   firstName: string;
@@ -21,17 +20,11 @@ export class PointOfContact {
 
   static from(preverificationDetails: PreVerification) {
     //TODO: https://github.com/exwestafrican/wagz/issues/286 remove buildusername logic
-    const username = preverificationDetails.username
-      ? preverificationDetails.username
-      : buildUsername(
-          preverificationDetails.firstName,
-          preverificationDetails.lastName,
-        );
     return new PointOfContact(
       preverificationDetails.firstName,
       preverificationDetails.lastName,
       preverificationDetails.email,
-      username,
+      preverificationDetails.username,
     );
   }
 
