@@ -35,9 +35,7 @@ describe('CreateSelfConversationStep', () => {
         owner.firstName,
         owner.lastName,
         owner.email,
-        owner.username
-          ? owner.username
-          : buildUsername(owner.firstName, owner.lastName),
+        owner.username!,
       ),
     );
   }

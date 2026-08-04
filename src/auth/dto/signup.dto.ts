@@ -83,19 +83,15 @@ export class SignupEmailDto {
   })
   @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
   @IsString()
-  @IsOptional()
-  username?: string;
+  @IsNotEmpty()
+  username: string;
 
   static toSignupDetails(signupDto: SignupEmailDto): SignupDetails {
-    //TODO: https://github.com/exwestafrican/wagz/issues/286 remove buildusername logic
-    const username = signupDto.username
-      ? signupDto.username
-      : buildUsername(signupDto.firstName, signupDto.lastName);
     return {
       email: signupDto.email,
       firstName: signupDto.firstName,
       lastName: signupDto.lastName,
-      username: username,
+      username: signupDto.username,
       companyName: signupDto.companyName,
       timezone: signupDto.timezone,
     };
