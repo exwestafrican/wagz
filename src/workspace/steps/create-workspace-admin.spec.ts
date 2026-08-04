@@ -60,7 +60,10 @@ describe('CreateWorkspaceAdminStep', () => {
   });
 
   it('can create and roll back teammate creation', async () => {
-    const preverificationData = preVerificationFactory.build();
+    const preverificationData = preVerificationFactory.build({
+      username: 'sam.davids',
+    });
+
     await prismaService.preVerification.create({ data: preverificationData });
     const workspaceDetails = await miniWorkspaceSetup(preverificationData);
     await step.execute(workspaceDetails);
@@ -74,12 +77,8 @@ describe('CreateWorkspaceAdminStep', () => {
       },
     });
 
-    expect(createdTeammate.username).toBe(
-      `${workspaceDetails.pointOfContact.firstName.toLowerCase()}.${workspaceDetails.pointOfContact.lastName.toLowerCase()}`,
-    );
-    expect(createdTeammate.normalizedUsername).toBe(
-      `${workspaceDetails.pointOfContact.firstName.toLowerCase()}${workspaceDetails.pointOfContact.lastName.toLowerCase()}`,
-    );
+    expect(createdTeammate.username).toBe(preverificationData.username);
+    expect(createdTeammate.normalizedUsername).toBe('samdavids');
 
     await step.compensate(workspaceDetails);
 
