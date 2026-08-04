@@ -10,6 +10,8 @@ on:
         - '.gitignore'
         - '**.md'
         - 'iac/**'
+        - '*.spec.*'
+        - 'test/**'
 jobs:
   test:
     runs-on: ubuntu-latest
