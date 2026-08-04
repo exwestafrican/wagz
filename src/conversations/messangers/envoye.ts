@@ -59,6 +59,27 @@ export default class EnvoyeMessenger implements Messenger {
     return messages.map((message) => toDomainMessage(message));
   }
 
+  async loadMessagesSince(
+    conversationId: number,
+    lastReadMessageId: number,
+    limit = 100,
+  ): Promise<DomainMessage[]> {
+    const messages = await this.prisma.message.findMany({
+      take: limit,
+      orderBy: {
+        sentAt: 'asc',
+      },
+      where: {
+        conversationId,
+        id: {
+          gt: lastReadMessageId,
+        },
+      },
+    });
+
+    return messages.map((message) => toDomainMessage(message));
+  }
+
   // TODO: add load previous messages.
   // TODO: add load most recent messages.
   // TODO: remove chat history.
