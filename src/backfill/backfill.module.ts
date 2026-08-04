@@ -1,7 +1,6 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { NormalizeUsernames } from '@/backfill/tasks/normalize-username';
-import { BackfillPreverificationUsername } from '@/backfill/tasks/preverification-username';
 import { BackfillCompanyProfilePreverification } from '@/backfill/tasks/company-profile-preverification';
 import { BackfillController } from './backfill.controller';
 import { BackfillRegistryProvider } from '@/backfill/backfill-registry.provider';
@@ -18,7 +17,6 @@ import { ConversationsModule } from '@/conversations/conversations.module';
   ],
   providers: [
     NormalizeUsernames,
-    BackfillPreverificationUsername,
     BackfillCompanyProfilePreverification,
     BackfillRegistryProvider,
   ],
