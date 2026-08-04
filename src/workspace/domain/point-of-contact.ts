@@ -1,5 +1,4 @@
 import { PreVerification } from '@/generated/prisma/client';
-import buildUsername from '@/common/build-username';
 
 export class PointOfContact {
   firstName: string;
@@ -25,7 +24,7 @@ export class PointOfContact {
       preverificationDetails.firstName,
       preverificationDetails.lastName,
       preverificationDetails.email,
-      preverificationDetails.username!,
+      preverificationDetails.username,
     );
   }
 

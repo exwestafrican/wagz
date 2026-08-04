@@ -2,7 +2,6 @@ import { ApiProperty } from '@nestjs/swagger';
 import {
   IsEmail,
   IsNotEmpty,
-  IsOptional,
   IsString,
   Validate,
   ValidateIf,
@@ -14,7 +13,6 @@ import { PhoneNumberDto } from '@/auth/dto/phone-number.dto';
 import { Transform, Type } from 'class-transformer';
 import { IsValidPhoneNumberConstraint } from '@/auth/validators/phone-number';
 import { IsValidIANATimezoneConstraint } from '../validators/timezone-iana';
-import buildUsername from '@/common/build-username';
 
 export class SignupEmailDto {
   @ApiProperty({

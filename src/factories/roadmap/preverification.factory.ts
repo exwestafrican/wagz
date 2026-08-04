@@ -6,7 +6,7 @@ import {
 import { faker } from '@faker-js/faker';
 import { PrismaService } from '@/prisma/prisma.service';
 
-const preVerificationFactory = Factory.define<PreVerification>(({ params }) => {
+const preVerificationFactory = Factory.define<PreVerification>(() => {
   return {
     id: faker.string.uuid(),
     email: faker.internet.email(),
