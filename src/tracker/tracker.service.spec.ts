@@ -100,14 +100,13 @@ describe('TrackerService', () => {
 
       expect(result).toEqual({ count: 1 });
 
-      const persistedLocation = await prismaService.location.findFirst({
+      const persistedLocation = await prismaService.location.findFirstOrThrow({
         where: { deviceId: device.id },
       });
-      expect(persistedLocation).not.toBeNull();
-      expect(Number(persistedLocation!.latitude)).toBeCloseTo(6.5244);
-      expect(Number(persistedLocation!.longitude)).toBeCloseTo(3.3792);
-      expect(Number(persistedLocation!.speed)).toBeCloseTo(12.5);
-      expect(persistedLocation!.timestamp.toISOString()).toBe(
+      expect(Number(persistedLocation.latitude)).toBeCloseTo(6.5244);
+      expect(Number(persistedLocation.longitude)).toBeCloseTo(3.3792);
+      expect(Number(persistedLocation.speed)).toBeCloseTo(12.5);
+      expect(persistedLocation.timestamp.toISOString()).toBe(
         capturedAt.toISOString(),
       );
     });
