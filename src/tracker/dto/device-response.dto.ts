@@ -19,3 +19,21 @@ export function toDeviceResponse(device: Device): DeviceResponseDto {
     createdAt: device.createdAt,
   };
 }
+
+export class RegisteredDeviceResponseDto extends DeviceResponseDto {
+  @ApiProperty({
+    description:
+      'One-time device API key. Provision onto the Android device; it is never returned again.',
+  })
+  apiKey: string;
+}
+
+export function toRegisteredDeviceResponse(
+  device: Device,
+  apiKey: string,
+): RegisteredDeviceResponseDto {
+  return {
+    ...toDeviceResponse(device),
+    apiKey,
+  };
+}

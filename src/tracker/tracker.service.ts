@@ -1,9 +1,24 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { Device, Location } from '@/generated/prisma/client';
+import { Device } from '@/generated/prisma/client';
 import { existsInDbError } from '@/common/error-type';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
-import NotFoundInDb from '@/common/exceptions/not-found';
+import {
+  generateDeviceApiKey,
+  hashDeviceApiKey,
+} from '@/tracker/device-api-key';
+
+export type RegisteredDevice = {
+  device: Device;
+  apiKey: string;
+};
+
+export type LocationPingInput = {
+  latitude: number;
+  longitude: number;
+  speed?: number;
+  capturedAt: Date;
+};
 
 @Injectable()
 export class TrackerService {
@@ -11,13 +26,20 @@ export class TrackerService {
 
   constructor(private readonly prismaService: PrismaService) {}
 
-  async registerDevice(imei: string): Promise<Device> {
+  async registerDevice(imei: string): Promise<RegisteredDevice> {
+    const apiKey = generateDeviceApiKey();
+    const apiKeyHash = hashDeviceApiKey(apiKey);
+
     try {
       const device = await this.prismaService.device.create({
-        data: { imei },
+        data: {
+          imei,
+          apiKeyHash,
+          isActive: true,
+        },
       });
       this.logger.log(`registered device id=${device.id} imei=${imei}`);
-      return device;
+      return { device, apiKey };
     } catch (error) {
       if (existsInDbError(error)) {
         throw new ItemAlreadyExistsInDb(
@@ -34,27 +56,23 @@ export class TrackerService {
     });
   }
 
-  async recordLocation(
+  async recordLocations(
     deviceId: string,
-    latitude: number,
-    longitude: number,
-  ): Promise<Location> {
-    const device = await this.prismaService.device.findUnique({
-      where: { id: deviceId },
-    });
-    if (!device) {
-      throw new NotFoundInDb(`device not found; deviceId=${deviceId}`);
-    }
-
-    const location = await this.prismaService.location.create({
-      data: {
+    locationPings: LocationPingInput[],
+  ): Promise<{ count: number }> {
+    const result = await this.prismaService.location.createMany({
+      data: locationPings.map((locationPing) => ({
         deviceId,
-        latitude,
-        longitude,
-        timestamp: new Date(),
-      },
+        latitude: locationPing.latitude,
+        longitude: locationPing.longitude,
+        speed: locationPing.speed,
+        timestamp: locationPing.capturedAt,
+      })),
     });
-    this.logger.log(`recorded location id=${location.id} deviceId=${deviceId}`);
-    return location;
+
+    this.logger.log(
+      `recorded locations count=${result.count} deviceId=${deviceId}`,
+    );
+    return { count: result.count };
   }
 }

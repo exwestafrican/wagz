@@ -14,7 +14,9 @@ import { TrackerService } from '@/tracker/tracker.service';
 import { RegisterDeviceDto } from '@/tracker/dto/register-device.dto';
 import {
   DeviceResponseDto,
+  RegisteredDeviceResponseDto,
   toDeviceResponse,
+  toRegisteredDeviceResponse,
 } from '@/tracker/dto/device-response.dto';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
@@ -64,8 +66,8 @@ export class TrackerAdminController {
   @ApiBody({ type: RegisterDeviceDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Device registered',
-    type: DeviceResponseDto,
+    description: 'Device registered with a one-time API key',
+    type: RegisteredDeviceResponseDto,
   })
   @ApiResponse({
     status: HttpStatus.CONFLICT,
@@ -80,16 +82,19 @@ export class TrackerAdminController {
   async registerDevice(
     @User() requestUser: RequestUser,
     @Body() registerDeviceDto: RegisterDeviceDto,
-  ): Promise<DeviceResponseDto> {
+  ): Promise<RegisteredDeviceResponseDto> {
     try {
-      const device =
+      const registeredDevice =
         await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
           requestUser,
           ENVOYE_WORKSPACE_CODE,
           PERMISSIONS.MANAGE_DEVICES,
           () => this.trackerService.registerDevice(registerDeviceDto.imei),
         );
-      return toDeviceResponse(device);
+      return toRegisteredDeviceResponse(
+        registeredDevice.device,
+        registeredDevice.apiKey,
+      );
     } catch (error) {
       if (error instanceof ItemAlreadyExistsInDb) {
         throw new ConflictException(error.message);
