@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Location } from '@/generated/prisma/client';
 
 export class LocationResponseDto {
@@ -14,11 +14,8 @@ export class LocationResponseDto {
   @ApiProperty({ description: 'Longitude in decimal degrees' })
   longitude: number;
 
-  @ApiPropertyOptional({
-    description: 'Speed in meters per second',
-    nullable: true,
-  })
-  speed: number | null;
+  @ApiProperty({ description: 'Speed in meters per second' })
+  speed: number;
 
   @ApiProperty({ description: 'When the device captured this point' })
   timestamp: Date;
@@ -30,7 +27,7 @@ export function toLocationResponse(location: Location): LocationResponseDto {
     deviceId: location.deviceId,
     latitude: Number(location.latitude),
     longitude: Number(location.longitude),
-    speed: location.speed === null ? null : Number(location.speed),
+    speed: Number(location.speed),
     timestamp: location.timestamp,
   };
 }
