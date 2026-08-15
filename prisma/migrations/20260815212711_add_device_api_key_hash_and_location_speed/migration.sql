@@ -18,7 +18,7 @@ DROP TABLE "Location";
 CREATE TABLE "device" (
     "id" TEXT NOT NULL,
     "imei" TEXT NOT NULL,
-    "apiKeyHash" TEXT NOT NULL,
+    "apiKeyHash" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,

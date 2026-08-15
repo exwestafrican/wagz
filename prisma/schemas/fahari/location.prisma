@@ -1,7 +1,7 @@
 model Device {
   id         String   @id @default(cuid())
   imei       String   @unique
-  apiKeyHash String   @unique
+  apiKeyHash String?  @unique
   isActive   Boolean  @default(false)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
