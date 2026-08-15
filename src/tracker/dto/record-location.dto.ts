@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
@@ -7,7 +7,6 @@ import {
   IsDate,
   IsNotEmpty,
   IsNumber,
-  IsOptional,
   Max,
   Min,
   ValidateNested,
@@ -33,14 +32,13 @@ export class LocationPingDto {
   @Max(180)
   longitude: number;
 
-  @ApiPropertyOptional({
+  @ApiProperty({
     description: 'Speed in meters per second',
     example: 12.5,
   })
-  @IsOptional()
   @IsNumber()
   @Min(0)
-  speed?: number;
+  speed: number;
 
   @ApiProperty({
     description: 'When the device captured this point',

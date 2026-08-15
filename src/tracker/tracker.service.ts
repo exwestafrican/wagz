@@ -16,7 +16,7 @@ export type RegisteredDevice = {
 export type LocationPingInput = {
   latitude: number;
   longitude: number;
-  speed?: number;
+  speed: number;
   capturedAt: Date;
 };
 
