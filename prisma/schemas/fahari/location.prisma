@@ -1,11 +1,14 @@
 model Device {
-  id        String   @id @default(cuid())
-  imei      String   @unique
-  isActive  Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id         String   @id @default(cuid())
+  imei       String   @unique
+  apiKeyHash String   @unique
+  isActive   Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   locations Location[]
+
+  @@map("device")
 }
 
 model Location {
@@ -14,6 +17,7 @@ model Location {
 
   latitude  Decimal @db.Decimal(10, 7)
   longitude Decimal @db.Decimal(10, 7)
+  speed     Decimal @default(0) @db.Decimal(8, 3)
 
   timestamp DateTime
 
@@ -24,4 +28,5 @@ model Location {
   @@index([deviceId])
   @@index([timestamp])
   @@index([deviceId, timestamp])
+  @@map("location")
 }
