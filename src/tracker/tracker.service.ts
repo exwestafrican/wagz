@@ -14,7 +14,7 @@ export class TrackerService {
   async registerDevice(imei: string): Promise<Device> {
     try {
       const device = await this.prismaService.device.create({
-        data: { imei, apiKeyHash: `pending_${imei}` }, // temporary to unblock myself
+        data: { imei },
       });
       this.logger.log(`registered device id=${device.id} imei=${imei}`);
       return device;
