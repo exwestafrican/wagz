@@ -14,7 +14,7 @@
     "generate:client": "pnpx prisma generate",
     "start": "nest start",
     "start:dev": "pnpm install && nest start --watch",
-    "email:dev": "email dev --dir src/emails -p 3001",
+    "email:dev": "email dev --dir src/envoye/emails -p 3001",
     "start:container-dev": "pnpx supabase start && docker compose -f docker-compose.local.yml up --build ",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -133,7 +133,7 @@
       "**/*.(t|j)s"
     ],
     "setupFilesAfterEnv": [
-      "<rootDir>/test-helpers/jest-setup.ts"
+      "<rootDir>/common/test-helpers/jest-setup.ts"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"

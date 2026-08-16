@@ -1,0 +1,23 @@
+---
+description: Keep Envoye and Fahari product code isolated — no cross-product imports.
+globs: src/fahari/**/*.{ts,tsx},src/envoye/**/*.{ts,tsx}
+alwaysApply: false
+---
+
+# Product import boundary
+
+`src/fahari` and `src/envoye` are separate products. They must not import each other.
+
+**Allowed**
+
+- `@/fahari/...` from under `src/fahari`
+- `@/envoye/...` from under `src/envoye`
+- `@/common/...` from either product
+- Shared needs belong in `src/common`, not cross-product imports
+
+**Forbidden**
+
+- From `src/fahari`: `@/envoye/...` or relative paths that reach `src/envoye` (e.g. `../../envoye/...`)
+- From `src/envoye`: `@/fahari/...` or relative paths that reach `src/fahari` (e.g. `../../fahari/...`)
+
+If both products need the same code, move it to `src/common` (or duplicate a tiny pure helper until a shared home is clear).

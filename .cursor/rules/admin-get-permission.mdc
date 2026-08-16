@@ -12,7 +12,7 @@ Mutating endpoints (`POST` / `PATCH` / `DELETE` / etc.) keep the default (`Forbi
 
 ## Example
 
-See `listDevices` in [`TrackerAdminController`](src/tracker/admin/tracker-admin.controller.ts):
+See `listDevices` in [`TrackerAdminController`](src/fahari/tracker/admin/tracker-admin.controller.ts):
 
 ```typescript
 const devices =

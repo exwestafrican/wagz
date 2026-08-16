@@ -1,1 +1,0 @@
-export const MAX_LOCATION_PINGS_PER_REQUEST = 200;

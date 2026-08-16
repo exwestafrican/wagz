@@ -1,0 +1,574 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { WorkspaceManager } from './workspace-manager.service';
+import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaModule } from '@/common/prisma/prisma.module';
+import { ConfigModule } from '@nestjs/config';
+import { createTestApp } from '@/common/test-helpers/test-app';
+import { INestApplication } from '@nestjs/common';
+import preVerificationFactory from '@/common/factories/roadmap/preverification.factory';
+import Factory, { PersistStrategy } from '@/common/factories/factory';
+import {
+  InviteStatus,
+  PreVerification,
+  PreVerificationStatus,
+  Teammate,
+  TeammateStatus,
+  Workspace,
+  WorkspaceInvite,
+} from '@/generated/prisma/client';
+import { ROLES } from '@/common/permission/types';
+import NotFoundInDb from '@/common/exceptions/not-found';
+import { InvalidState } from '@/common/exceptions/invalid-state';
+import workspaceFactory from '@/common/factories/workspace.factory';
+import teammateFactory from '@/common/factories/teammate.factory';
+import workspaceInviteFactory from '@/common/factories/workspace-invite.factory';
+import { MessagingModule } from '@/common/messaging/messaging.module';
+import { RoleService } from '@/common/permission/role/role.service';
+import { WorkspaceInviteService } from '@/envoye/workspace/workspace-invite-service';
+import { LinkService } from '@/common/link-service';
+import { AuthService } from '@/envoye/auth/auth.service';
+import { mockAuthService } from '@/common/test-helpers/mocks';
+import CompanyProfileFactory from '@/common/factories/company-profile.factory';
+import { resetDb } from '@/common/test-helpers/rest-db';
+import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
+import FeatureFlagManager from '@/envoye/feature-flag/manager';
+import { ConversationsService } from '@/envoye/conversations/conversations.service';
+
+describe('WorkspaceService', () => {
+  let service: WorkspaceManager;
+  let app: INestApplication;
+  let prismaService: PrismaService;
+  let workspaceLinkService: LinkService;
+  let factory: PersistStrategy;
+  let preVerificationDetails: PreVerification;
+  let workspaceInviteService: WorkspaceInviteService;
+  let messenger: EnvoyeMessenger;
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      imports: [ConfigModule.forRoot(), PrismaModule, MessagingModule],
+      providers: [
+        WorkspaceManager,
+        LinkService,
+        RoleService,
+        WorkspaceInviteService,
+        EnvoyeMessenger,
+        FeatureFlagManager,
+        ConversationsService,
+        {
+          provide: AuthService,
+          useValue: mockAuthService as unknown as AuthService,
+        },
+      ],
+    }).compile();
+    app = await createTestApp(module);
+    service = app.get<WorkspaceManager>(WorkspaceManager);
+    prismaService = app.get<PrismaService>(PrismaService);
+    workspaceLinkService = app.get<LinkService>(LinkService);
+    workspaceInviteService = app.get<WorkspaceInviteService>(
+      WorkspaceInviteService,
+    );
+    messenger = app.get<EnvoyeMessenger>(EnvoyeMessenger);
+    factory = Factory.createStrategy(prismaService);
+    preVerificationDetails = await factory.persist('preverification', () =>
+      preVerificationFactory.build(),
+    );
+  });
+
+  afterEach(async () => {
+    await resetDb(prismaService);
+    await app.close();
+  });
+
+  async function assertRequiredStepsRun(details: PreVerification) {
+    const companyProfile = await prismaService.companyProfile.findFirst({
+      where: { pointOfContactEmail: details.email },
+    });
+    expect(companyProfile).toBeTruthy();
+
+    const workspace = await prismaService.workspace.findFirst({
+      where: { ownedById: companyProfile!.id },
+    });
+    expect(workspace).toBeTruthy();
+
+    expect(
+      await prismaService.teammate.count({
+        where: { email: details.email },
+      }),
+    ).toBe(1);
+
+    expect(
+      await prismaService.companyProfile.count({
+        where: { pointOfContactEmail: details.email },
+      }),
+    ).toBe(1);
+
+    const preverification =
+      await prismaService.preVerification.findUniqueOrThrow({
+        where: { id: details.id },
+      });
+    expect(preverification.status).toBe(PreVerificationStatus.VERIFIED);
+  }
+
+  async function assertRollbackHappened(details: PreVerification) {
+    expect(
+      await prismaService.companyProfile.count({
+        where: { pointOfContactEmail: details.email },
+      }),
+    ).toBe(0);
+
+    expect(
+      await prismaService.workspace.count({
+        where: { name: details.companyName },
+      }),
+    ).toBe(0);
+
+    expect(
+      await prismaService.teammate.count({
+        where: { email: details.email },
+      }),
+    ).toBe(0);
+
+    const preverification =
+      await prismaService.preVerification.findUniqueOrThrow({
+        where: { id: details.id },
+      });
+    expect(preverification.status).toBe(PreVerificationStatus.PENDING);
+  }
+
+  async function assertRecipientHasNoInvite(
+    workspace: Workspace,
+    email: string,
+  ) {
+    expect(
+      await prismaService.workspaceInvite.count({
+        where: {
+          workspace: workspace,
+          recipientEmail: email,
+        },
+      }),
+    ).toBe(0);
+  }
+
+  async function assertRecipientHasPreviouslyFailedInvite(
+    workspace: Workspace,
+    email: string,
+  ) {
+    expect(
+      await prismaService.workspaceInvite.count({
+        where: {
+          workspace: workspace,
+          recipientEmail: email,
+          status: InviteStatus.FAILED,
+        },
+      }),
+    ).toBe(0);
+  }
+
+  async function assertRecipientWasPreviouslySuccessfullyInvited(
+    workspace: Workspace,
+    email: string,
+  ) {
+    expect(
+      await prismaService.workspaceInvite.count({
+        where: {
+          workspace: workspace,
+          recipientEmail: email,
+          status: InviteStatus.ACCEPTED,
+        },
+      }),
+    ).toBe(1);
+  }
+
+  function assertInviteIsCreated(
+    invite: WorkspaceInvite,
+    recipientEmail: string,
+  ) {
+    expect(invite).not.toBeNull();
+    expect(invite.recipientRole).toBe(ROLES.SupportStaff.code);
+    expect(invite.recipientEmail).toBe(recipientEmail);
+    expect(invite.validTill).toStrictEqual(
+      new Date('2026-02-23T23:59:59.999Z'),
+    );
+  }
+
+  async function assertFailedInviteIsCreated(
+    workspace: Workspace,
+    adminTeammate: Teammate,
+    recipientEmail: string,
+  ) {
+    expect(
+      await prismaService.workspaceInvite.count({
+        where: {
+          workspace: workspace,
+          senderId: adminTeammate.id,
+          status: InviteStatus.FAILED,
+          recipientEmail: recipientEmail,
+        },
+      }),
+    ).toBe(1);
+  }
+
+  describe('setup', () => {
+    it('returns not found when email and id do not match', async () => {
+      await expect(
+        service.setup('somrandomEmail', preVerificationDetails.id),
+      ).rejects.toThrow(NotFoundInDb);
+    });
+
+    it('returns conflict when status is not pending', async () => {
+      const details = await factory.persist('preverification', () =>
+        preVerificationFactory.build({
+          status: PreVerificationStatus.VERIFIED,
+        }),
+      );
+      await expect(service.setup(details.email, details.id)).rejects.toThrow(
+        InvalidState,
+      );
+    });
+
+    describe('Teammate', () => {
+      it('it runs teammate create step successfully', async () => {
+        expect(
+          await prismaService.teammate.count({
+            where: { email: preVerificationDetails.email },
+          }),
+        ).toBe(0);
+        expect(preVerificationDetails.status).toBe(
+          PreVerificationStatus.PENDING,
+        );
+        await service.setup(
+          preVerificationDetails.email,
+          preVerificationDetails.id,
+        );
+        const teammate = await prismaService.teammate.findFirstOrThrow({
+          where: { email: preVerificationDetails.email },
+        });
+        expect(teammate.groups.length).toBe(1);
+        expect(teammate.groups[0]).toBe(ROLES.WorkspaceAdmin.code);
+        await assertRequiredStepsRun(preVerificationDetails);
+      });
+
+      it('does not run teammate create step successfully', async () => {
+        jest
+          .spyOn(prismaService.teammate, 'create')
+          .mockRejectedValue(new Error('Database error'));
+
+        await expect(
+          service.setup(
+            preVerificationDetails.email,
+            preVerificationDetails.id,
+          ),
+        ).rejects.toThrow('Database error');
+
+        await assertRollbackHappened(preVerificationDetails);
+      });
+    });
+
+    describe('SelfConversation', () => {
+      it('creates a self-conversation for the new admin', async () => {
+        await service.setup(
+          preVerificationDetails.email,
+          preVerificationDetails.id,
+        );
+
+        const admin = await prismaService.teammate.findFirstOrThrow({
+          where: { email: preVerificationDetails.email },
+        });
+        const participants =
+          await prismaService.conversationParticipant.findMany({
+            where: { teammateId: admin.id },
+          });
+        expect(participants).toHaveLength(1);
+        expect(participants[0].isOwner).toBe(true);
+      });
+
+      it('rolls everything back when self-conversation creation fails', async () => {
+        jest
+          .spyOn(messenger, 'sendOpeningTextMessage')
+          .mockRejectedValue(new Error('Database error'));
+
+        await expect(
+          service.setup(
+            preVerificationDetails.email,
+            preVerificationDetails.id,
+          ),
+        ).rejects.toThrow('Database error');
+
+        await assertRollbackHappened(preVerificationDetails);
+        expect(await prismaService.conversation.count()).toBe(0);
+      });
+
+      it('keeps the conversation from a successful setup when a later setup fails', async () => {
+        await service.setup(
+          preVerificationDetails.email,
+          preVerificationDetails.id,
+        );
+
+        const failingDetails = await factory.persist('preverification', () =>
+          preVerificationFactory.build(),
+        );
+        jest
+          .spyOn(messenger, 'sendOpeningTextMessage')
+          .mockRejectedValue(new Error('Database error'));
+
+        await expect(
+          service.setup(failingDetails.email, failingDetails.id),
+        ).rejects.toThrow('Database error');
+
+        expect(await prismaService.conversation.count()).toBe(1);
+      });
+    });
+  });
+
+  describe('inviteTeammateIfEligible', () => {
+    let adminTeammate: Teammate;
+    let workspace: Workspace;
+    let recipientEmail: string;
+
+    beforeEach(async () => {
+      workspace = await factory.persist('workspace', () =>
+        workspaceFactory.envoyeWorkspace(),
+      );
+
+      adminTeammate = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          groups: [ROLES.WorkspaceAdmin.code],
+          workspaceCode: workspace.code,
+        }),
+      );
+
+      recipientEmail = 'tumise@usewaggz.com';
+
+      const fixedMs = new Date('2026-02-21T10:00:00.000Z').getTime();
+      jest.spyOn(Date, 'now').mockReturnValue(fixedMs);
+    });
+
+    describe('Teammate is new and has no Invites', () => {
+      it('creates invite', async () => {
+        await assertRecipientHasNoInvite(workspace, recipientEmail);
+        const encodeInviteSpy = jest.spyOn(
+          workspaceInviteService,
+          'encodeInvite',
+        );
+        const inviteUrlSpy = jest.spyOn(workspaceLinkService, 'inviteUrl');
+
+        await service.inviteTeammateIfEligible(
+          workspace,
+          recipientEmail,
+          adminTeammate.id,
+          ROLES.SupportStaff,
+        );
+
+        const workspaceInvite = await prismaService.workspaceInvite.findMany({
+          where: {
+            workspace: workspace,
+            senderId: adminTeammate.id,
+            status: InviteStatus.SENT,
+            recipientEmail: recipientEmail,
+          },
+        });
+
+        expect(workspaceInvite.length).toBe(1);
+
+        expect(inviteUrlSpy).toHaveBeenCalledTimes(1);
+        expect(encodeInviteSpy).toHaveBeenCalledWith(
+          recipientEmail,
+          workspace.code,
+          workspaceInvite[0].inviteCode,
+        );
+      });
+
+      it('creates invite valid for 2 days', async () => {
+        await assertRecipientHasNoInvite(workspace, recipientEmail);
+
+        await service.inviteTeammateIfEligible(
+          workspace,
+          recipientEmail,
+          adminTeammate.id,
+          ROLES.SupportStaff,
+        );
+
+        const invite = await prismaService.workspaceInvite.findFirst({
+          where: {
+            workspace: workspace,
+            senderId: adminTeammate.id,
+            status: InviteStatus.SENT,
+            recipientEmail: recipientEmail,
+          },
+        });
+
+        expect(invite).not.toBeNull();
+        expect(invite!.validTill).toStrictEqual(
+          new Date('2026-02-23T23:59:59.999Z'),
+        );
+      });
+
+      it('creates invite with invite role', async () => {
+        await assertRecipientHasNoInvite(workspace, recipientEmail);
+
+        await service.inviteTeammateIfEligible(
+          workspace,
+          recipientEmail,
+          adminTeammate.id,
+          ROLES.SupportStaff,
+        );
+
+        const invite = await prismaService.workspaceInvite.findFirst({
+          where: {
+            workspace: workspace,
+            senderId: adminTeammate.id,
+            status: InviteStatus.SENT,
+            recipientEmail: recipientEmail,
+          },
+        });
+
+        expect(invite).not.toBeNull();
+        expect(invite!.recipientRole).toBe(ROLES.SupportStaff.code);
+      });
+    });
+
+    describe('Teammate has previous failed Invite', () => {
+      it('creates new invite for teammate', async () => {
+        await assertRecipientHasPreviouslyFailedInvite(
+          workspace,
+          recipientEmail,
+        );
+        await service.inviteTeammateIfEligible(
+          workspace,
+          recipientEmail,
+          adminTeammate.id,
+          ROLES.SupportStaff,
+        );
+
+        const invite = await prismaService.workspaceInvite.findFirst({
+          where: {
+            workspace: workspace,
+            senderId: adminTeammate.id,
+            status: InviteStatus.SENT,
+            recipientEmail: recipientEmail,
+          },
+        });
+
+        assertInviteIsCreated(invite!, recipientEmail);
+      });
+    });
+
+    describe('Teammate was previously successfully invited to workspace', () => {
+      test.each([
+        TeammateStatus.DISABLED,
+        TeammateStatus.ACTIVE,
+        TeammateStatus.DELETED,
+      ])(
+        'creates failed invite and does send email for %s Teammate',
+        async (status: TeammateStatus) => {
+          const senderTeammate = await factory.persist('teammate', () =>
+            teammateFactory.build({
+              email: 'sender@usewaggz.com',
+              workspaceCode: workspace.code,
+              status: status,
+            }),
+          );
+
+          await factory.persist('workspaceInvite', () =>
+            workspaceInviteFactory.build({
+              recipientEmail: recipientEmail,
+              senderId: senderTeammate.id,
+              workspaceCode: workspace.code,
+              status: InviteStatus.ACCEPTED,
+            }),
+          );
+
+          await factory.persist('teammate', () =>
+            teammateFactory.build({
+              email: recipientEmail,
+              workspaceCode: workspace.code,
+              status: status,
+            }),
+          );
+
+          await assertRecipientWasPreviouslySuccessfullyInvited(
+            workspace,
+            recipientEmail,
+          );
+
+          await service.inviteTeammateIfEligible(
+            workspace,
+            recipientEmail,
+            adminTeammate.id,
+            ROLES.SupportStaff,
+          );
+
+          await assertFailedInviteIsCreated(
+            workspace,
+            adminTeammate,
+            recipientEmail,
+          );
+        },
+      );
+    });
+  });
+
+  describe('inviteEligibleTeammates', () => {
+    let adminTeammate: Teammate;
+    let workspace: Workspace;
+
+    beforeEach(async () => {
+      workspace = await factory.persist('workspace', () =>
+        workspaceFactory.envoyeWorkspace(),
+      );
+
+      adminTeammate = await factory.persist('teammate', () =>
+        teammateFactory.build({
+          groups: [ROLES.WorkspaceAdmin.code],
+          workspaceCode: workspace.code,
+        }),
+      );
+
+      const fixedMs = new Date('2026-02-21T10:00:00.000Z').getTime();
+      jest.spyOn(Date, 'now').mockReturnValue(fixedMs);
+    });
+
+    it('creates one SENT invite per recipient email', async () => {
+      const emails = ['batch-a@example.com', 'batch-b@example.com'];
+      await assertRecipientHasNoInvite(workspace, emails[0]);
+      await assertRecipientHasNoInvite(workspace, emails[1]);
+      const inviteUrlSpy = jest.spyOn(workspaceLinkService, 'inviteUrl');
+      await service.inviteEligibleTeammates(
+        adminTeammate,
+        emails,
+        'SupportStaff',
+      );
+      expect(inviteUrlSpy).toHaveBeenCalledTimes(2);
+      expect(
+        await prismaService.workspaceInvite.count({
+          where: {
+            workspace: { id: workspace.id },
+            senderId: adminTeammate.id,
+            status: InviteStatus.SENT,
+            recipientRole: ROLES.SupportStaff.code,
+            recipientEmail: { in: emails },
+          },
+        }),
+      ).toBe(2);
+    });
+  });
+
+  describe('listApps', () => {
+    it('returns up to 100 workspaces ordered by id', async () => {
+      const preverification = await factory.persist('preverification', () =>
+        preVerificationFactory.build(),
+      );
+      const companyProfile = await factory.persist('companyProfile', () =>
+        CompanyProfileFactory.build({ preVerificationId: preverification.id }),
+      );
+      await prismaService.workspace.createMany({
+        data: workspaceFactory.buildList(200, { ownedById: companyProfile.id }),
+      });
+
+      const listedWorkspaces = await service.listApps();
+
+      expect(listedWorkspaces).toHaveLength(100);
+    });
+  });
+});
