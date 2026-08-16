@@ -7,7 +7,7 @@ import {
 import type { Request } from 'express';
 import { Device } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
-import { hashDeviceApiKey } from '@/tracker/device-api-key';
+import { hashDeviceApiKey } from '@/auth/device-api-key';
 import { extractBearerToken } from '@/auth/extract-bearer-token';
 
 export type DeviceAuthenticatedRequest = Request & { device: Device };

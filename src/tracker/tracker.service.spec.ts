@@ -10,7 +10,7 @@ import { resetDb } from '@/test-helpers/rest-db';
 import { TrackerService } from '@/tracker/tracker.service';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 import NotFoundInDb from '@/common/exceptions/not-found';
-import { hashDeviceApiKey } from '@/tracker/device-api-key';
+import { hashDeviceApiKey } from '@/auth/device-api-key';
 
 describe('TrackerService', () => {
   let app: INestApplication;

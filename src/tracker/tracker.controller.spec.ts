@@ -30,7 +30,7 @@ import {
 import teammateFactory from '@/factories/teammate.factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
 import { ROLES } from '@/permission/types';
-import { hashDeviceApiKey } from '@/tracker/device-api-key';
+import { hashDeviceApiKey } from '@/auth/device-api-key';
 
 describe('TrackerController', () => {
   let app: INestApplication;

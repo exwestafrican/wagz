@@ -7,7 +7,7 @@ import NotFoundInDb from '@/common/exceptions/not-found';
 import {
   generateDeviceApiKey,
   hashDeviceApiKey,
-} from '@/tracker/device-api-key';
+} from '@/auth/device-api-key';
 
 export type RegisteredDevice = {
   device: Device;
