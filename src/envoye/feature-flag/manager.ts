@@ -4,7 +4,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { FeatureFlag, Workspace } from '@/generated/prisma/client';
-import { PrismaService } from '@/prisma/prisma.service';
+import { PrismaService } from '@/common/prisma/prisma.service';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import { UnExpectedStatusException } from '@/envoye/feature-flag/exceptions/unexpected-status.exception';
 import { existsInDbError, notInDbError } from '@/common/error-type';

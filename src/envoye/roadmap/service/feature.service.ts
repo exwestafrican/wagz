@@ -1,9 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@/prisma/prisma.service';
+import { PrismaService } from '@/common/prisma/prisma.service';
 import { FeatureStage, FeatureRequestPriority } from '@/generated/prisma/enums';
 import { WaitlistService } from '@/envoye/waitlist/waitlist.service';
 import { Feature, FeatureVotes, Prisma } from '@/generated/prisma/client';
-import PRISMA_CODES from '@/prisma/consts';
+import PRISMA_CODES from '@/common/prisma/consts';
 import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Injectable()
