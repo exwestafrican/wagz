@@ -318,10 +318,9 @@ describe('TrackerAdminController', () => {
         imei: faker.string.numeric(15),
       });
 
-      const rotated = await adminController.rotateDeviceApiKey(
-        requestUser,
-        registered.id,
-      );
+      const rotated = await adminController.rotateDeviceApiKey(requestUser, {
+        deviceId: registered.id,
+      });
 
       expect(rotated.id).toBe(registered.id);
       expect(rotated.apiKey).toMatch(/^trk_/);
@@ -339,7 +338,9 @@ describe('TrackerAdminController', () => {
       await setupSuperAdmin(factory, requestUser.email);
 
       await expect(
-        adminController.rotateDeviceApiKey(requestUser, 'missing-device-id'),
+        adminController.rotateDeviceApiKey(requestUser, {
+          deviceId: 'missing-device-id',
+        }),
       ).rejects.toThrow(NotFoundException);
     });
 
@@ -354,7 +355,9 @@ describe('TrackerAdminController', () => {
       );
 
       await expect(
-        adminController.rotateDeviceApiKey(requestUser, 'any-device-id'),
+        adminController.rotateDeviceApiKey(requestUser, {
+          deviceId: 'any-device-id',
+        }),
       ).rejects.toThrow(ForbiddenException);
     });
   });

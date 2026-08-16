@@ -6,13 +6,13 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
-  Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { TrackerService } from '@/tracker/tracker.service';
 import { RegisterDeviceDto } from '@/tracker/dto/register-device.dto';
+import { RotateDeviceApiKeyDto } from '@/tracker/dto/rotate-device-api-key.dto';
 import {
   DeviceResponseDto,
   RegisteredDeviceResponseDto,
@@ -105,9 +105,10 @@ export class TrackerAdminController {
     }
   }
 
-  @Post('devices/:id/rotate-key')
+  @Post('devices/rotate-key')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'Rotate API key for a tracking device' })
+  @ApiBody({ type: RotateDeviceApiKeyDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'New one-time API key issued; previous keys are revoked',
@@ -121,10 +122,11 @@ export class TrackerAdminController {
     status: HttpStatus.FORBIDDEN,
     description: 'Missing permission or not an active Envoye workspace member',
   })
+  @ApiBadRequestResponse()
   @UseGuards(SupabaseAuthGuard)
   async rotateDeviceApiKey(
     @User() requestUser: RequestUser,
-    @Param('id') deviceId: string,
+    @Body() rotateDeviceApiKeyDto: RotateDeviceApiKeyDto,
   ): Promise<RegisteredDeviceResponseDto> {
     try {
       const registeredDevice =
@@ -132,7 +134,10 @@ export class TrackerAdminController {
           requestUser,
           ENVOYE_WORKSPACE_CODE,
           PERMISSIONS.MANAGE_DEVICES,
-          () => this.trackerService.rotateDeviceApiKey(deviceId),
+          () =>
+            this.trackerService.rotateDeviceApiKey(
+              rotateDeviceApiKeyDto.deviceId,
+            ),
         );
       return toRegisteredDeviceResponse(
         registeredDevice.device,
