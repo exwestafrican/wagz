@@ -117,19 +117,21 @@ describe('TrackerController device auth', () => {
     await app.close();
   });
 
+  const locationBatchBody = {
+    locations: [
+      {
+        latitude: 6.5244,
+        longitude: 3.3792,
+        speed: 1,
+        capturedAt: '2026-08-15T20:01:02.000Z',
+      },
+    ],
+  };
+
   it('returns 401 when authorization header is missing', async () => {
     await request(getHttpServer(app))
       .post('/tracker/locations')
-      .send({
-        locations: [
-          {
-            latitude: 6.5244,
-            longitude: 3.3792,
-            speed: 1,
-            capturedAt: '2026-08-15T20:01:02.000Z',
-          },
-        ],
-      })
+      .send(locationBatchBody)
       .expect(HttpStatus.UNAUTHORIZED);
   });
 
@@ -139,16 +141,7 @@ describe('TrackerController device auth', () => {
     await request(getHttpServer(app))
       .post('/tracker/locations')
       .set('Authorization', 'Bearer trk_not-a-real-key')
-      .send({
-        locations: [
-          {
-            latitude: 6.5244,
-            longitude: 3.3792,
-            speed: 1,
-            capturedAt: '2026-08-15T20:01:02.000Z',
-          },
-        ],
-      })
+      .send(locationBatchBody)
       .expect(HttpStatus.UNAUTHORIZED);
 
     expect(await prismaService.location.count()).toBe(0);
@@ -166,19 +159,31 @@ describe('TrackerController device auth', () => {
     await request(getHttpServer(app))
       .post('/tracker/locations')
       .set('Authorization', `Bearer ${apiKey}`)
-      .send({
-        locations: [
-          {
-            latitude: 6.5244,
-            longitude: 3.3792,
-            speed: 1,
-            capturedAt: '2026-08-15T20:01:02.000Z',
-          },
-        ],
-      })
+      .send(locationBatchBody)
       .expect(HttpStatus.UNAUTHORIZED);
 
     expect(await prismaService.location.count()).toBe(0);
+  });
+
+  it('returns 401 when the api key has been revoked', async () => {
+    const { device, apiKey: previousApiKey } =
+      await trackerService.registerDevice(faker.string.numeric(15));
+    const { apiKey: rotatedApiKey } =
+      await trackerService.rotateDeviceApiKey(device.id);
+
+    await request(getHttpServer(app))
+      .post('/tracker/locations')
+      .set('Authorization', `Bearer ${previousApiKey}`)
+      .send(locationBatchBody)
+      .expect(HttpStatus.UNAUTHORIZED);
+
+    await request(getHttpServer(app))
+      .post('/tracker/locations')
+      .set('Authorization', `Bearer ${rotatedApiKey}`)
+      .send(locationBatchBody)
+      .expect(HttpStatus.CREATED);
+
+    expect(await prismaService.location.count()).toBe(1);
   });
 });
 
@@ -261,15 +266,21 @@ describe('TrackerAdminController', () => {
       expect(body.id).toBeDefined();
       expect(body.apiKey).toMatch(/^trk_/);
 
-      const persistedDevice = await prismaService.device.findUnique({
+      const persistedDevice = await prismaService.device.findUniqueOrThrow({
         where: { id: body.id },
       });
       expect(persistedDevice).toMatchObject({
         imei,
         isActive: true,
-        apiKeyHash: hashDeviceApiKey(body.apiKey),
       });
-      expect(Object.keys(persistedDevice!)).not.toContain('apiKey');
+      expect(Object.keys(persistedDevice)).not.toContain('apiKey');
+      expect(
+        await prismaService.deviceApiKey.findFirstOrThrow({
+          where: { deviceId: body.id, isActive: true },
+        }),
+      ).toMatchObject({
+        keyHash: hashDeviceApiKey(body.apiKey),
+      });
     });
 
     it('throws ConflictException when imei is already registered', async () => {
@@ -296,6 +307,54 @@ describe('TrackerAdminController', () => {
         adminController.registerDevice(requestUser, {
           imei: faker.string.numeric(15),
         }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+  });
+
+  describe('rotateDeviceApiKey', () => {
+    it('returns a new one-time api key and revokes the previous key', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+      const registered = await adminController.registerDevice(requestUser, {
+        imei: faker.string.numeric(15),
+      });
+
+      const rotated = await adminController.rotateDeviceApiKey(
+        requestUser,
+        registered.id,
+      );
+
+      expect(rotated.id).toBe(registered.id);
+      expect(rotated.apiKey).toMatch(/^trk_/);
+      expect(rotated.apiKey).not.toBe(registered.apiKey);
+
+      const revokedCredential =
+        await prismaService.deviceApiKey.findFirstOrThrow({
+          where: { keyHash: hashDeviceApiKey(registered.apiKey) },
+        });
+      expect(revokedCredential.isActive).toBe(false);
+      expect(revokedCredential.revokedAt).not.toBeNull();
+    });
+
+    it('throws NotFoundException when device does not exist', async () => {
+      await setupSuperAdmin(factory, requestUser.email);
+
+      await expect(
+        adminController.rotateDeviceApiKey(requestUser, 'missing-device-id'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('throws ForbiddenException when user lacks manage_devices permission', async () => {
+      await setupWorkspaceWithTeammate(
+        factory,
+        teammateFactory.build({
+          email: requestUser.email,
+          workspaceCode: ENVOYE_WORKSPACE_CODE,
+          groups: [ROLES.WorkspaceAdmin.code],
+        }),
+      );
+
+      await expect(
+        adminController.rotateDeviceApiKey(requestUser, 'any-device-id'),
       ).rejects.toThrow(ForbiddenException);
     });
   });

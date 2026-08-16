@@ -3,6 +3,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { Device } from '@/generated/prisma/client';
 import { existsInDbError } from '@/common/error-type';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
+import NotFoundInDb from '@/common/exceptions/not-found';
 import {
   generateDeviceApiKey,
   hashDeviceApiKey,
@@ -28,14 +29,16 @@ export class TrackerService {
 
   async registerDevice(imei: string): Promise<RegisteredDevice> {
     const apiKey = generateDeviceApiKey();
-    const apiKeyHash = hashDeviceApiKey(apiKey);
+    const keyHash = hashDeviceApiKey(apiKey);
 
     try {
       const device = await this.prismaService.device.create({
         data: {
           imei,
-          apiKeyHash,
           isActive: true,
+          apiKeys: {
+            create: { keyHash },
+          },
         },
       });
       this.logger.log(`registered device id=${device.id} imei=${imei}`);
@@ -48,6 +51,32 @@ export class TrackerService {
       }
       throw error;
     }
+  }
+
+  async rotateDeviceApiKey(deviceId: string): Promise<RegisteredDevice> {
+    const device = await this.prismaService.device.findUnique({
+      where: { id: deviceId },
+    });
+    if (!device) {
+      throw new NotFoundInDb(`device not found; deviceId=${deviceId}`);
+    }
+
+    const apiKey = generateDeviceApiKey();
+    const keyHash = hashDeviceApiKey(apiKey);
+    const revokedAt = new Date();
+
+    await this.prismaService.$transaction([
+      this.prismaService.deviceApiKey.updateMany({
+        where: { deviceId, isActive: true },
+        data: { isActive: false, revokedAt },
+      }),
+      this.prismaService.deviceApiKey.create({
+        data: { deviceId, keyHash },
+      }),
+    ]);
+
+    this.logger.log(`rotated api key for device id=${deviceId}`);
+    return { device, apiKey };
   }
 
   async listDevices(): Promise<Device[]> {

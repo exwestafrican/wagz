@@ -6,6 +6,7 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
+  Param,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -19,6 +20,7 @@ import {
   toRegisteredDeviceResponse,
 } from '@/tracker/dto/device-response.dto';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
+import NotFoundInDb from '@/common/exceptions/not-found';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
 import { User } from '@/auth/decorator/user.decorator';
@@ -98,6 +100,47 @@ export class TrackerAdminController {
     } catch (error) {
       if (error instanceof ItemAlreadyExistsInDb) {
         throw new ConflictException(error.message);
+      }
+      throw error;
+    }
+  }
+
+  @Post('devices/:id/rotate-key')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Rotate API key for a tracking device' })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'New one-time API key issued; previous keys are revoked',
+    type: RegisteredDeviceResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Device not found',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Missing permission or not an active Envoye workspace member',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async rotateDeviceApiKey(
+    @User() requestUser: RequestUser,
+    @Param('id') deviceId: string,
+  ): Promise<RegisteredDeviceResponseDto> {
+    try {
+      const registeredDevice =
+        await this.permissionService.runIfActiveWorkspaceMemberAndPermitted(
+          requestUser,
+          ENVOYE_WORKSPACE_CODE,
+          PERMISSIONS.MANAGE_DEVICES,
+          () => this.trackerService.rotateDeviceApiKey(deviceId),
+        );
+      return toRegisteredDeviceResponse(
+        registeredDevice.device,
+        registeredDevice.apiKey,
+      );
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
+        throw new NotFoundException(error.message);
       }
       throw error;
     }

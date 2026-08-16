@@ -9,6 +9,7 @@ import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
 import { TrackerService } from '@/tracker/tracker.service';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
+import NotFoundInDb from '@/common/exceptions/not-found';
 import { hashDeviceApiKey } from '@/tracker/device-api-key';
 
 describe('TrackerService', () => {
@@ -33,7 +34,7 @@ describe('TrackerService', () => {
   });
 
   describe('registerDevice', () => {
-    it('creates an active device with a hashed api key', async () => {
+    it('creates an active device with a hashed api key on device_api_key', async () => {
       const imei = faker.string.numeric(15);
 
       const { device, apiKey } = await trackerService.registerDevice(imei);
@@ -45,7 +46,15 @@ describe('TrackerService', () => {
       ).toMatchObject({
         imei,
         isActive: true,
-        apiKeyHash: hashDeviceApiKey(apiKey),
+      });
+      expect(
+        await prismaService.deviceApiKey.findFirstOrThrow({
+          where: { deviceId: device.id, isActive: true },
+        }),
+      ).toMatchObject({
+        keyHash: hashDeviceApiKey(apiKey),
+        isActive: true,
+        revokedAt: null,
       });
     });
 
@@ -57,6 +66,43 @@ describe('TrackerService', () => {
         ItemAlreadyExistsInDb,
       );
       expect(await prismaService.device.count({ where: { imei } })).toBe(1);
+    });
+  });
+
+  describe('rotateDeviceApiKey', () => {
+    it('revokes the previous key and issues a new active key', async () => {
+      const { device, apiKey: previousApiKey } =
+        await trackerService.registerDevice(faker.string.numeric(15));
+
+      const { apiKey: rotatedApiKey } =
+        await trackerService.rotateDeviceApiKey(device.id);
+
+      expect(rotatedApiKey).toMatch(/^trk_/);
+      expect(rotatedApiKey).not.toBe(previousApiKey);
+
+      const revokedCredential =
+        await prismaService.deviceApiKey.findFirstOrThrow({
+          where: { keyHash: hashDeviceApiKey(previousApiKey) },
+        });
+      expect(revokedCredential.isActive).toBe(false);
+      expect(revokedCredential.revokedAt).not.toBeNull();
+
+      const activeCredential =
+        await prismaService.deviceApiKey.findFirstOrThrow({
+          where: { deviceId: device.id, isActive: true },
+        });
+      expect(activeCredential.keyHash).toBe(hashDeviceApiKey(rotatedApiKey));
+      expect(
+        await prismaService.deviceApiKey.count({
+          where: { deviceId: device.id, isActive: true },
+        }),
+      ).toBe(1);
+    });
+
+    it('throws NotFoundInDb when device does not exist', async () => {
+      await expect(
+        trackerService.rotateDeviceApiKey('missing-device-id'),
+      ).rejects.toBeInstanceOf(NotFoundInDb);
     });
   });
 

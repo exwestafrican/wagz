@@ -20,18 +20,19 @@ export class DeviceAuthGuard implements CanActivate {
       .switchToHttp()
       .getRequest<DeviceAuthenticatedRequest>();
     const apiKey = this.extractApiKeyFromBearerToken(request);
-    const apiKeyHash = hashDeviceApiKey(apiKey);
+    const keyHash = hashDeviceApiKey(apiKey);
 
-    const device = await this.prismaService.device.findUnique({
-      where: { apiKeyHash },
+    const credential = await this.prismaService.deviceApiKey.findUnique({
+      where: { keyHash },
+      include: { device: true },
     });
 
-    if (!device?.isActive) {
-      throw new UnauthorizedException('Invalid or inactive device credentials');
+    if (credential?.isActive && credential?.device.isActive) {
+      request.device = credential.device;
+      return true;
     }
 
-    request.device = device;
-    return true;
+    throw new UnauthorizedException('Invalid or inactive device credentials');
   }
 
   private extractApiKeyFromBearerToken(request: Request): string {
