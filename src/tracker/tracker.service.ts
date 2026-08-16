@@ -4,10 +4,7 @@ import { Device } from '@/generated/prisma/client';
 import { existsInDbError } from '@/common/error-type';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 import NotFoundInDb from '@/common/exceptions/not-found';
-import {
-  generateDeviceApiKey,
-  hashDeviceApiKey,
-} from '@/auth/device-api-key';
+import { generateDeviceApiKey, hashDeviceApiKey } from '@/auth/device-api-key';
 
 export type RegisteredDevice = {
   device: Device;
