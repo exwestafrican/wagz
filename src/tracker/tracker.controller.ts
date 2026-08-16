@@ -3,18 +3,23 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
-  NotFoundException,
   Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { TrackerService } from '@/tracker/tracker.service';
-import { RecordLocationDto } from '@/tracker/dto/record-location.dto';
 import {
-  LocationResponseDto,
-  toLocationResponse,
-} from '@/tracker/dto/location-response.dto';
-import NotFoundInDb from '@/common/exceptions/not-found';
+  ApiBearerAuth,
+  ApiBody,
+  ApiOperation,
+  ApiResponse,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import type { Device } from '@/generated/prisma/client';
+import { TrackerService } from '@/tracker/tracker.service';
+import { RecordLocationsDto } from '@/tracker/dto/record-location.dto';
+import { RecordLocationsResponseDto } from '@/tracker/dto/record-locations-response.dto';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
+import { DeviceAuthGuard } from '@/auth/guard/device-auth.guard';
+import { AuthenticatedDevice } from '@/tracker/decorator/device.decorator';
 
 @Controller('tracker')
 export class TrackerController {
@@ -22,33 +27,28 @@ export class TrackerController {
 
   @Post('locations')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Record a device location ping' })
-  @ApiBody({ type: RecordLocationDto })
+  @UseGuards(DeviceAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Record a batch of location pings for the authenticated device',
+  })
+  @ApiBody({ type: RecordLocationsDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
-    description: 'Location recorded',
-    type: LocationResponseDto,
+    description: 'Locations recorded',
+    type: RecordLocationsResponseDto,
   })
-  @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Device not found',
+  @ApiUnauthorizedResponse({
+    description: 'Missing, invalid, or inactive device API key',
   })
   @ApiBadRequestResponse()
-  async recordLocation(
-    @Body() recordLocationDto: RecordLocationDto,
-  ): Promise<LocationResponseDto> {
-    try {
-      const location = await this.trackerService.recordLocation(
-        recordLocationDto.deviceId,
-        recordLocationDto.latitude,
-        recordLocationDto.longitude,
-      );
-      return toLocationResponse(location);
-    } catch (error) {
-      if (error instanceof NotFoundInDb) {
-        throw new NotFoundException(error.message);
-      }
-      throw error;
-    }
+  async recordLocations(
+    @AuthenticatedDevice() device: Device,
+    @Body() recordLocationsDto: RecordLocationsDto,
+  ): Promise<RecordLocationsResponseDto> {
+    return this.trackerService.recordLocations(
+      device.id,
+      recordLocationsDto.locations,
+    );
   }
 }
