@@ -2,9 +2,9 @@ import { createTaskRegistry } from '@/envoye/backfill/task';
 import { NormalizeUsernames } from '@/envoye/backfill/tasks/normalize-username';
 import { ConversationParticipantsSignature } from '@/envoye/backfill/tasks/participants-signature';
 import { BackfillCompanyProfilePreverification } from '@/envoye/backfill/tasks/company-profile-preverification';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
-import { PrismaModule } from '@/common/prisma/prisma.module';
+import { PrismaModule } from '@/prisma/prisma.module';
 import { ConversationsModule } from '@/envoye/conversations/conversations.module';
 
 export const BACKFILL_REGISTRY = Symbol('BACKFILL_REGISTRY');

@@ -1,12 +1,12 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { notInDbError } from '@/common/error-type';
 import { Teammate } from '@/generated/prisma/client';
 import { render } from '@react-email/render';
 import NewMessageNotificationTemplate from '@/envoye/emails/templates/new-message-notification.template';
 import React from 'react';
 import { fullName } from '@/envoye/teammates/utils/full-name';
-import { EMAIL_CLIENT, type EmailClient } from '@/common/messaging/email/email-client';
+import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { faker } from '@faker-js/faker';
 import { quotes } from '@/envoye/conversations/messangers/quotes';
 import { LinkService } from '@/common/link-service';

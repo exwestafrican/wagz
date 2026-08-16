@@ -13,7 +13,7 @@ import {
 import { ApiOperation, ApiParam, ApiResponse } from '@nestjs/swagger';
 import { render } from '@react-email/render';
 import React from 'react';
-import { SupabaseAuthGuard } from '@/common/auth/guard/supabase.guard';
+import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
 import type BackfillTask from '@/envoye/backfill/task';
 import BackfillResponseDto, {
   toBackfillResponseDto,
@@ -25,13 +25,13 @@ import {
   BACKFILL_REGISTRY,
   type Registry,
 } from '@/envoye/backfill/backfill-registry.provider';
-import { PermissionService } from '@/common/permission/permission.service';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { EMAIL_CLIENT, type EmailClient } from '@/common/messaging/email/email-client';
+import { PermissionService } from '@/permission/permission.service';
+import { PrismaService } from '@/prisma/prisma.service';
+import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { BackfillCompleteTemplate } from '@/envoye/emails/templates/backfill-complete-template';
-import { User } from '@/common/auth/decorator/user.decorator';
-import RequestUser from '@/common/auth/domain/request-user';
-import { PERMISSIONS } from '@/common/permission/types';
+import { User } from '@/auth/decorator/user.decorator';
+import RequestUser from '@/auth/domain/request-user';
+import { PERMISSIONS } from '@/permission/types';
 import { ENVOYE_WORKSPACE_CODE } from '@/envoye/feature-flag/const';
 import buildJobRunSummary, { JobRunSummary } from '@/envoye/backfill/utils';
 import { TeammatesService } from '@/envoye/teammates/teammates.service';

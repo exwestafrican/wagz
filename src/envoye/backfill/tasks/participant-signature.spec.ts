@@ -1,17 +1,17 @@
 import { INestApplication } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
+import { PrismaService } from '@/prisma/prisma.service';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
 import { ConversationParticipantsSignature } from '@/envoye/backfill/tasks/participants-signature';
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { createTestApp } from '@/test-helpers/test-app';
 import { LinkService } from '@/common/link-service';
-import { mockConfigService } from '@/common/test-helpers/mocks';
-import { TestEmailClient } from '@/common/messaging/email/test-email-client';
-import { resetDb } from '@/common/test-helpers/rest-db';
-import { setupWorkspaceWithMultipleTeammates } from '@/common/test-helpers/workspace-helpers';
+import { mockConfigService } from '@/test-helpers/mocks';
+import { TestEmailClient } from '@/messaging/email/test-email-client';
+import { resetDb } from '@/test-helpers/rest-db';
+import { setupWorkspaceWithMultipleTeammates } from '@/test-helpers/workspace-helpers';
 import { Conversation, Teammate } from '@/generated/prisma/client';
 
 //TODO: add date added to backfill taks

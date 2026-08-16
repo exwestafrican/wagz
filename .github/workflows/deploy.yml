@@ -6,7 +6,7 @@ on:
         - main
       paths-ignore:
         - 'prisma/**'
-        - 'src/common/factories/**'
+        - 'src/factories/**'
         - '.gitignore'
         - '**.md'
         - 'iac/**'

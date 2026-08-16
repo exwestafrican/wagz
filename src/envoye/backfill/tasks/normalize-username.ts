@@ -1,6 +1,6 @@
 import { Teammate, Workspace } from '@/generated/prisma/client';
 import BackfillTask from '@/envoye/backfill/task';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { Logger } from '@nestjs/common';
 import normalizeUsername from '@/common/normalize-username';
 

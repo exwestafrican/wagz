@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WorkspaceManager } from './workspace-manager.service';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { PrismaModule } from '@/common/prisma/prisma.module';
+import { PrismaService } from '@/prisma/prisma.service';
+import { PrismaModule } from '@/prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { createTestApp } from '@/test-helpers/test-app';
 import { INestApplication } from '@nestjs/common';
-import preVerificationFactory from '@/common/factories/roadmap/preverification.factory';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
+import preVerificationFactory from '@/factories/roadmap/preverification.factory';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import {
   InviteStatus,
   PreVerification,
@@ -16,20 +16,20 @@ import {
   Workspace,
   WorkspaceInvite,
 } from '@/generated/prisma/client';
-import { ROLES } from '@/common/permission/types';
+import { ROLES } from '@/permission/types';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import { InvalidState } from '@/common/exceptions/invalid-state';
-import workspaceFactory from '@/common/factories/workspace.factory';
-import teammateFactory from '@/common/factories/teammate.factory';
-import workspaceInviteFactory from '@/common/factories/workspace-invite.factory';
-import { MessagingModule } from '@/common/messaging/messaging.module';
-import { RoleService } from '@/common/permission/role/role.service';
+import workspaceFactory from '@/factories/workspace.factory';
+import teammateFactory from '@/factories/teammate.factory';
+import workspaceInviteFactory from '@/factories/workspace-invite.factory';
+import { MessagingModule } from '@/messaging/messaging.module';
+import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/envoye/workspace/workspace-invite-service';
 import { LinkService } from '@/common/link-service';
 import { AuthService } from '@/envoye/auth/auth.service';
-import { mockAuthService } from '@/common/test-helpers/mocks';
-import CompanyProfileFactory from '@/common/factories/company-profile.factory';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { mockAuthService } from '@/test-helpers/mocks';
+import CompanyProfileFactory from '@/factories/company-profile.factory';
+import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';

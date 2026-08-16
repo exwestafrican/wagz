@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { SetupAdministrativeWorkspaceCommand } from '@/envoye/commands/setup-administrative-workspace.command';
-import { PrismaModule } from '@/common/prisma/prisma.module';
+import { PrismaModule } from '@/prisma/prisma.module';
 import { AuthModule } from '@/envoye/auth/auth.module';
 import { WorkspaceModule } from '@/envoye/workspace/workspace.module';
 import { FeatureFlagModule } from '@/envoye/feature-flag/feature-flag.module';

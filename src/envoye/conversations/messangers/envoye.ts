@@ -1,5 +1,5 @@
 import { ConflictException, Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import Messenger from '@/envoye/conversations/messangers/messenger';
 import { Conversation, Message } from '@/generated/prisma/client';
 import { isEmpty } from '@/common/utils';

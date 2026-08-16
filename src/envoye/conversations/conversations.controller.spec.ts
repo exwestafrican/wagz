@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { ConversationsController } from './conversations.controller';
-import RequestUser from '@/common/auth/domain/request-user';
+import RequestUser from '@/auth/domain/request-user';
 import {
   BadRequestException,
   ForbiddenException,
@@ -11,26 +11,26 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { validate } from 'class-validator';
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { PrismaService } from '@/prisma/prisma.service';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import { createTestApp } from '@/test-helpers/test-app';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
 import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
 import { TeammatesService } from '@/envoye/teammates/teammates.service';
-import { PermissionService } from '@/common/permission/permission.service';
-import { RoleService } from '@/common/permission/role/role.service';
-import { setupWorkspaceWithMultipleTeammates } from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
-import workspaceFactory from '@/common/factories/workspace.factory';
-import { resetDb } from '@/common/test-helpers/rest-db';
-import { ROLES } from '@/common/permission/types';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
+import { setupWorkspaceWithMultipleTeammates } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
+import workspaceFactory from '@/factories/workspace.factory';
+import { resetDb } from '@/test-helpers/rest-db';
+import { ROLES } from '@/permission/types';
 import { CreateConversationDto } from '@/envoye/conversations/dto/create-conversation.dto';
 import { SendTextMessageDto } from '@/envoye/conversations/dto/send-message.dto';
 import { MessagesSinceQueryDto } from '@/envoye/conversations/dto/messages-since-query.dto';
-import { TestEmailClient } from '@/common/messaging/email/test-email-client';
+import { TestEmailClient } from '@/messaging/email/test-email-client';
 import { LinkService } from '@/common/link-service';
-import { mockConfigService } from '@/common/test-helpers/mocks';
+import { mockConfigService } from '@/test-helpers/mocks';
 
 const validSentAt = new Date('2026-06-20T10:00:00.000Z');
 const futureSentAt = new Date(Date.now() + 300_000);

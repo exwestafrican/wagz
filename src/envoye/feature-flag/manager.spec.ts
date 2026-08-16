@@ -4,19 +4,19 @@ import {
   ConflictException,
   INestApplication,
 } from '@nestjs/common';
-import { createTestApp } from '@/common/test-helpers/test-app';
-import workspaceFactory from '@/common/factories/workspace.factory';
-import featureFlagFactory from '@/common/factories/feature-flag.factory';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { createTestApp } from '@/test-helpers/test-app';
+import workspaceFactory from '@/factories/workspace.factory';
+import featureFlagFactory from '@/factories/feature-flag.factory';
+import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
+import { PrismaModule } from '@/prisma/prisma.module';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import NotFoundInDb from '@/common/exceptions/not-found';
-import CompanyProfileFactory from '@/common/factories/company-profile.factory';
-import { resetDb } from '@/common/test-helpers/rest-db';
-import preVerificationFactory from '@/common/factories/preverification.factory';
+import CompanyProfileFactory from '@/factories/company-profile.factory';
+import { resetDb } from '@/test-helpers/rest-db';
+import preVerificationFactory from '@/factories/preverification.factory';
 
 describe('FeatureFlagManager', () => {
   let featureFlagManager: FeatureFlagManager;

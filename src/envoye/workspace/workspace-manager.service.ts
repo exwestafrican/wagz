@@ -9,23 +9,23 @@ import {
   Teammate,
   WorkspaceInvite,
 } from '@/generated/prisma/client';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { generate } from 'generate-password';
 import { Workspace } from '@/envoye/workspace/dto/workspace-response.dto';
 import { WorkspaceDetails } from '@/envoye/workspace/domain/workspace-details';
 import { PointOfContact } from '@/envoye/workspace/domain/point-of-contact';
 import { PostSetupStep } from '@/envoye/workspace/steps/postsetup-step';
 import { CreateWorkspaceAdminStep } from '@/envoye/workspace/steps/create-workspace-admin';
-import PRISMA_CODES from '@/common/prisma/consts';
+import PRISMA_CODES from '@/prisma/consts';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import { InvalidState } from '@/common/exceptions/invalid-state';
-import { Role } from '@/common/permission/domain/role';
+import { Role } from '@/permission/domain/role';
 import { sentenceCase, Time } from '@/common/utils';
 import { render } from '@react-email/render';
 import { WorkspaceInviteTemplate } from '@/envoye/emails/templates/workspace-invite-template';
 import React from 'react';
-import { EMAIL_CLIENT, type EmailClient } from '@/common/messaging/email/email-client';
-import { RoleService } from '@/common/permission/role/role.service';
+import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
+import { RoleService } from '@/permission/role/role.service';
 import { ConcurrentLimit } from '@/common/concurrent-runner';
 import { WorkspaceInviteService } from '@/envoye/workspace/workspace-invite-service';
 import { LinkService } from '@/common/link-service';

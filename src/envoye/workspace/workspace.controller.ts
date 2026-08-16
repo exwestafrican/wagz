@@ -23,13 +23,13 @@ import WorkspaceDetailsResponseDto, {
   toWorkspaceDetailsResponse,
 } from '@/envoye/workspace/dto/workspace-details-response.dto';
 import WorkspaceResponseDto from '@/envoye/workspace/dto/workspace-response.dto';
-import { SupabaseAuthGuard } from '@/common/auth/guard/supabase.guard';
-import { User } from '@/common/auth/decorator/user.decorator';
-import RequestUser from '@/common/auth/domain/request-user';
+import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import { User } from '@/auth/decorator/user.decorator';
+import RequestUser from '@/auth/domain/request-user';
 import { InvalidState } from '@/common/exceptions/invalid-state';
 import NotFoundInDb from '@/common/exceptions/not-found';
-import { PermissionService } from '@/common/permission/permission.service';
-import { PERMISSIONS } from '@/common/permission/types';
+import { PermissionService } from '@/permission/permission.service';
+import { PERMISSIONS } from '@/permission/types';
 import ApiForbiddenResponse from '@/common/decorators/forbidden-response';
 import { WorkspaceInviteService } from '@/envoye/workspace/workspace-invite-service';
 import DecodedInviteDto, {
@@ -41,7 +41,7 @@ import AcceptWorkspaceInviteDto from '@/envoye/workspace/dto/accept-workspace-in
 import DebounceService, { DEBOUNCE_SERVICE } from '@/common/debounce.service';
 import { Time } from '@/common/utils';
 import { WorkspaceDetails } from '@/envoye/workspace/domain/workspace-details';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { PointOfContact } from '@/envoye/workspace/domain/point-of-contact';
 import DebounceException from '@/common/exceptions/debounce';
 

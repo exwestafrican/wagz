@@ -1,10 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { MessagingModule } from '@/common/messaging/messaging.module';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { MessagingModule } from '@/messaging/messaging.module';
 import { WorkspaceManager } from '@/envoye/workspace/workspace-manager.service';
-import { RoleService } from '@/common/permission/role/role.service';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { RoleService } from '@/permission/role/role.service';
+import { createTestApp } from '@/test-helpers/test-app';
 import {
   DecodedResult,
   WorkspaceInviteService,
@@ -15,16 +15,16 @@ import { InviteStatus } from '@/generated/prisma/enums';
 import {
   setupWorkspaceWithMultipleTeammates,
   setupWorkspaceWithTeammate,
-} from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
-import workspaceInviteFactory from '@/common/factories/workspace-invite.factory';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { resetDb } from '@/common/test-helpers/rest-db';
-import { ROLES } from '@/common/permission/types';
+} from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
+import workspaceInviteFactory from '@/factories/workspace-invite.factory';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import { PrismaService } from '@/prisma/prisma.service';
+import { resetDb } from '@/test-helpers/rest-db';
+import { ROLES } from '@/permission/types';
 import { AuthService } from '@/envoye/auth/auth.service';
 import { Teammate, Workspace } from '@/generated/prisma/client';
-import { mockAuthService } from '@/common/test-helpers/mocks';
+import { mockAuthService } from '@/test-helpers/mocks';
 import { LinkService } from '@/common/link-service';
 import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';

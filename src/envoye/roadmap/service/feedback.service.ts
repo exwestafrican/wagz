@@ -1,4 +1,4 @@
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { WaitlistService } from '@/envoye/waitlist/waitlist.service';
 import { Injectable, Logger } from '@nestjs/common';
 

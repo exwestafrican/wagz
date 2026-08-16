@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { WorkspaceDetails } from '@/envoye/workspace/domain/workspace-details';
 import { PostSetupStep } from '@/envoye/workspace/steps/postsetup-step';
 import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';

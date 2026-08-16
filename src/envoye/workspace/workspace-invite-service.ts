@@ -1,6 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InvalidInviteCode } from '@/common/exceptions/invalid-code';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { isEmpty } from '@/common/utils';
 import { InviteStatus } from '@/generated/prisma/enums';
 import { AuthService } from '@/envoye/auth/auth.service';
@@ -11,7 +11,7 @@ import { LinkService } from '@/common/link-service';
 import React from 'react';
 import { InviteAcceptedNotificationTemplate } from '@/envoye/emails/templates/invite-accepted-notification-template';
 import { render } from '@react-email/render';
-import { EMAIL_CLIENT, type EmailClient } from '@/common/messaging/email/email-client';
+import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { fullName } from '@/envoye/teammates/utils/full-name';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';
 import normalizeUsername from '@/common/normalize-username';

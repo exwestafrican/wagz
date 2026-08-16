@@ -3,15 +3,15 @@ import { HttpStatus, INestApplication } from '@nestjs/common';
 import {
   createTestApp,
   TestControllerModuleWithAuthUser,
-} from '@/common/test-helpers/test-app';
-import getHttpServer from '@/common/test-helpers/get-http-server';
+} from '@/test-helpers/test-app';
+import getHttpServer from '@/test-helpers/get-http-server';
 import request from 'supertest';
-import RequestUser from '@/common/auth/domain/request-user';
+import RequestUser from '@/auth/domain/request-user';
 import { ENVOYE_WORKSPACE_CODE } from './const';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { setupWorkspaceWithFeatures } from '@/common/test-helpers/workspace-helpers';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { PrismaService } from '@/prisma/prisma.service';
+import { setupWorkspaceWithFeatures } from '@/test-helpers/workspace-helpers';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('FeatureFlagController', () => {
   let requestUser: RequestUser;

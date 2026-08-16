@@ -7,11 +7,11 @@ import {
 } from './test-utils/supabase.mock';
 import PasswordGenerator from './services/password.generator';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/envoye/teammates/teammates.service';
-import { PermissionService } from '@/common/permission/permission.service';
-import { RoleService } from '@/common/permission/role/role.service';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
 
 describe('AuthService', () => {
   let service: AuthService;

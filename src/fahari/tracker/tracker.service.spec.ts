@@ -3,10 +3,10 @@ import { ConfigModule } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { createTestApp } from '@/common/test-helpers/test-app';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { PrismaService } from '@/prisma/prisma.service';
+import { createTestApp } from '@/test-helpers/test-app';
+import { resetDb } from '@/test-helpers/rest-db';
 import { TrackerService } from '@/fahari/tracker/tracker.service';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 import NotFoundInDb from '@/common/exceptions/not-found';

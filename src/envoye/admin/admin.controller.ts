@@ -30,13 +30,13 @@ import FeatureFlagDto, {
   toAppEnrollmentDto,
   toFeatureFlagDto,
 } from '@/envoye/admin/dto/feature-flag.dto';
-import { SupabaseAuthGuard } from '@/common/auth/guard/supabase.guard';
-import { User } from '@/common/auth/decorator/user.decorator';
-import RequestUser from '@/common/auth/domain/request-user';
+import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import { User } from '@/auth/decorator/user.decorator';
+import RequestUser from '@/auth/domain/request-user';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';
-import { PermissionService } from '@/common/permission/permission.service';
+import { PermissionService } from '@/permission/permission.service';
 import { ENVOYE_WORKSPACE_CODE } from '@/envoye/feature-flag/const';
-import { PERMISSIONS } from '@/common/permission/types';
+import { PERMISSIONS } from '@/permission/types';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import { WorkspaceManager } from '@/envoye/workspace/workspace-manager.service';
 

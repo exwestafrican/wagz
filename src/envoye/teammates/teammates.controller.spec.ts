@@ -1,24 +1,24 @@
 import { TeammatesController } from './teammates.controller';
-import RequestUser from '@/common/auth/domain/request-user';
+import RequestUser from '@/auth/domain/request-user';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
+import { PrismaService } from '@/prisma/prisma.service';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import {
   createTestApp,
   TestControllerModuleWithAuthUser,
-} from '@/common/test-helpers/test-app';
+} from '@/test-helpers/test-app';
 import { TeammatesService } from '@/envoye/teammates/teammates.service';
-import { PermissionService } from '@/common/permission/permission.service';
-import { RoleService } from '@/common/permission/role/role.service';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
 import { TeammateResponseDto } from '@/envoye/teammates/dto/teammate-response.dto';
-import { setupWorkspaceWithTeammate } from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
 import { TeammateStatus } from '@/generated/prisma/enums';
 import request from 'supertest';
-import getHttpServer from '@/common/test-helpers/get-http-server';
+import getHttpServer from '@/test-helpers/get-http-server';
 import { TeammatesEndpoints } from '@/common/const';
 import { Teammate, Workspace } from '@/generated/prisma/client';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('TeammatesController', () => {
   let requestUser: RequestUser;

@@ -10,26 +10,26 @@ import {
 import { faker } from '@faker-js/faker';
 import request from 'supertest';
 
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { createTestApp } from '@/common/test-helpers/test-app';
-import getHttpServer from '@/common/test-helpers/get-http-server';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { PrismaService } from '@/prisma/prisma.service';
+import { createTestApp } from '@/test-helpers/test-app';
+import getHttpServer from '@/test-helpers/get-http-server';
+import { resetDb } from '@/test-helpers/rest-db';
 import { TrackerService } from '@/fahari/tracker/tracker.service';
 import { TrackerController } from '@/fahari/tracker/tracker.controller';
 import { TrackerAdminController } from '@/fahari/tracker/admin/tracker-admin.controller';
 import { DeviceAuthGuard } from '@/fahari/auth/guard/device-auth.guard';
-import { PermissionService } from '@/common/permission/permission.service';
-import { RoleService } from '@/common/permission/role/role.service';
-import RequestUser from '@/common/auth/domain/request-user';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
+import RequestUser from '@/auth/domain/request-user';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import {
   setupSuperAdmin,
   setupWorkspaceWithTeammate,
-} from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
+} from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/common/envoye-workspace.const';
-import { ROLES } from '@/common/permission/types';
+import { ROLES } from '@/permission/types';
 import { hashDeviceApiKey } from '@/fahari/auth/device-api-key';
 
 describe('TrackerController', () => {

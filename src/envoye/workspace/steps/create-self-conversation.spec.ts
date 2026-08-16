@@ -1,19 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { PrismaService } from '@/prisma/prisma.service';
+import { createTestApp } from '@/test-helpers/test-app';
 import { CreateSelfConversationStep } from '@/envoye/workspace/steps/create-self-conversation';
 import { WorkspaceDetails } from '@/envoye/workspace/domain/workspace-details';
 import { PointOfContact } from '@/envoye/workspace/domain/point-of-contact';
-import { setupWorkspaceWithMultipleTeammates } from '@/common/test-helpers/workspace-helpers';
-import { resetDb } from '@/common/test-helpers/rest-db';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
+import { setupWorkspaceWithMultipleTeammates } from '@/test-helpers/workspace-helpers';
+import { resetDb } from '@/test-helpers/rest-db';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
 import { LinkService } from '@/common/link-service';
-import { MessagingModule } from '@/common/messaging/messaging.module';
+import { MessagingModule } from '@/messaging/messaging.module';
 
 describe('CreateSelfConversationStep', () => {
   let step: CreateSelfConversationStep;

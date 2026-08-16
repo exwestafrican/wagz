@@ -3,9 +3,9 @@ import { WorkspaceManager } from '@/envoye/workspace/workspace-manager.service';
 import {
   createTestApp,
   TestControllerModuleWithAuthUser,
-} from '@/common/test-helpers/test-app';
-import RequestUser from '@/common/auth/domain/request-user';
-import { PrismaService } from '@/common/prisma/prisma.service';
+} from '@/test-helpers/test-app';
+import RequestUser from '@/auth/domain/request-user';
+import { PrismaService } from '@/prisma/prisma.service';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import {
   InviteStatus,
@@ -14,30 +14,30 @@ import {
   TeammateStatus,
   Workspace,
 } from '@/generated/prisma/client';
-import preVerificationFactory from '@/common/factories/roadmap/preverification.factory';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
+import preVerificationFactory from '@/factories/roadmap/preverification.factory';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import request from 'supertest';
 
 import { AuthEndpoints, URIPaths } from '@/common/const';
-import getHttpServer from '@/common/test-helpers/get-http-server';
-import { MailerProvider } from '@/common/messaging/messaging.module';
+import getHttpServer from '@/test-helpers/get-http-server';
+import { MailerProvider } from '@/messaging/messaging.module';
 import { faker } from '@faker-js/faker';
-import workspaceFactory from '@/common/factories/workspace.factory';
-import teammateFactory from '@/common/factories/teammate.factory';
-import { ROLES } from '@/common/permission/types';
-import { RoleService } from '@/common/permission/role/role.service';
+import workspaceFactory from '@/factories/workspace.factory';
+import teammateFactory from '@/factories/teammate.factory';
+import { ROLES } from '@/permission/types';
+import { RoleService } from '@/permission/role/role.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
-import { PermissionService } from '@/common/permission/permission.service';
+import { PermissionService } from '@/permission/permission.service';
 import { WorkspaceInviteService } from '@/envoye/workspace/workspace-invite-service';
-import workspaceInviteFactory from '@/common/factories/workspace-invite.factory';
-import { setupWorkspaceWithTeammate } from '@/common/test-helpers/workspace-helpers';
+import workspaceInviteFactory from '@/factories/workspace-invite.factory';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
 import { AuthService } from '@/envoye/auth/auth.service';
-import { mockAuthService } from '@/common/test-helpers/mocks';
+import { mockAuthService } from '@/test-helpers/mocks';
 import { LinkService } from '@/common/link-service';
 import DebounceService, { DEBOUNCE_SERVICE } from '@/common/debounce.service';
 import { Time } from '@/common/utils';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';
 import DebounceException from '@/common/exceptions/debounce';

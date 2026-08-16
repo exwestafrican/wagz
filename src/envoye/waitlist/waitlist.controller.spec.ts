@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WaitlistService } from '@/envoye/waitlist/waitlist.service';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@/common/prisma/prisma.module';
+import { PrismaModule } from '@/prisma/prisma.module';
 import request from 'supertest';
-import getHttpServer from '@/common/test-helpers/get-http-server';
+import getHttpServer from '@/test-helpers/get-http-server';
 import { INestApplication } from '@nestjs/common';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { createTestApp } from '@/test-helpers/test-app';
 import { WaitListEndpoints } from '@/envoye/waitlist/consts';
-import featureFactory from '@/common/factories/roadmap/features.factory';
+import featureFactory from '@/factories/roadmap/features.factory';
 import { MAIN_FEATURE } from '@/envoye/roadmap/consts';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { WaitlistModule } from '@/envoye/waitlist/waitlist.module';
 
 describe('WaitlistController', () => {

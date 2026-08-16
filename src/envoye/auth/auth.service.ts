@@ -8,19 +8,19 @@ import {
 import { AuthError, SupabaseClient } from '@supabase/supabase-js';
 import { AccountExistsException } from './exceptions/account.exists';
 import PasswordGenerator from './services/password.generator';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import SignupDetails from './domain/signup.details';
 import { PreVerification, Prisma } from '@/generated/prisma/client';
-import PRISMA_CODES from '@/common/prisma/consts';
+import PRISMA_CODES from '@/prisma/consts';
 import { TeammatesService } from '@/envoye/teammates/teammates.service';
 import { LinkService } from '@/common/link-service';
 import { notInDbError } from '@/common/error-type';
 import { faker } from '@faker-js/faker';
-import { PermissionService } from '@/common/permission/permission.service';
-import RequestUser from '@/common/auth/domain/request-user';
+import { PermissionService } from '@/permission/permission.service';
+import RequestUser from '@/auth/domain/request-user';
 import OtpVerification from '@/envoye/auth/domain/otp-verification';
 import { ENVOYE_WORKSPACE_CODE } from '@/envoye/feature-flag/const';
-import { PERMISSIONS } from '@/common/permission/types';
+import { PERMISSIONS } from '@/permission/types';
 import buildUsername from '@/common/build-username';
 
 @Injectable()

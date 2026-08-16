@@ -22,12 +22,12 @@ import {
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 import NotFoundInDb from '@/common/exceptions/not-found';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
-import { SupabaseAuthGuard } from '@/common/auth/guard/supabase.guard';
-import { User } from '@/common/auth/decorator/user.decorator';
-import RequestUser from '@/common/auth/domain/request-user';
-import { PermissionService } from '@/common/permission/permission.service';
+import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import { User } from '@/auth/decorator/user.decorator';
+import RequestUser from '@/auth/domain/request-user';
+import { PermissionService } from '@/permission/permission.service';
 import { ENVOYE_WORKSPACE_CODE } from '@/common/envoye-workspace.const';
-import { PERMISSIONS } from '@/common/permission/types';
+import { PERMISSIONS } from '@/permission/types';
 
 @Controller('admin/tracker')
 export class TrackerAdminController {

@@ -1,8 +1,8 @@
 import { Logger } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { WorkspaceDetails } from '@/envoye/workspace/domain/workspace-details';
 import { PostSetupStep } from '@/envoye/workspace/steps/postsetup-step';
-import { ROLES } from '@/common/permission/types';
+import { ROLES } from '@/permission/types';
 import buildUsername from '@/common/build-username';
 import normalizeUsername from '@/common/normalize-username';
 

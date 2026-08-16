@@ -2,22 +2,22 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { RoadmapController } from '@/envoye/roadmap/roadmap.controller';
 import { RoadmapEndpoints } from '@/envoye/roadmap/consts';
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { createTestApp } from '@/test-helpers/test-app';
 import request from 'supertest';
 import { FeaturesService } from '@/envoye/roadmap/service/feature.service';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { ConfigModule } from '@nestjs/config';
 import { FeatureRequestPriority, FeatureStage } from '@/generated/prisma/enums';
 import { FeatureResponseDto } from '@/envoye/roadmap/dto/feature-response.dto';
-import featureFactory from '@/common/factories/roadmap/features.factory';
-import getHttpServer from '@/common/test-helpers/get-http-server';
+import featureFactory from '@/factories/roadmap/features.factory';
+import getHttpServer from '@/test-helpers/get-http-server';
 import { WaitlistModule } from '@/envoye/waitlist/waitlist.module';
 import { WaitlistService } from '@/envoye/waitlist/waitlist.service';
-import { PrismaModule } from '@/common/prisma/prisma.module';
+import { PrismaModule } from '@/prisma/prisma.module';
 import { Feature } from '@/generated/prisma/client';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import { FeedbackService } from './service/feedback.service';
-import { addFeature, setupMainFeature } from '@/common/test-helpers/feature-helpers';
+import { addFeature, setupMainFeature } from '@/test-helpers/feature-helpers';
 
 describe('RoadmapController', () => {
   let app: INestApplication;

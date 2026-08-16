@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
-import { SupabaseAuthGuard } from '@/common/auth/guard/supabase.guard';
+import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';
 
 @Controller('feature-flags')

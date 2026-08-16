@@ -3,34 +3,34 @@ import { ConfigModule } from '@nestjs/config';
 import { INestApplication } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { PrismaService } from '@/prisma/prisma.service';
+import { createTestApp } from '@/test-helpers/test-app';
 import { SetupAdministrativeWorkspaceCommand } from '@/envoye/commands/setup-administrative-workspace.command';
 import {
   createMockSupabaseClient,
   type MockSupabaseClient,
 } from '@/envoye/auth/test-utils/supabase.mock';
 import { ENVOYE_WORKSPACE_CODE } from '@/envoye/feature-flag/const';
-import { ROLES } from '@/common/permission/types';
-import workspaceFactory from '@/common/factories/workspace.factory';
-import teammateFactory from '@/common/factories/teammate.factory';
-import Factory from '@/common/factories/factory';
+import { ROLES } from '@/permission/types';
+import workspaceFactory from '@/factories/workspace.factory';
+import teammateFactory from '@/factories/teammate.factory';
+import Factory from '@/factories/factory';
 import { PreVerificationStatus } from '@/generated/prisma/enums';
 import { faker } from '@faker-js/faker';
 import { LinkService } from '@/common/link-service';
 import { WorkspaceManager } from '@/envoye/workspace/workspace-manager.service';
-import { RoleService } from '@/common/permission/role/role.service';
+import { RoleService } from '@/permission/role/role.service';
 import { WorkspaceInviteService } from '@/envoye/workspace/workspace-invite-service';
 import { AuthService } from '@/envoye/auth/auth.service';
 import PasswordGenerator from '@/envoye/auth/services/password.generator';
 import { TeammatesService } from '@/envoye/teammates/teammates.service';
-import { TestEmailClient } from '@/common/messaging/email/test-email-client';
-import { PermissionService } from '@/common/permission/permission.service';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { TestEmailClient } from '@/messaging/email/test-email-client';
+import { PermissionService } from '@/permission/permission.service';
+import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';
-import { mockConfigService } from '@/common/test-helpers/mocks';
+import { mockConfigService } from '@/test-helpers/mocks';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
 
 describe('SetupAdministrativeWorkspaceCommand', () => {

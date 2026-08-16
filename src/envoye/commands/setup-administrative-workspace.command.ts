@@ -1,6 +1,6 @@
 import { Logger } from '@nestjs/common';
 import { Command, CommandRunner, Help, Option } from 'nest-commander';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { AuthService } from '@/envoye/auth/auth.service';
 import { WorkspaceManager } from '@/envoye/workspace/workspace-manager.service';
 import { CreateSuperAdminStep } from '@/envoye/workspace/steps/create-super-admin';

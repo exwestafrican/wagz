@@ -6,9 +6,9 @@ import {
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { Device } from '@/generated/prisma/client';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { hashDeviceApiKey } from '@/fahari/auth/device-api-key';
-import { extractBearerToken } from '@/common/auth/extract-bearer-token';
+import { extractBearerToken } from '@/auth/extract-bearer-token';
 
 export type DeviceAuthenticatedRequest = Request & { device: Device };
 

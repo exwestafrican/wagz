@@ -1,7 +1,7 @@
 import BackfillTask from '@/envoye/backfill/task';
 import { Logger } from '@nestjs/common';
 import { Workspace } from '@/generated/prisma/client';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
 
 export class ConversationParticipantsSignature implements BackfillTask {

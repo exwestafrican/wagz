@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { createTestApp } from '@/test-helpers/test-app';
 import { INestApplication } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
-import { setupWorkspaceWithTeammate } from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
-import { ROLES } from '@/common/permission/types';
+import { PrismaService } from '@/prisma/prisma.service';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
+import { ROLES } from '@/permission/types';
 import { Teammate } from '@/generated/prisma/client';
 import { NormalizeUsernames } from '@/envoye/backfill/tasks/normalize-username';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('Normalize Username Backfill Task', () => {
   let app: INestApplication;

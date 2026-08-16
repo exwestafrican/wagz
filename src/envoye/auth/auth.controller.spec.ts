@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import request from 'supertest';
 
 import { HttpStatus, INestApplication } from '@nestjs/common';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { createTestApp } from '@/test-helpers/test-app';
 import { ConfigModule } from '@nestjs/config';
 import { SupabaseClient } from '@supabase/supabase-js';
 import {
@@ -14,21 +14,21 @@ import {
 import PasswordGenerator from './services/password.generator';
 import { AuthEndpoints } from './consts';
 import { Server } from 'http';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import { OtpVerificationResponseDto } from './dto/otp-verification-response.dto';
-import preVerificationFactory from '@/common/factories/roadmap/preverification.factory';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
-import { setupWorkspaceWithTeammate } from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
+import preVerificationFactory from '@/factories/roadmap/preverification.factory';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
 import { LinkService } from '@/common/link-service';
 import { TeammatesService } from '@/envoye/teammates/teammates.service';
 import { TeammateStatus } from '@/generated/prisma/client';
-import { ROLES } from '@/common/permission/types';
-import { PermissionService } from '@/common/permission/permission.service';
-import { RoleService } from '@/common/permission/role/role.service';
+import { ROLES } from '@/permission/types';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
 import { ENVOYE_WORKSPACE_CODE } from '@/envoye/feature-flag/const';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('AuthController', () => {
   let app: INestApplication;

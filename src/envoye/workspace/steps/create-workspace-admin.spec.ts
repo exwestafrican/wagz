@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@/common/prisma/prisma.module';
+import { PrismaModule } from '@/prisma/prisma.module';
 import { INestApplication } from '@nestjs/common';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { createTestApp } from '@/test-helpers/test-app';
 import { CreateWorkspaceAdminStep } from '@/envoye/workspace/steps/create-workspace-admin';
 import { WorkspaceDetails } from '@/envoye/workspace/domain/workspace-details';
 import {
@@ -10,10 +10,10 @@ import {
   PreVerification,
   Workspace,
 } from '@/generated/prisma/client';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { PointOfContact } from '@/envoye/workspace/domain/point-of-contact';
-import preVerificationFactory from '@/common/factories/roadmap/preverification.factory';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import preVerificationFactory from '@/factories/roadmap/preverification.factory';
+import { resetDb } from '@/test-helpers/rest-db';
 
 describe('CreateWorkspaceAdminStep', () => {
   let step: CreateWorkspaceAdminStep;

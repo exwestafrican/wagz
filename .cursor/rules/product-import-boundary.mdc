@@ -12,12 +12,12 @@ alwaysApply: false
 
 - `@/fahari/...` from under `src/fahari`
 - `@/envoye/...` from under `src/envoye`
-- `@/common/...` from either product
-- Shared needs belong in `src/common`, not cross-product imports
+- Shared non-product code from either product, e.g. `@/common/...`, `@/auth/...`, `@/prisma/...`, `@/permission/...`, `@/generated/...`
+- Shared needs belong at the `src/` root (or in `src/common` utils), not cross-product imports
 
 **Forbidden**
 
 - From `src/fahari`: `@/envoye/...` or relative paths that reach `src/envoye` (e.g. `../../envoye/...`)
 - From `src/envoye`: `@/fahari/...` or relative paths that reach `src/fahari` (e.g. `../../fahari/...`)
 
-If both products need the same code, move it to `src/common` (or duplicate a tiny pure helper until a shared home is clear).
+If both products need the same code, put it under `src/` (shared) or `src/common` (utils) — do not import across products.

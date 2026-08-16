@@ -1,16 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { createTestApp } from '@/test-helpers/test-app';
 import { INestApplication } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
-import { setupWorkspaceWithTeammate } from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
-import preVerificationFactory from '@/common/factories/preverification.factory';
-import { ROLES } from '@/common/permission/types';
+import { PrismaService } from '@/prisma/prisma.service';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
+import preVerificationFactory from '@/factories/preverification.factory';
+import { ROLES } from '@/permission/types';
 import { BackfillCompanyProfilePreverification } from '@/envoye/backfill/tasks/company-profile-preverification';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { resetDb } from '@/test-helpers/rest-db';
 import { Workspace } from '@/generated/prisma/client';
 
 describe('Backfill Company Profile Preverification Task', () => {

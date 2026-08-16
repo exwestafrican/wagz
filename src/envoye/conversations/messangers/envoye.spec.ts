@@ -1,24 +1,24 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { ConflictException, INestApplication } from '@nestjs/common';
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { createTestApp } from '@/common/test-helpers/test-app';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
-import teammateFactory from '@/common/factories/teammate.factory';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { PrismaService } from '@/prisma/prisma.service';
+import { createTestApp } from '@/test-helpers/test-app';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import teammateFactory from '@/factories/teammate.factory';
 import {
   setupWorkspaceWithMultipleTeammates,
   setupWorkspaceWithTeammate,
-} from '@/common/test-helpers/workspace-helpers';
+} from '@/test-helpers/workspace-helpers';
 import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
 import { ConversationStatus } from '@/generated/prisma/client';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { resetDb } from '@/test-helpers/rest-db';
 import { addMinutes } from 'date-fns/addMinutes';
-import { singeParticipantMessageHistory } from '@/common/test-helpers/messaging.helpers';
+import { singeParticipantMessageHistory } from '@/test-helpers/messaging.helpers';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
-import { TestEmailClient } from '@/common/messaging/email/test-email-client';
+import { TestEmailClient } from '@/messaging/email/test-email-client';
 import { LinkService } from '@/common/link-service';
-import { mockConfigService } from '@/common/test-helpers/mocks';
+import { mockConfigService } from '@/test-helpers/mocks';
 import { ConversationType } from '@/envoye/conversations/const';
 
 describe('EnvoyeMessenger', () => {

@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { TeammateStatus } from '@/generated/prisma/enums';
 import { Teammate } from '@/generated/prisma/client';
 import { TeammatesNotInSameWorkspace } from '@/common/exceptions/teammates-not-in-same-workspace';

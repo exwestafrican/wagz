@@ -3,34 +3,34 @@ import { AdminController } from './admin.controller';
 import {
   createTestApp,
   TestControllerModuleWithAuthUser,
-} from '@/common/test-helpers/test-app';
-import RequestUser from '@/common/auth/domain/request-user';
-import getHttpServer from '@/common/test-helpers/get-http-server';
+} from '@/test-helpers/test-app';
+import RequestUser from '@/auth/domain/request-user';
+import getHttpServer from '@/test-helpers/get-http-server';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import request from 'supertest';
-import { PermissionService } from '@/common/permission/permission.service';
-import { RoleService } from '@/common/permission/role/role.service';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
 import {
   setupSuperAdmin,
   setupWorkspaceWithTeammate,
-} from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
-import { ROLES } from '@/common/permission/types';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
+} from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
+import { ROLES } from '@/permission/types';
+import { PrismaService } from '@/prisma/prisma.service';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import FeatureFlagManager from '@/envoye/feature-flag/manager';
 import { ENVOYE_WORKSPACE_CODE } from '@/envoye/feature-flag/const';
-import featureFlagFactory from '@/common/factories/feature-flag.factory';
-import workspaceFactory from '@/common/factories/workspace.factory';
+import featureFlagFactory from '@/factories/feature-flag.factory';
+import workspaceFactory from '@/factories/workspace.factory';
 import { FeatureFlagStatus } from '@/generated/prisma/enums';
 import { WorkspaceManager } from '@/envoye/workspace/workspace-manager.service';
 import { LinkService } from '@/common/link-service';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
 import { WorkspaceInviteService } from '@/envoye/workspace/workspace-invite-service';
-import { EMAIL_CLIENT } from '@/common/messaging/email/email-client';
+import { EMAIL_CLIENT } from '@/messaging/email/email-client';
 import { AuthService } from '@/envoye/auth/auth.service';
-import { mockAuthService } from '@/common/test-helpers/mocks';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { mockAuthService } from '@/test-helpers/mocks';
+import { resetDb } from '@/test-helpers/rest-db';
 import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
 
 describe('AdminController', () => {

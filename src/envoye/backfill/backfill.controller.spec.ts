@@ -3,25 +3,25 @@ import { BackfillController } from './backfill.controller';
 import {
   createTestApp,
   TestControllerModuleWithAuthUser,
-} from '@/common/test-helpers/test-app';
-import RequestUser from '@/common/auth/domain/request-user';
+} from '@/test-helpers/test-app';
+import RequestUser from '@/auth/domain/request-user';
 import { BackfillRegistryProvider } from '@/envoye/backfill/backfill-registry.provider';
-import getHttpServer from '@/common/test-helpers/get-http-server';
+import getHttpServer from '@/test-helpers/get-http-server';
 import { HttpStatus, INestApplication } from '@nestjs/common';
 import request from 'supertest';
 import { URIPaths } from '@/common/const';
 import BackfillResponseDto from '@/envoye/backfill/dto/backfill-response.dto';
-import { PermissionService } from '@/common/permission/permission.service';
-import { RoleService } from '@/common/permission/role/role.service';
-import { setupWorkspaceWithTeammate } from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
-import { ROLES } from '@/common/permission/types';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
+import { PermissionService } from '@/permission/permission.service';
+import { RoleService } from '@/permission/role/role.service';
+import { setupWorkspaceWithTeammate } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
+import { ROLES } from '@/permission/types';
+import { PrismaService } from '@/prisma/prisma.service';
+import Factory, { PersistStrategy } from '@/factories/factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/envoye/feature-flag/const';
-import { EMAIL_CLIENT, EmailClient } from '@/common/messaging/email/email-client';
+import { EMAIL_CLIENT, EmailClient } from '@/messaging/email/email-client';
 import { TeammatesService } from '@/envoye/teammates/teammates.service';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { resetDb } from '@/test-helpers/rest-db';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
 import { LinkService } from '@/common/link-service';
 

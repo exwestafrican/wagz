@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { Prisma } from '@/generated/prisma/client';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
-import PRISMA_CODES from '@/common/prisma/consts';
+import PRISMA_CODES from '@/prisma/consts';
 import { MAIN_FEATURE } from '@/envoye/roadmap/consts';
 import NotFoundInDb from '@/common/exceptions/not-found';
 

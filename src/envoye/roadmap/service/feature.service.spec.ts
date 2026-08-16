@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { FeaturesService } from '@/envoye/roadmap/service/feature.service';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { createTestApp } from '@/common/test-helpers/test-app';
+import { PrismaService } from '@/prisma/prisma.service';
+import { createTestApp } from '@/test-helpers/test-app';
 import { INestApplication } from '@nestjs/common';
-import { PrismaModule } from '@/common/prisma/prisma.module';
+import { PrismaModule } from '@/prisma/prisma.module';
 import { ConfigModule } from '@nestjs/config';
 import { WaitlistService } from '@/envoye/waitlist/waitlist.service';
 import { WaitlistModule } from '@/envoye/waitlist/waitlist.module';
-import featureFactory from '@/common/factories/roadmap/features.factory';
+import featureFactory from '@/factories/roadmap/features.factory';
 import { FeatureRequestPriority } from '@/generated/prisma/enums';
 import { Feature } from '@/generated/prisma/client';
 import { MAIN_FEATURE } from '../consts';

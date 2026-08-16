@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { PrismaService } from '@/prisma/prisma.service';
 import { Device } from '@/generated/prisma/client';
 import { existsInDbError } from '@/common/error-type';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';

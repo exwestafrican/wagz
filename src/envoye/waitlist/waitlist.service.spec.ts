@@ -1,18 +1,18 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WaitlistService } from './waitlist.service';
 import { ConfigModule } from '@nestjs/config';
-import { PrismaModule } from '@/common/prisma/prisma.module';
+import { PrismaModule } from '@/prisma/prisma.module';
 import { RoadmapModule } from '@/envoye/roadmap/roadmap.module';
 import { INestApplication } from '@nestjs/common';
-import { createTestApp } from '@/common/test-helpers/test-app';
-import { PrismaService } from '@/common/prisma/prisma.service';
+import { createTestApp } from '@/test-helpers/test-app';
+import { PrismaService } from '@/prisma/prisma.service';
 import { faker } from '@faker-js/faker';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 import {
   addFeature,
   setupMainFeature,
   subscribeToFeature,
-} from '@/common/test-helpers/feature-helpers';
+} from '@/test-helpers/feature-helpers';
 
 describe('WaitlistService', () => {
   let service: WaitlistService;

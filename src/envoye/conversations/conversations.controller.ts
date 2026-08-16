@@ -12,11 +12,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiResponse } from '@nestjs/swagger';
-import { SupabaseAuthGuard } from '@/common/auth/guard/supabase.guard';
-import { User } from '@/common/auth/decorator/user.decorator';
-import RequestUser from '@/common/auth/domain/request-user';
-import { PermissionService } from '@/common/permission/permission.service';
-import { PERMISSIONS } from '@/common/permission/types';
+import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import { User } from '@/auth/decorator/user.decorator';
+import RequestUser from '@/auth/domain/request-user';
+import { PermissionService } from '@/permission/permission.service';
+import { PERMISSIONS } from '@/permission/types';
 import { TeammatesService } from '@/envoye/teammates/teammates.service';
 import { ConversationsService } from '@/envoye/conversations/conversations.service';
 import { CreateConversationDto } from '@/envoye/conversations/dto/create-conversation.dto';
