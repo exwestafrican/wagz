@@ -6,7 +6,7 @@ import {
   ArrayMaxSize,
   IsIn,
 } from 'class-validator';
-import { ROLES } from '@/common/permission/types';
+import { ROLES } from '@/permission/types';
 const MAX_EMAILS = 10;
 const INVITEABLE_ROLES = Object.keys(ROLES);
 

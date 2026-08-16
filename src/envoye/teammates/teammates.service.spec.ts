@@ -2,16 +2,16 @@ import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { TeammatesService } from './teammates.service';
 import { INestApplication } from '@nestjs/common';
-import { PrismaService } from '@/common/prisma/prisma.service';
-import { PrismaModule } from '@/common/prisma/prisma.module';
-import { createTestApp } from '@/common/test-helpers/test-app';
-import Factory, { PersistStrategy } from '@/common/factories/factory';
-import workspaceFactory from '@/common/factories/workspace.factory';
-import { setupWorkspaceWithMultipleTeammates } from '@/common/test-helpers/workspace-helpers';
-import teammateFactory from '@/common/factories/teammate.factory';
-import RequestUser from '@/common/auth/domain/request-user';
+import { PrismaService } from '@/prisma/prisma.service';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { createTestApp } from '@/test-helpers/test-app';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import workspaceFactory from '@/factories/workspace.factory';
+import { setupWorkspaceWithMultipleTeammates } from '@/test-helpers/workspace-helpers';
+import teammateFactory from '@/factories/teammate.factory';
+import RequestUser from '@/auth/domain/request-user';
 import { TeammateStatus } from '@/generated/prisma/enums';
-import { resetDb } from '@/common/test-helpers/rest-db';
+import { resetDb } from '@/test-helpers/rest-db';
 import { TeammatesNotInSameWorkspace } from '@/common/exceptions/teammates-not-in-same-workspace';
 
 describe('TeammatesService', () => {

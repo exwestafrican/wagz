@@ -7,7 +7,7 @@ import PasswordGenerator from './services/password.generator';
 import { PassportModule } from '@nestjs/passport';
 import { TeammatesModule } from '@/envoye/teammates/teammates.module';
 import { CommonModule } from '@/common/common.module';
-import { PermissionModule } from '@/common/permission/permission.module';
+import { PermissionModule } from '@/permission/permission.module';
 
 const SupabaseAuthClient = {
   provide: SupabaseClient,
