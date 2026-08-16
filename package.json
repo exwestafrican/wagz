@@ -133,7 +133,7 @@
       "**/*.(t|j)s"
     ],
     "setupFilesAfterEnv": [
-      "<rootDir>/test-helpers/jest-setup.ts"
+      "<rootDir>/common/test-helpers/jest-setup.ts"
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
