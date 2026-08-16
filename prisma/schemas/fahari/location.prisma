@@ -1,14 +1,28 @@
 model Device {
-  id         String   @id @default(cuid())
-  imei       String   @unique
-  apiKeyHash String?  @unique
-  isActive   Boolean  @default(false)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id        String   @id @default(cuid())
+  imei      String   @unique
+  isActive  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   locations Location[]
+  apiKeys   DeviceApiKey[]
 
   @@map("device")
+}
+
+model DeviceApiKey {
+  id        String    @id @default(cuid())
+  deviceId  String
+  keyHash   String    @unique
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, isActive])
+  @@map("device_api_key")
 }
 
 model Location {
