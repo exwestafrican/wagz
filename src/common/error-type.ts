@@ -1,5 +1,5 @@
 import { Prisma } from '@/generated/prisma/client';
-import PRISMA_CODES from '@/prisma/consts';
+import PRISMA_CODES from '@/common/prisma/consts';
 
 export function notInDbError(error: unknown) {
   return (
