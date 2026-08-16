@@ -1,6 +1,6 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import type { Device } from '@/generated/prisma/client';
-import type { DeviceAuthenticatedRequest } from '@/tracker/guard/device-auth.guard';
+import type { DeviceAuthenticatedRequest } from '@/auth/guard/device-auth.guard';
 
 export const AuthenticatedDevice = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): Device => {

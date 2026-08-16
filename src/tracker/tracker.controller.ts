@@ -18,7 +18,7 @@ import { TrackerService } from '@/tracker/tracker.service';
 import { RecordLocationsDto } from '@/tracker/dto/record-location.dto';
 import { RecordLocationsResponseDto } from '@/tracker/dto/record-locations-response.dto';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
-import { DeviceAuthGuard } from '@/tracker/guard/device-auth.guard';
+import { DeviceAuthGuard } from '@/auth/guard/device-auth.guard';
 import { AuthenticatedDevice } from '@/tracker/decorator/device.decorator';
 
 @Controller('tracker')

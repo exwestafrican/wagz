@@ -8,6 +8,7 @@ import type { Request } from 'express';
 import { Device } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { hashDeviceApiKey } from '@/tracker/device-api-key';
+import { extractBearerToken } from '@/auth/extract-bearer-token';
 
 export type DeviceAuthenticatedRequest = Request & { device: Device };
 
@@ -19,7 +20,7 @@ export class DeviceAuthGuard implements CanActivate {
     const request = context
       .switchToHttp()
       .getRequest<DeviceAuthenticatedRequest>();
-    const apiKey = this.extractApiKeyFromBearerToken(request);
+    const apiKey = extractBearerToken(request);
     const keyHash = hashDeviceApiKey(apiKey);
 
     const credential = await this.prismaService.deviceApiKey.findUnique({
@@ -27,22 +28,14 @@ export class DeviceAuthGuard implements CanActivate {
       include: { device: true },
     });
 
-    if (credential?.isActive && credential?.device.isActive) {
+    const credentialIsActive = credential?.isActive === true;
+    const deviceIsActive = credential?.device.isActive === true;
+
+    if (credentialIsActive && deviceIsActive) {
       request.device = credential.device;
       return true;
     }
 
     throw new UnauthorizedException('Invalid or inactive device credentials');
-  }
-
-  private extractApiKeyFromBearerToken(request: Request): string {
-    const authHeader = request.headers.authorization;
-    const [scheme, token] = authHeader?.split(' ') || [];
-    if (scheme !== 'Bearer' || !token) {
-      throw new UnauthorizedException(
-        'Missing or invalid authorization header',
-      );
-    }
-    return token;
   }
 }

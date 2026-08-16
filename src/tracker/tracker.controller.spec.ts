@@ -18,7 +18,7 @@ import { resetDb } from '@/test-helpers/rest-db';
 import { TrackerService } from '@/tracker/tracker.service';
 import { TrackerController } from '@/tracker/tracker.controller';
 import { TrackerAdminController } from '@/tracker/admin/tracker-admin.controller';
-import { DeviceAuthGuard } from '@/tracker/guard/device-auth.guard';
+import { DeviceAuthGuard } from '@/auth/guard/device-auth.guard';
 import { PermissionService } from '@/permission/permission.service';
 import { RoleService } from '@/permission/role/role.service';
 import RequestUser from '@/auth/domain/request-user';
