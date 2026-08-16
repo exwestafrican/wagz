@@ -247,7 +247,8 @@ export class ConversationsController {
   })
   @ApiResponse({
     status: HttpStatus.NO_CONTENT,
-    description: 'Read cursor updated or already at or past mostRecentMessageId',
+    description:
+      'Read cursor updated or already at or past mostRecentMessageId',
   })
   @ApiResponse({
     status: HttpStatus.UNAUTHORIZED,
