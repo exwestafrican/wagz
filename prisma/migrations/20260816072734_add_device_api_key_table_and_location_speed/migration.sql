@@ -18,12 +18,23 @@ DROP TABLE "Location";
 CREATE TABLE "device" (
     "id" TEXT NOT NULL,
     "imei" TEXT NOT NULL,
-    "apiKeyHash" TEXT,
     "isActive" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "device_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "device_api_key" (
+    "id" TEXT NOT NULL,
+    "deviceId" TEXT NOT NULL,
+    "keyHash" TEXT NOT NULL,
+    "isActive" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "revokedAt" TIMESTAMP(3),
+
+    CONSTRAINT "device_api_key_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -43,7 +54,10 @@ CREATE TABLE "location" (
 CREATE UNIQUE INDEX "device_imei_key" ON "device"("imei");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "device_apiKeyHash_key" ON "device"("apiKeyHash");
+CREATE UNIQUE INDEX "device_api_key_keyHash_key" ON "device_api_key"("keyHash");
+
+-- CreateIndex
+CREATE INDEX "device_api_key_deviceId_isActive_idx" ON "device_api_key"("deviceId", "isActive");
 
 -- CreateIndex
 CREATE INDEX "location_deviceId_idx" ON "location"("deviceId");
@@ -53,6 +67,9 @@ CREATE INDEX "location_timestamp_idx" ON "location"("timestamp");
 
 -- CreateIndex
 CREATE INDEX "location_deviceId_timestamp_idx" ON "location"("deviceId", "timestamp");
+
+-- AddForeignKey
+ALTER TABLE "device_api_key" ADD CONSTRAINT "device_api_key_deviceId_fkey" FOREIGN KEY ("deviceId") REFERENCES "device"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "location" ADD CONSTRAINT "location_deviceId_fkey" FOREIGN KEY ("deviceId") REFERENCES "device"("id") ON DELETE CASCADE ON UPDATE CASCADE;
