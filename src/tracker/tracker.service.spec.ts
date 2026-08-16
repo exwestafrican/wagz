@@ -74,8 +74,9 @@ describe('TrackerService', () => {
       const { device, apiKey: previousApiKey } =
         await trackerService.registerDevice(faker.string.numeric(15));
 
-      const { apiKey: rotatedApiKey } =
-        await trackerService.rotateDeviceApiKey(device.id);
+      const { apiKey: rotatedApiKey } = await trackerService.rotateDeviceApiKey(
+        device.id,
+      );
 
       expect(rotatedApiKey).toMatch(/^trk_/);
       expect(rotatedApiKey).not.toBe(previousApiKey);

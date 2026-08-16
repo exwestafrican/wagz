@@ -4,9 +4,7 @@ import type { DeviceAuthenticatedRequest } from '@/auth/guard/device-auth.guard'
 
 export const AuthenticatedDevice = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): Device => {
-    const request = ctx
-      .switchToHttp()
-      .getRequest<DeviceAuthenticatedRequest>();
+    const request = ctx.switchToHttp().getRequest<DeviceAuthenticatedRequest>();
     return request.device;
   },
 );

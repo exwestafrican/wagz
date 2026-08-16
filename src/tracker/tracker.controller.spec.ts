@@ -168,8 +168,9 @@ describe('TrackerController device auth', () => {
   it('returns 401 when the api key has been revoked', async () => {
     const { device, apiKey: previousApiKey } =
       await trackerService.registerDevice(faker.string.numeric(15));
-    const { apiKey: rotatedApiKey } =
-      await trackerService.rotateDeviceApiKey(device.id);
+    const { apiKey: rotatedApiKey } = await trackerService.rotateDeviceApiKey(
+      device.id,
+    );
 
     await request(getHttpServer(app))
       .post('/tracker/locations')
