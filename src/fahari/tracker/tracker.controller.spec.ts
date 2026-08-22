@@ -93,6 +93,109 @@ describe('TrackerController', () => {
       );
     });
   });
+  describe('validateCredentials', () => {
+    it('returns valid true for a registered active api key', async () => {
+      const { apiKey } = await trackerService.registerDevice(
+        faker.string.numeric(15),
+      );
+
+      const body = await controller.validateCredentials({ apiKey });
+
+      expect(body).toEqual({ valid: true });
+    });
+  });
+});
+
+describe('TrackerController validate credentials', () => {
+  let app: INestApplication;
+  let prismaService: PrismaService;
+  let trackerService: TrackerService;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      imports: [ConfigModule.forRoot(), PrismaModule],
+      controllers: [TrackerController],
+      providers: [TrackerService, DeviceAuthGuard],
+    }).compile();
+
+    app = await createTestApp(module);
+    prismaService = app.get(PrismaService);
+    trackerService = app.get(TrackerService);
+  });
+
+  afterEach(async () => {
+    await resetDb(prismaService);
+    await app.close();
+  });
+
+  it('returns 200 with valid true for a registered active api key', async () => {
+    const { apiKey } = await trackerService.registerDevice(
+      faker.string.numeric(15),
+    );
+
+    const response = await request(getHttpServer(app))
+      .post('/tracker/validate-credentials')
+      .send({ apiKey })
+      .expect(HttpStatus.OK);
+
+    expect(response.body).toEqual({ valid: true });
+  });
+
+  it('returns 401 when the api key is wrong', async () => {
+    await trackerService.registerDevice(faker.string.numeric(15));
+
+    await request(getHttpServer(app))
+      .post('/tracker/validate-credentials')
+      .send({ apiKey: 'trk_not-a-real-key' })
+      .expect(HttpStatus.UNAUTHORIZED);
+  });
+
+  it('returns 401 when the device is inactive', async () => {
+    const { device, apiKey } = await trackerService.registerDevice(
+      faker.string.numeric(15),
+    );
+    await prismaService.device.update({
+      where: { id: device.id },
+      data: { isActive: false },
+    });
+
+    await request(getHttpServer(app))
+      .post('/tracker/validate-credentials')
+      .send({ apiKey })
+      .expect(HttpStatus.UNAUTHORIZED);
+  });
+
+  it('returns 401 when the api key has been revoked', async () => {
+    const { device, apiKey: previousApiKey } =
+      await trackerService.registerDevice(faker.string.numeric(15));
+    const { apiKey: rotatedApiKey } = await trackerService.rotateDeviceApiKey(
+      device.id,
+    );
+
+    await request(getHttpServer(app))
+      .post('/tracker/validate-credentials')
+      .send({ apiKey: previousApiKey })
+      .expect(HttpStatus.UNAUTHORIZED);
+
+    await request(getHttpServer(app))
+      .post('/tracker/validate-credentials')
+      .send({ apiKey: rotatedApiKey })
+      .expect(HttpStatus.OK);
+  });
+
+  it('returns 400 when apiKey is missing', async () => {
+    await request(getHttpServer(app))
+      .post('/tracker/validate-credentials')
+      .send({})
+      .expect(HttpStatus.BAD_REQUEST);
+  });
+
+  it('returns 400 when apiKey does not start with trk_', async () => {
+    await request(getHttpServer(app))
+      .post('/tracker/validate-credentials')
+      .send({ apiKey: 'not-a-tracker-key' })
+      .expect(HttpStatus.BAD_REQUEST);
+  });
 });
 
 describe('TrackerController device auth', () => {
