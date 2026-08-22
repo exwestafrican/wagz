@@ -95,6 +95,88 @@ describe('TrackerController', () => {
   });
 });
 
+describe('TrackerController ping', () => {
+  let app: INestApplication;
+  let prismaService: PrismaService;
+  let trackerService: TrackerService;
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      imports: [ConfigModule.forRoot(), PrismaModule],
+      controllers: [TrackerController],
+      providers: [TrackerService, DeviceAuthGuard],
+    }).compile();
+
+    app = await createTestApp(module);
+    prismaService = app.get(PrismaService);
+    trackerService = app.get(TrackerService);
+  });
+
+  afterEach(async () => {
+    await resetDb(prismaService);
+    await app.close();
+  });
+
+  it('returns 200 when the api key is valid', async () => {
+    const { apiKey } = await trackerService.registerDevice(
+      faker.string.numeric(15),
+    );
+
+    await request(getHttpServer(app))
+      .get('/tracker/ping')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .expect(HttpStatus.OK);
+  });
+
+  it('returns 401 when authorization header is missing', async () => {
+    await request(getHttpServer(app))
+      .get('/tracker/ping')
+      .expect(HttpStatus.UNAUTHORIZED);
+  });
+
+  it('returns 401 when the api key is wrong', async () => {
+    await trackerService.registerDevice(faker.string.numeric(15));
+
+    await request(getHttpServer(app))
+      .get('/tracker/ping')
+      .set('Authorization', 'Bearer trk_not-a-real-key')
+      .expect(HttpStatus.UNAUTHORIZED);
+  });
+
+  it('returns 401 when the device is inactive', async () => {
+    const { device, apiKey } = await trackerService.registerDevice(
+      faker.string.numeric(15),
+    );
+    await prismaService.device.update({
+      where: { id: device.id },
+      data: { isActive: false },
+    });
+
+    await request(getHttpServer(app))
+      .get('/tracker/ping')
+      .set('Authorization', `Bearer ${apiKey}`)
+      .expect(HttpStatus.UNAUTHORIZED);
+  });
+
+  it('returns 401 when the api key has been revoked', async () => {
+    const { device, apiKey: previousApiKey } =
+      await trackerService.registerDevice(faker.string.numeric(15));
+    const { apiKey: rotatedApiKey } = await trackerService.rotateDeviceApiKey(
+      device.id,
+    );
+
+    await request(getHttpServer(app))
+      .get('/tracker/ping')
+      .set('Authorization', `Bearer ${previousApiKey}`)
+      .expect(HttpStatus.UNAUTHORIZED);
+
+    await request(getHttpServer(app))
+      .get('/tracker/ping')
+      .set('Authorization', `Bearer ${rotatedApiKey}`)
+      .expect(HttpStatus.OK);
+  });
+});
+
 describe('TrackerController device auth', () => {
   let app: INestApplication;
   let prismaService: PrismaService;

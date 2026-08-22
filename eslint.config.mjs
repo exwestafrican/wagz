@@ -32,4 +32,48 @@ export default tseslint.config(
       "prettier/prettier": ["error", { endOfLine: "auto" }],
     },
   },
+  {
+    files: ['src/fahari/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/envoye', '@/envoye/**'],
+              message:
+                'Fahari must not import Envoye. Move shared code to src/ (e.g. @/common, @/auth) instead.',
+            },
+            {
+              group: ['**/envoye', '**/envoye/**'],
+              message:
+                'Fahari must not import Envoye via relative paths. Move shared code to src/ instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ['src/envoye/**/*.{ts,tsx}'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['@/fahari', '@/fahari/**'],
+              message:
+                'Envoye must not import Fahari. Move shared code to src/ (e.g. @/common, @/auth) instead.',
+            },
+            {
+              group: ['**/fahari', '**/fahari/**'],
+              message:
+                'Envoye must not import Fahari via relative paths. Move shared code to src/ instead.',
+            },
+          ],
+        },
+      ],
+    },
+  },
 );

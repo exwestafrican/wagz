@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -24,6 +25,16 @@ import { AuthenticatedDevice } from '@/fahari/tracker/decorator/device.decorator
 @Controller('tracker')
 export class TrackerController {
   constructor(private readonly trackerService: TrackerService) {}
+
+  @Get('ping')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(DeviceAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Check that the device API key is valid' })
+  @ApiUnauthorizedResponse({
+    description: 'Missing, invalid, or inactive device API key',
+  })
+  async ping(): Promise<void> {}
 
   @Post('locations')
   @HttpCode(HttpStatus.CREATED)
