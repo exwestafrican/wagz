@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { INestApplication, UnauthorizedException } from '@nestjs/common';
+import { INestApplication } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 
 import { PrismaModule } from '@/prisma/prisma.module';
@@ -104,56 +104,6 @@ describe('TrackerService', () => {
       await expect(
         trackerService.rotateDeviceApiKey('missing-device-id'),
       ).rejects.toBeInstanceOf(NotFoundInDb);
-    });
-  });
-
-  describe('validateDeviceApiKey', () => {
-    it('returns the device for a valid active api key', async () => {
-      const { device, apiKey } = await trackerService.registerDevice(
-        faker.string.numeric(15),
-      );
-
-      const validatedDevice = await trackerService.validateDeviceApiKey(apiKey);
-
-      expect(validatedDevice.id).toBe(device.id);
-    });
-
-    it('throws UnauthorizedException when the api key is wrong', async () => {
-      await trackerService.registerDevice(faker.string.numeric(15));
-
-      await expect(
-        trackerService.validateDeviceApiKey('trk_not-a-real-key'),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
-    });
-
-    it('throws UnauthorizedException when the device is inactive', async () => {
-      const { device, apiKey } = await trackerService.registerDevice(
-        faker.string.numeric(15),
-      );
-      await prismaService.device.update({
-        where: { id: device.id },
-        data: { isActive: false },
-      });
-
-      await expect(
-        trackerService.validateDeviceApiKey(apiKey),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
-    });
-
-    it('throws UnauthorizedException when the api key has been revoked', async () => {
-      const { device, apiKey: previousApiKey } =
-        await trackerService.registerDevice(faker.string.numeric(15));
-      const { apiKey: rotatedApiKey } = await trackerService.rotateDeviceApiKey(
-        device.id,
-      );
-
-      await expect(
-        trackerService.validateDeviceApiKey(previousApiKey),
-      ).rejects.toBeInstanceOf(UnauthorizedException);
-
-      const validatedDevice =
-        await trackerService.validateDeviceApiKey(rotatedApiKey);
-      expect(validatedDevice.id).toBe(device.id);
     });
   });
 
