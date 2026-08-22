@@ -1,10 +1,13 @@
-import { Injectable, Logger, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { Device } from '@/generated/prisma/client';
 import { existsInDbError } from '@/common/error-type';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 import NotFoundInDb from '@/common/exceptions/not-found';
-import { generateDeviceApiKey, hashDeviceApiKey } from '@/fahari/auth/device-api-key';
+import {
+  generateDeviceApiKey,
+  hashDeviceApiKey,
+} from '@/fahari/auth/device-api-key';
 
 export type RegisteredDevice = {
   device: Device;
@@ -74,23 +77,6 @@ export class TrackerService {
 
     this.logger.log(`rotated api key for device id=${deviceId}`);
     return { device, apiKey };
-  }
-
-  async validateDeviceApiKey(apiKey: string): Promise<Device> {
-    const keyHash = hashDeviceApiKey(apiKey);
-    const credential = await this.prismaService.deviceApiKey.findUnique({
-      where: { keyHash },
-      include: { device: true },
-    });
-
-    const credentialIsActive = credential?.isActive === true;
-    const deviceIsActive = credential?.device.isActive === true;
-
-    if (credentialIsActive && deviceIsActive) {
-      return credential.device;
-    }
-
-    throw new UnauthorizedException('Invalid or inactive device credentials');
   }
 
   async listDevices(): Promise<Device[]> {
