@@ -93,20 +93,9 @@ describe('TrackerController', () => {
       );
     });
   });
-  describe('validateCredentials', () => {
-    it('returns valid true for a registered active api key', async () => {
-      const { apiKey } = await trackerService.registerDevice(
-        faker.string.numeric(15),
-      );
-
-      const body = await controller.validateCredentials({ apiKey });
-
-      expect(body).toEqual({ valid: true });
-    });
-  });
 });
 
-describe('TrackerController validate credentials', () => {
+describe('TrackerController ping', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let trackerService: TrackerService;
@@ -128,25 +117,29 @@ describe('TrackerController validate credentials', () => {
     await app.close();
   });
 
-  it('returns 200 with valid true for a registered active api key', async () => {
+  it('returns 200 when the api key is valid', async () => {
     const { apiKey } = await trackerService.registerDevice(
       faker.string.numeric(15),
     );
 
-    const response = await request(getHttpServer(app))
-      .post('/tracker/validate-credentials')
-      .send({ apiKey })
+    await request(getHttpServer(app))
+      .post('/tracker/ping')
+      .set('Authorization', `Bearer ${apiKey}`)
       .expect(HttpStatus.OK);
+  });
 
-    expect(response.body).toEqual({ valid: true });
+  it('returns 401 when authorization header is missing', async () => {
+    await request(getHttpServer(app))
+      .post('/tracker/ping')
+      .expect(HttpStatus.UNAUTHORIZED);
   });
 
   it('returns 401 when the api key is wrong', async () => {
     await trackerService.registerDevice(faker.string.numeric(15));
 
     await request(getHttpServer(app))
-      .post('/tracker/validate-credentials')
-      .send({ apiKey: 'trk_not-a-real-key' })
+      .post('/tracker/ping')
+      .set('Authorization', 'Bearer trk_not-a-real-key')
       .expect(HttpStatus.UNAUTHORIZED);
   });
 
@@ -160,8 +153,8 @@ describe('TrackerController validate credentials', () => {
     });
 
     await request(getHttpServer(app))
-      .post('/tracker/validate-credentials')
-      .send({ apiKey })
+      .post('/tracker/ping')
+      .set('Authorization', `Bearer ${apiKey}`)
       .expect(HttpStatus.UNAUTHORIZED);
   });
 
@@ -173,28 +166,14 @@ describe('TrackerController validate credentials', () => {
     );
 
     await request(getHttpServer(app))
-      .post('/tracker/validate-credentials')
-      .send({ apiKey: previousApiKey })
+      .post('/tracker/ping')
+      .set('Authorization', `Bearer ${previousApiKey}`)
       .expect(HttpStatus.UNAUTHORIZED);
 
     await request(getHttpServer(app))
-      .post('/tracker/validate-credentials')
-      .send({ apiKey: rotatedApiKey })
+      .post('/tracker/ping')
+      .set('Authorization', `Bearer ${rotatedApiKey}`)
       .expect(HttpStatus.OK);
-  });
-
-  it('returns 400 when apiKey is missing', async () => {
-    await request(getHttpServer(app))
-      .post('/tracker/validate-credentials')
-      .send({})
-      .expect(HttpStatus.BAD_REQUEST);
-  });
-
-  it('returns 400 when apiKey does not start with trk_', async () => {
-    await request(getHttpServer(app))
-      .post('/tracker/validate-credentials')
-      .send({ apiKey: 'not-a-tracker-key' })
-      .expect(HttpStatus.BAD_REQUEST);
   });
 });
 
