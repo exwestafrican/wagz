@@ -7,7 +7,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import {
   ENVOYE_WORKSPACE_CODE,
   ENVOYE_WORKSPACE_ID,
-} from '@/feature-flag/const';
+} from '@/common/envoye-workspace.const';
 import preVerificationFactory from './preverification.factory';
 
 class WorkspaceFactory extends Factory<Workspace> {

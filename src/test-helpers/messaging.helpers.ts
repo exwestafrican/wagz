@@ -1,5 +1,5 @@
 import { Conversation, Workspace } from '@/generated/prisma/client';
-import Messenger from '@/conversations/messangers/messenger';
+import Messenger from '@/envoye/conversations/messangers/messenger';
 
 export type MessageHistory = {
   senderId: number;

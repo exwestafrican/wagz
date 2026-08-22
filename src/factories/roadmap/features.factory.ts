@@ -1,7 +1,7 @@
 import { Feature, FeatureStage } from '@/generated/prisma/client';
 import { Factory } from 'fishery';
 import { faker } from '@faker-js/faker';
-import { MAIN_FEATURE } from '@/roadmap/consts';
+import { MAIN_FEATURE } from '@/envoye/roadmap/consts';
 
 type FeatureTransientParams = {
   main: boolean;

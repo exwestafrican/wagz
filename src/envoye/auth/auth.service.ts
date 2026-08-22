@@ -1,0 +1,260 @@
+import {
+  ForbiddenException,
+  Injectable,
+  Logger,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { AuthError, SupabaseClient } from '@supabase/supabase-js';
+import { AccountExistsException } from './exceptions/account.exists';
+import PasswordGenerator from './services/password.generator';
+import { PrismaService } from '@/prisma/prisma.service';
+import SignupDetails from './domain/signup.details';
+import { PreVerification, Prisma } from '@/generated/prisma/client';
+import PRISMA_CODES from '@/prisma/consts';
+import { TeammatesService } from '@/envoye/teammates/teammates.service';
+import { LinkService } from '@/common/link-service';
+import { notInDbError } from '@/common/error-type';
+import { faker } from '@faker-js/faker';
+import { PermissionService } from '@/permission/permission.service';
+import RequestUser from '@/auth/domain/request-user';
+import OtpVerification from '@/envoye/auth/domain/otp-verification';
+import { ENVOYE_WORKSPACE_CODE } from '@/envoye/feature-flag/const';
+import { PERMISSIONS } from '@/permission/types';
+import buildUsername from '@/common/build-username';
+
+@Injectable()
+export class AuthService {
+  logger = new Logger(AuthService.name);
+  constructor(
+    private readonly supabaseClient: SupabaseClient,
+    private readonly passwordGenerator: PasswordGenerator,
+    private readonly prismaService: PrismaService,
+    private readonly linkService: LinkService,
+    private readonly teammatesService: TeammatesService,
+    private readonly permissionService: PermissionService,
+  ) {}
+
+  private async signInWithOtp(
+    email: string,
+    workspaceCode: string,
+  ): Promise<void> {
+    await this.signInWithOtpRedirect(
+      email,
+      this.linkService.loadWorkspaceUrl(workspaceCode),
+    );
+  }
+
+  private async signInWithOtpRedirect(
+    email: string,
+    emailRedirectTo: string,
+  ): Promise<void> {
+    const { error } = await this.supabaseClient.auth.signInWithOtp({
+      email: email,
+      options: {
+        shouldCreateUser: false,
+        emailRedirectTo,
+      },
+    });
+
+    if (error) {
+      this.logger.error(error);
+      throw new UnauthorizedException();
+    }
+  }
+
+  async requestMagicLinkOrThrow(email: string): Promise<void> {
+    try {
+      const primaryWorkspace =
+        await this.teammatesService.primaryWorkspace(email);
+      await this.signInWithOtp(email, primaryWorkspace.code);
+    } catch (e) {
+      if (notInDbError(e as Error)) {
+        throw new UnauthorizedException();
+      }
+      throw e;
+    }
+  }
+
+  async requestAdminMagicLinkOrThrow(email: string): Promise<void> {
+    try {
+      await this.permissionService.runIfPermitted(
+        RequestUser.of(email),
+        ENVOYE_WORKSPACE_CODE,
+        PERMISSIONS.ACCESS_ADMIN,
+        () =>
+          this.signInWithOtpRedirect(email, this.linkService.adminLoginUrl()),
+      );
+    } catch (error) {
+      if (error instanceof ForbiddenException || notInDbError(error as Error)) {
+        throw new UnauthorizedException();
+      }
+      throw error;
+    }
+  }
+
+  async emailOnlySignup(signupDetails: SignupDetails): Promise<void> {
+    const password = this.passwordGenerator.generateRandomPassword();
+    return await this.signup(signupDetails, password);
+  }
+
+  async signupAutoVerifiedForWorkspace(
+    email: string,
+  ): Promise<PreVerification> {
+    const firstname = faker.person.firstName();
+    const lastname = faker.person.lastName();
+    const signupDetails = {
+      email: email.trim().toLowerCase(),
+      firstName: firstname,
+      lastName: lastname,
+      companyName: 'Envoye',
+      username: buildUsername(firstname, lastname),
+      timezone: 'UTC',
+    };
+
+    const preverificationDetails =
+      await this.storePreverificationDetails(signupDetails);
+
+    try {
+      const password = this.passwordGenerator.generateRandomPassword();
+      const { error } = await this.supabaseClient.auth.admin.createUser({
+        email: signupDetails.email,
+        password,
+        email_confirm: true,
+      });
+      if (error) {
+        this.handleAuthError(error);
+      }
+    } catch (e) {
+      if (e instanceof AccountExistsException) {
+        return preverificationDetails;
+      }
+      throw e;
+    }
+
+    return preverificationDetails;
+  }
+
+  private existsInDBError(error: unknown): boolean {
+    return (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === PRISMA_CODES.DUPLICATE_KEY_CONSTRAINT_VIOLATION
+    );
+  }
+
+  private async storePreverificationDetails(
+    signupDetails: SignupDetails,
+  ): Promise<PreVerification> {
+    try {
+      const preVerification = await this.prismaService.preVerification.create({
+        data: {
+          email: signupDetails.email,
+          firstName: signupDetails.firstName,
+          lastName: signupDetails.lastName,
+          username: signupDetails.username,
+          companyName: signupDetails.companyName,
+          timezone: signupDetails.timezone,
+        },
+      });
+      this.logger.log(`PreVerification successful Id=${preVerification.id}`);
+      return preVerification;
+    } catch (e) {
+      if (this.existsInDBError(e)) {
+        const preVerification =
+          await this.prismaService.preVerification.findUniqueOrThrow({
+            where: { email: signupDetails.email },
+          });
+
+        this.logger.log(
+          `User already exists in the pre verification table Id=${preVerification.id}`,
+        );
+        return preVerification;
+      } else {
+        this.logger.error(e);
+        throw e;
+      }
+    }
+  }
+
+  private handleAuthError(error: AuthError) {
+    this.logger.error(error);
+    if (error.code === 'user_already_exists' || error.code === 'email_exists') {
+      throw new AccountExistsException(error.message); // this is thrown when user has verified email
+    } else {
+      //TODO: we need to alert outselves of every error here except for the AccountExistsException
+      // store this users email and contact them.
+      throw new ServiceUnavailableException(error.message);
+    }
+  }
+
+  async signTeammateUpAndPushMagicLink(email: string, workspaceCode: string) {
+    try {
+      const password = this.passwordGenerator.generateRandomPassword();
+      const { error } = await this.supabaseClient.auth.admin.createUser({
+        email: email,
+        password: password,
+        email_confirm: true,
+      });
+      if (error) {
+        this.handleAuthError(error);
+      }
+      await this.signInWithOtp(email, workspaceCode);
+    } catch (e) {
+      if (e instanceof AccountExistsException) {
+        // user might exist in another workspace with same email just log user in
+        await this.signInWithOtp(email, workspaceCode);
+        return;
+      }
+      throw e;
+    }
+  }
+
+  async signup(signupDetails: SignupDetails, password: string): Promise<void> {
+    const preverificationDetails =
+      await this.storePreverificationDetails(signupDetails);
+
+    const { error } = await this.supabaseClient.auth.signUp({
+      email: signupDetails.email,
+      password,
+      options: {
+        emailRedirectTo: this.linkService.setupWorkspaceUrl(
+          preverificationDetails.id,
+        ),
+      },
+    });
+
+    if (error) {
+      this.handleAuthError(error);
+      //TODO: mark as faileed, add reason
+    }
+  }
+
+  async verifyOtpOrThrow(email: string, otp: string): Promise<OtpVerification> {
+    const {
+      data: { session },
+      error,
+    } = await this.supabaseClient.auth.verifyOtp({
+      email,
+      token: otp,
+      type: 'email',
+    });
+
+    if (error) {
+      this.logger.error(error);
+      throw new UnauthorizedException();
+    } else if (!session) {
+      this.logger.error('No session returned after OTP verification');
+      throw new ServiceUnavailableException();
+    } else {
+      this.logger.log(`OTP verified successfully for email: ${email}`);
+      //TODO: Look into supporting refresh tokens in the future, for now we will just use the access token and not refresh it.
+      const { access_token } = session;
+      const primaryWorkspace =
+        await this.teammatesService.primaryWorkspace(email);
+      return {
+        accessToken: access_token,
+        workspaceCode: primaryWorkspace.code,
+      };
+    }
+  }
+}

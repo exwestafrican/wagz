@@ -2,22 +2,22 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
-import { AuthModule } from './auth/auth.module';
-import { JwtVerifierModule } from './jwt-verifier/jwt-verifier.module';
-import { PrismaModule } from './prisma/prisma.module';
-import { RoadmapModule } from './roadmap/roadmap.module';
-import { WaitlistModule } from './waitlist/waitlist.module';
-import { PermissionModule } from './permission/permission.module';
-import { WorkspaceModule } from './workspace/workspace.module';
-import { MessagingModule } from './messaging/messaging.module';
-import { FeatureFlagModule } from './feature-flag/feature-flag.module';
-import { TeammatesModule } from './teammates/teammates.module';
+import { AuthModule } from '@/envoye/auth/auth.module';
+import { JwtVerifierModule } from '@/jwt-verifier/jwt-verifier.module';
+import { PrismaModule } from '@/prisma/prisma.module';
+import { RoadmapModule } from '@/envoye/roadmap/roadmap.module';
+import { WaitlistModule } from '@/envoye/waitlist/waitlist.module';
+import { PermissionModule } from '@/permission/permission.module';
+import { WorkspaceModule } from '@/envoye/workspace/workspace.module';
+import { MessagingModule } from '@/messaging/messaging.module';
+import { FeatureFlagModule } from '@/envoye/feature-flag/feature-flag.module';
+import { TeammatesModule } from '@/envoye/teammates/teammates.module';
 import { CommonModule } from '@/common/common.module';
-import { BackfillModule } from './backfill/backfill.module';
-import { CommandsModule } from '@/commands/commands.module';
-import { AdminModule } from './admin/admin.module';
-import { ConversationsModule } from './conversations/conversations.module';
-import { TrackerModule } from './tracker/tracker.module';
+import { BackfillModule } from '@/envoye/backfill/backfill.module';
+import { CommandsModule } from '@/envoye/commands/commands.module';
+import { AdminModule } from '@/envoye/admin/admin.module';
+import { ConversationsModule } from '@/envoye/conversations/conversations.module';
+import { TrackerModule } from '@/fahari/tracker/tracker.module';
 
 @Module({
   imports: [

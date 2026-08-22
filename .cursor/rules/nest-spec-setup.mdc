@@ -6,7 +6,7 @@ alwaysApply: false
 
 # NestJS spec setup
 
-Follow [`setup-administrative-workspace.command.spec.ts`](src/commands/setup-administrative-workspace.command.spec.ts) and [`conversations.controller.spec.ts`](src/conversations/conversations.controller.spec.ts).
+Follow [`setup-administrative-workspace.command.spec.ts`](src/envoye/commands/setup-administrative-workspace.command.spec.ts) and [`conversations.controller.spec.ts`](src/envoye/conversations/conversations.controller.spec.ts).
 
 ## Bootstrap
 

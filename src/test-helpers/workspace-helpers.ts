@@ -4,9 +4,9 @@ import workspaceFactory from '@/factories/workspace.factory';
 import { FeatureFlagStatus, Teammate } from '@/generated/prisma/client';
 import { INestApplication } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import FeatureFlagManager from '@/feature-flag/manager';
+import FeatureFlagManager from '@/envoye/feature-flag/manager';
 import featureFlagFactory from '@/factories/feature-flag.factory';
-import { ENVOYE_WORKSPACE_CODE } from '@/feature-flag/const';
+import { ENVOYE_WORKSPACE_CODE } from '@/common/envoye-workspace.const';
 import { ROLES } from '@/permission/types';
 import { repeatFn } from '@/common/utils';
 
