@@ -123,14 +123,14 @@ describe('TrackerController ping', () => {
     );
 
     await request(getHttpServer(app))
-      .post('/tracker/ping')
+      .get('/tracker/ping')
       .set('Authorization', `Bearer ${apiKey}`)
       .expect(HttpStatus.OK);
   });
 
   it('returns 401 when authorization header is missing', async () => {
     await request(getHttpServer(app))
-      .post('/tracker/ping')
+      .get('/tracker/ping')
       .expect(HttpStatus.UNAUTHORIZED);
   });
 
@@ -138,7 +138,7 @@ describe('TrackerController ping', () => {
     await trackerService.registerDevice(faker.string.numeric(15));
 
     await request(getHttpServer(app))
-      .post('/tracker/ping')
+      .get('/tracker/ping')
       .set('Authorization', 'Bearer trk_not-a-real-key')
       .expect(HttpStatus.UNAUTHORIZED);
   });
@@ -153,7 +153,7 @@ describe('TrackerController ping', () => {
     });
 
     await request(getHttpServer(app))
-      .post('/tracker/ping')
+      .get('/tracker/ping')
       .set('Authorization', `Bearer ${apiKey}`)
       .expect(HttpStatus.UNAUTHORIZED);
   });
@@ -166,12 +166,12 @@ describe('TrackerController ping', () => {
     );
 
     await request(getHttpServer(app))
-      .post('/tracker/ping')
+      .get('/tracker/ping')
       .set('Authorization', `Bearer ${previousApiKey}`)
       .expect(HttpStatus.UNAUTHORIZED);
 
     await request(getHttpServer(app))
-      .post('/tracker/ping')
+      .get('/tracker/ping')
       .set('Authorization', `Bearer ${rotatedApiKey}`)
       .expect(HttpStatus.OK);
   });

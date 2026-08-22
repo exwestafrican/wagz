@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Post,
@@ -25,7 +26,7 @@ import { AuthenticatedDevice } from '@/fahari/tracker/decorator/device.decorator
 export class TrackerController {
   constructor(private readonly trackerService: TrackerService) {}
 
-  @Post('ping')
+  @Get('ping')
   @HttpCode(HttpStatus.OK)
   @UseGuards(DeviceAuthGuard)
   @ApiBearerAuth()
