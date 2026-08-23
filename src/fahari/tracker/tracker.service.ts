@@ -8,6 +8,8 @@ import {
   generateDeviceApiKey,
   hashDeviceApiKey,
 } from '@/fahari/auth/device-api-key';
+import { GeoFencingService } from '@/fahari/tracker/geo-fencing.service';
+import GeoFence, { GeoFenceStatus } from '@/fahari/tracker/domain/geo-fence';
 
 export type RegisteredDevice = {
   device: Device;
@@ -25,7 +27,10 @@ export type LocationPingInput = {
 export class TrackerService {
   logger = new Logger(TrackerService.name);
 
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly geoFencingService: GeoFencingService,
+  ) {}
 
   async registerDevice(imei: string): Promise<RegisteredDevice> {
     const apiKey = generateDeviceApiKey();
@@ -85,10 +90,38 @@ export class TrackerService {
     });
   }
 
+  private geoFence() {
+    return {
+      location: 'Home',
+      latitude: 6.497747,
+      longitude: 3.381939,
+      radiusMeters: 75,
+      transitionZoneMeters: 12,
+    };
+  }
+
   async recordLocations(
     deviceId: string,
     locationPings: LocationPingInput[],
   ): Promise<{ count: number }> {
+    const coordinates = locationPings.map((locationPing) => ({
+      longitude: locationPing.longitude,
+      latitude: locationPing.latitude,
+    }));
+
+    const position = this.geoFencingService.getPosition(
+      deviceId,
+      coordinates,
+      this.geoFence(),
+    ); // pass in last know state
+
+    const wasInFence = false; //TODO fetch this from vechile state
+    const isInFence = position === GeoFenceStatus.IN_FENCE;
+
+    if (wasInFence && isInFence) {
+      return { count: 0 }; // skip don't record //TODO: add test
+    }
+
     const result = await this.prismaService.location.createMany({
       data: locationPings.map((locationPing) => ({
         deviceId,

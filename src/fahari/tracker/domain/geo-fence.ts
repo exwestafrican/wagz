@@ -22,3 +22,9 @@ export interface GeoFenceResult {
   status: GeoFenceStatus;
   distanceInMeters: number;
 }
+
+export enum GeofenceDirection {
+  TOWARDS_GEOFENCE = 'TOWARDS_GEOFENCE',
+  AWAY_FROM_GEOFENCE = 'AWAY_FROM_GEOFENCE',
+  STATIONARY = 'STATIONARY',
+}
