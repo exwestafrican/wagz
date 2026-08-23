@@ -5,8 +5,10 @@ model Device {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  locations Location[]
-  apiKeys   DeviceApiKey[]
+  locations    Location[]
+  apiKeys      DeviceApiKey[]
+  deviceStates DeviceState[]
+  geofences    Geofence[]
 
   @@map("device")
 }
@@ -43,4 +45,38 @@ model Location {
   @@index([timestamp])
   @@index([deviceId, timestamp])
   @@map("location")
+}
+
+model Geofence {
+  id       Int    @id @default(autoincrement())
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  latitude             Decimal @db.Decimal(10, 7)
+  longitude            Decimal @db.Decimal(10, 7)
+  radiusMeters         Int     @default(75) // 75 meters
+  transitionZoneMeters Int     @default(15) // 15 meters
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("geofence")
+}
+
+model DeviceState {
+  id Int @id @default(autoincrement())
+
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  beginningLocationId String? @unique // foreign key to location table
+  endLocationId       String? @unique // foreign key to location: the GPS point that caused the state transition
+
+  geoTag String @db.VarChar(100) // e.g. HOME, Derive this from  geoTag entity.
+  state  String @db.VarChar(100) // e.g. IN_MOTION, STOPPED, IDLE
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("device_state")
 }
