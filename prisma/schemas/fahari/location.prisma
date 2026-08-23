@@ -52,6 +52,7 @@ model Geofence {
   deviceId String
   device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
+  tag                  String  @db.VarChar(100)
   latitude             Decimal @db.Decimal(10, 7)
   longitude            Decimal @db.Decimal(10, 7)
   radiusMeters         Int     @default(75) // 75 meters

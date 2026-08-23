@@ -2,6 +2,7 @@
 CREATE TABLE "geofence" (
     "id" SERIAL NOT NULL,
     "deviceId" TEXT NOT NULL,
+    "tag" VARCHAR(100) NOT NULL,
     "latitude" DECIMAL(10,7) NOT NULL,
     "longitude" DECIMAL(10,7) NOT NULL,
     "radiusMeters" INTEGER NOT NULL DEFAULT 75,
