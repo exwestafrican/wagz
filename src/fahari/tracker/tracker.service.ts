@@ -115,6 +115,7 @@ export class TrackerService {
       this.geoFence(),
     ); // pass in last know state
 
+    // we should do this for every fence i.e home, work, generic
     const wasInFence = false; //TODO fetch this from vechile state
     const isInFence = position === GeoFenceStatus.IN_FENCE;
 
