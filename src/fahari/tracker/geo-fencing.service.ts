@@ -3,8 +3,10 @@ import GeoFence, {
   Coordinate,
   GeofenceDirection,
   GeoFenceResult,
+  geoFenceStatus,
   GeoFenceStatus,
 } from '@/fahari/tracker/domain/geo-fence';
+import { DeviceState } from '@/generated/prisma/client';
 
 @Injectable()
 export class GeoFencingService {
@@ -13,22 +15,15 @@ export class GeoFencingService {
   // shouldPersistCoordinates
 
   //take in the deviceId, newCoordinates, the geoFence. assume we can only geo fence one place per device for now
-  getPosition(deviceId: string, coordinates: Coordinate[], geoFence: GeoFence) {
+  getPosition(
+    deviceState: DeviceState,
+    coordinates: Coordinate[],
+    geoFence: GeoFence,
+  ) {
+    //TODO: test this
     const currentCoordinate = coordinates[coordinates.length - 1];
-    const result = this.check(currentCoordinate);
-    // if ([GeoFenceStatus.IN_FENCE, GeoFenceStatus.TRANSITIONING]) {
-    //   // we need to figure out the direction
-    //   // distance from geo fence [90, 78, 68, 10]
-    //   // if getting closer to geo fence , heading home
-    //   // else leaving.
-    // } else {
-    //   return false;
-    // }
-
-    // if transitioning
-    // distance from geo fence [90, 78, 68, 10]
-    //  if getting closer to geo fence , heading home
-    //  else leaving. if leaving wait till outside transition
+    const result = this.check(currentCoordinate, geoFence);
+    const deviceGeoTag: string = deviceState.geoTag;
 
     if (result.status === GeoFenceStatus.TRANSITIONING) {
       const movementDirection = this.getGeofenceDirection(
@@ -41,33 +36,11 @@ export class GeoFencingService {
       } else if (movementDirection === GeofenceDirection.TOWARDS_GEOFENCE) {
         return GeoFenceStatus.OUTSIDE_FENCE; // care is outside but heading home
       } else {
-        return GeoFenceStatus.IN_FENCE; //TOOD: we'll use last know location to see if car is in geo fence or outside i.e in transit and assume that state
+        return geoFenceStatus(deviceGeoTag);
       }
     }
 
-    // } else {
-    //   return result.status;
-    // }
-
-    // switch (result.status) {
-    //   case GeoFenceStatus.IN_FENCE:
-    //     return true;
-    //   case GeoFenceStatus.TRANSITIONING: {
-    //     const movementDirection = this.getGeofenceDirection(
-    //       coordinates,
-    //       geoFence,
-    //     );
-    //     if (movementDirection === GeofenceDirection.AWAY_FROM_GEOFENCE) {
-    //       return true; // we can assume car is still home
-    //     } else if (movementDirection === GeofenceDirection.TOWARDS_GEOFENCE) {
-    //       return false; // care is outside but heading home
-    //     } else {
-    //       return false; //TOOD: we'll use last know location to see if car is in geo fence or outside i.e in transit and assume that state
-    //     }
-    //   }
-    //   case GeoFenceStatus.OUTSIDE_FENCE:
-    //     return false;
-    // }
+    return result.status;
   }
 
   getGeofenceDirection(coordinates: Coordinate[], geoFence: GeoFence) {
@@ -109,17 +82,8 @@ export class GeoFencingService {
     }
   }
 
-  check(coordinates: Coordinate): GeoFenceResult {
+  check(coordinates: Coordinate, geoFence: GeoFence): GeoFenceResult {
     //TODO: take in coordinates and geofence
-
-    const geoFence: GeoFence = {
-      location: 'Home',
-      latitude: 6.497747,
-      longitude: 3.381939,
-      radiusMeters: 75,
-      transitionZoneMeters: 12,
-    };
-
     const distanceInMeters = this.distanceInMeters(coordinates, {
       longitude: geoFence.longitude,
       latitude: geoFence.latitude,

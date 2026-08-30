@@ -68,3 +68,29 @@ export function repeatFn<T>(
 export function isSame<T>(left: T, right: T): boolean {
   return left === right;
 }
+
+export function mode<T>(numbers: T[]): T {
+  const values: T[] = [];
+  const counts: number[] = [];
+
+  for (const num of numbers) {
+    const index = values.indexOf(num);
+
+    if (index === -1) {
+      values.push(num);
+      counts.push(1);
+    } else {
+      counts[index]++;
+    }
+  }
+
+  let modeIndex = 0;
+
+  for (let i = 1; i < counts.length; i++) {
+    if (counts[i] > counts[modeIndex]) {
+      modeIndex = i;
+    }
+  }
+
+  return values[modeIndex];
+}

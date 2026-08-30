@@ -1,9 +1,9 @@
 ### Making DB Change
 1. create a file `<model_name>.prisma`
 2. update schema and run `pnpm format:schema`
-3. generate migration using `pnpx prisma migrate dev --name change_table_name --create-only`
-4. Check status of migration with `pnpx prisma migrate status`
-5. Run `pnpx prisma migrate deploy` to update schema
+3. generate migration using `pnpm exec prisma migrate dev --name change_table_name --create-only`
+4. Check status of migration with `pnpm exec prisma migrate status`
+5. Run `pnpm exec prisma migrate deploy` to update schema
 
 ### To Confirm schema locally run
 
@@ -13,7 +13,7 @@
 
 
 ### Generate client with command:
-1. `pnpx prisma generate`
+1. `pnpm exec prisma generate`
 
 
 ### Known issues:
