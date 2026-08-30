@@ -5,8 +5,9 @@ model Device {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  locations Location[]
-  apiKeys   DeviceApiKey[]
+  locations    Location[]
+  apiKeys      DeviceApiKey[]
+  deviceStates DeviceState[]
 
   @@map("device")
 }
@@ -26,8 +27,9 @@ model DeviceApiKey {
 }
 
 model Location {
-  id       String @id @default(cuid())
-  deviceId String
+  id            String @id @default(cuid())
+  deviceId      String
+  deviceStateId Int
 
   latitude  Decimal @db.Decimal(10, 7)
   longitude Decimal @db.Decimal(10, 7)
@@ -37,10 +39,28 @@ model Location {
 
   createdAt DateTime @default(now())
 
-  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  device      Device      @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceState DeviceState @relation(fields: [deviceStateId], references: [id], onDelete: Cascade)
 
   @@index([deviceId])
   @@index([timestamp])
   @@index([deviceId, timestamp])
   @@map("location")
+}
+
+model DeviceState {
+  id Int @id @default(autoincrement())
+
+  deviceId String
+  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  geoTag String @db.VarChar(100) // e.g. HOME, Derive this from  geoTag entity.
+  state  String @db.VarChar(100) // e.g. IN_MOTION, STOPPED, IDLE
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  locations Location[]
+
+  //TODO: consider adding index to fetch by tag.
+  @@map("device_state")
 }
