@@ -4,11 +4,12 @@ import { TrackerController } from '@/fahari/tracker/tracker.controller';
 import { TrackerAdminController } from '@/fahari/tracker/admin/tracker-admin.controller';
 import { PermissionModule } from '@/permission/permission.module';
 import { DeviceAuthGuard } from '@/fahari/auth/guard/device-auth.guard';
+import { GeoFencingService } from '@/fahari/tracker/geo-fencing.service';
 
 @Module({
   imports: [PermissionModule],
-  providers: [TrackerService, DeviceAuthGuard],
+  providers: [TrackerService, DeviceAuthGuard, GeoFencingService],
   controllers: [TrackerController, TrackerAdminController],
-  exports: [TrackerService],
+  exports: [TrackerService, GeoFencingService],
 })
 export class TrackerModule {}
