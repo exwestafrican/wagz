@@ -34,7 +34,7 @@ export default class DbTestContainerManager {
   reset() {
     try {
       execSync(
-        `DATABASE_URL="${this.connectionUri}" pnpx prisma migrate reset --force --skip-seed`,
+        `DATABASE_URL="${this.connectionUri}" pnpm prisma migrate reset --force --skip-seed`,
         {
           stdio: 'inherit',
           env: {
@@ -56,7 +56,7 @@ export default class DbTestContainerManager {
         `🧘🏾‍♂️ Running migrations on test database ${this.connectionUri}...`,
       );
       execSync(
-        `DATABASE_URL="${this.connectionUri}" pnpx prisma migrate deploy`,
+        `DATABASE_URL="${this.connectionUri}" pnpm prisma migrate deploy`,
         {
           stdio: 'inherit',
           env: {

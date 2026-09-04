@@ -89,13 +89,13 @@ We use prisma to generate migrations. Here are some of the steps to achieve this
 2. Create a migration file using command 👇🏿
 
       ```bash
-      $ pnpx prisma migrate dev --name change_this_name
+      $ pnpm prisma migrate dev --name change_this_name
       ```
 
 3. One migration file is created, run command to reads= your schema file and generates custom typescript code in `node_modules`. e.g if you have a model called `User` it creates function `db.user.findMany()`
 
       ```bash
-      $ pnpx prisma generate
+      $ pnpm prisma generate
       ```
 
 
@@ -111,17 +111,17 @@ We use prisma to generate migrations. Here are some of the steps to achieve this
 ```bash
 $ make setup
 $ pnpm run start:dev
-$ pnpx supabase start
+$ pnpm supabase start
 ```
 
 **[Supported]** Alternatively you can start backend with Docker
 
 ```bash
 $ pnpm install
-$ pnpx supabase start
+$ pnpm supabase start
 $ make setup-prisma
 $ make setup-ssl
-$ pnpx prisma migrate deploy
+$ pnpm prisma migrate deploy
 $ pnpm start:container-dev
 $ docker exec -it  envoye-nest-app  node dist/src/cli.js setup --email <yourEmail>
 ``` 
@@ -136,7 +136,7 @@ ls -la /etc/letsencrypt/live/api.envoye.co/
 after setup, please use seed to update db and run the following
 
 ```bash
-$ pnpx prisma migrate deploy
+$ pnpm prisma migrate deploy
 $ docker compose up -d --build
 ```
 
@@ -154,7 +154,7 @@ $ docker compose up -d --build
   ```
 
 - supabase runs locally [here](http://127.0.0.1:54323/project/default)
-- run `pnpx supabase status` to see local keys
+- run `pnpm supabase status` to see local keys
 
 ## Resources
 
@@ -173,10 +173,10 @@ Check out a few resources that may come in handy when working with NestJS:
 - How to create schema [example](https://github.com/exwestafrican/wagz/pull/15#issue-3751650684)
 
 ## Notes
-To run supabase commands we need to add prefix pnpx e.g
+To run supabase commands we need to add prefix pnpm e.g
 
 ```bash
-$ pnpx supabase login
+$ pnpm supabase login
 ```
 
 ## Support
