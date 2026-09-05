@@ -1,7 +1,6 @@
 import { LocationPing } from '@/fahari/tracker/tracker.service';
-import { average, firstOrThrow, lastOrThrow, sum } from '@/common/utils';
+import { firstOrThrow, lastOrThrow, sum } from '@/common/utils';
 import { distanceInMeters } from '@/fahari/tracker/utils/geo.utils';
-import { toCoordinate } from '@/fahari/tracker/utils/location-ping';
 import { differenceInSeconds } from 'date-fns';
 
 export function averageSpeedMs(pings: LocationPing[]) {
