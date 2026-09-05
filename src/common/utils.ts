@@ -68,3 +68,36 @@ export function repeatFn<T>(
 export function isSame<T>(left: T, right: T): boolean {
   return left === right;
 }
+
+export function last<T>(items: T[]): T | undefined {
+  if (isEmpty(items)) return undefined;
+  return items[items.length - 1];
+}
+
+export function first<T>(items: T[]): T | undefined {
+  if (isEmpty(items)) return undefined;
+  return items[0];
+}
+
+export function firstOrThrow<T>(items: T[]): T {
+  const firstItem = first(items);
+  if (firstItem === undefined)
+    throw new Error('First item cannot be undefined');
+  return firstItem;
+}
+
+export function lastOrThrow<T>(items: T[]): T {
+  const lastItem = last(items);
+  if (lastItem === undefined) throw Error('Last Item cannot be undefined');
+  return lastItem;
+}
+
+export function average(array: number[]): number {
+  return (
+    array.reduce((sum, currentValue) => sum + currentValue, 0) / array.length
+  );
+}
+
+export function sum(numbers: number[]) {
+  return numbers.reduce((partialSum, a) => partialSum + a, 0);
+}

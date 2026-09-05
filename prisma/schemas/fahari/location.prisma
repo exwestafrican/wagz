@@ -7,6 +7,8 @@ model Device {
 
   locations Location[]
   apiKeys   DeviceApiKey[]
+  eventLogs EventLog[]
+  geoFences Geofence[]
 
   @@map("device")
 }
@@ -26,21 +28,52 @@ model DeviceApiKey {
 }
 
 model Location {
-  id       String @id @default(cuid())
+  id       Int    @id @default(autoincrement())
   deviceId String
 
   latitude  Decimal @db.Decimal(10, 7)
   longitude Decimal @db.Decimal(10, 7)
   speed     Decimal @default(0) @db.Decimal(8, 3)
 
-  timestamp DateTime
+  timestamp DateTime // this is capturedAt
 
   createdAt DateTime @default(now())
 
-  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  device   Device    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  eventLog EventLog?
 
   @@index([deviceId])
   @@index([timestamp])
   @@index([deviceId, timestamp])
   @@map("location")
+}
+
+model Geofence {
+  id                   Int     @id @default(autoincrement())
+  deviceId             String
+  device               Device  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  tag                  String  @db.VarChar(100)
+  latitude             Decimal @db.Decimal(10, 7)
+  longitude            Decimal @db.Decimal(10, 7)
+  radiusMeters         Int     @default(75) // 75 meters
+  transitionZoneMeters Int     @default(15) // 15 meters
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("geofence")
+}
+
+model EventLog {
+  id         Int     @id @default(autoincrement())
+  deviceId   String
+  locationId Int     @unique
+  inGeofence Boolean @default(true)
+  isMoving   Boolean @default(false)
+
+  location  Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@map("event_log")
 }
