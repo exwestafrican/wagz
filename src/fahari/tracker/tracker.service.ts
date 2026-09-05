@@ -8,7 +8,7 @@ import {
   generateDeviceApiKey,
   hashDeviceApiKey,
 } from '@/fahari/auth/device-api-key';
-import { differenceInMinutes, differenceInSeconds, subMinutes } from 'date-fns';
+import { differenceInSeconds } from 'date-fns';
 import {
   first,
   firstOrThrow,
@@ -172,7 +172,6 @@ export class TrackerService {
     inGeofence: boolean,
     isMoving: boolean,
   ) {
-    //write
     return this.prismaService.eventLog.create({
       data: {
         deviceId: deviceId,
@@ -182,9 +181,6 @@ export class TrackerService {
       },
     });
   }
-
-  // fenceState: {prev: , current: }
-  // movementState = {prev: , current: }
 
   statesEqual(a: State, b: State): boolean {
     return a.inFence === b.inFence && a.isMoving === b.isMoving;
@@ -325,106 +321,4 @@ export class TrackerService {
     await this.writeIfStateChanged(deviceId, earliest, previous, current);
     return { count: locations.length };
   }
-
-  //TODO: record first 3 pings
-  // async recordLocations(
-  //   deviceId: string,
-  //   receivedPings: LocationPing[],
-  // ): Promise<{ count: number }> {
-  //   const previousTenPings = await this.lastNPings(
-  //     deviceId,
-  //     BOOTSTRAP_PING_COUNT,
-  //   );
-  //
-  //   const testCom = toLocationPings(previousTenPings);
-  //
-  //   if (isEmpty(previousTenPings)) {
-  //     //save first n pings
-  //     //set state here
-  //     const currentlyInFence = await this.geofenceService.currentlyInFence(
-  //       deviceId,
-  //       previousTenPings,
-  //       receivedPings,
-  //       false, //default assume not in fence
-  //     );
-  //     const locations = await this.writeLocationsToDb(deviceId, receivedPings);
-  //     const earliest = firstOrThrow(locations);
-  //     await this.writeEventLog(deviceId, earliest, currentlyInFence, false); //lets assume no movement
-  //     return { count: locations.length };
-  //   }
-  //
-  //   if (this.isBehindLastSavedPing(previousTenPings, receivedPings)) {
-  //     return { count: 0 };
-  //   }
-  //
-  //   //TODO move this into an object that can answer questions
-  //
-  //   //TODO: add test for multiple states
-  //   const mostRecentState = await this.prismaService.eventLog.findFirstOrThrow({
-  //     where: {
-  //       deviceId: deviceId,
-  //     },
-  //     orderBy: {
-  //       createdAt: 'desc',
-  //     },
-  //   });
-  //
-  //   const wasInFence: boolean = mostRecentState.inGeofence;
-  //   const wasMoving: boolean = mostRecentState.isMoving;
-  //
-  //   const currentlyInFence = await this.geofenceService.currentlyInFence(
-  //     deviceId,
-  //     previousTenPings,
-  //     receivedPings,
-  //     wasInFence,
-  //   );
-  //
-  //   const currentlyMoving = this.isMoving(previousTenPings, receivedPings);
-  //
-  //   const previous = { inFence: wasInFence, isMoving: wasMoving };
-  //   const current = { inFence: currentlyInFence, isMoving: currentlyMoving };
-  //
-  //   if (currentlyInFence && wasInFence) {
-  //     const savedCount = await this.saveHeartBeatOrDrop(
-  //       deviceId,
-  //       previousTenPings,
-  //       receivedPings,
-  //     );
-  //     return { count: savedCount };
-  //   }
-  //
-  //   //only check if is still after enough data points
-  //
-  //   if (previousTenPings.length < BOOTSTRAP_PING_COUNT) {
-  //     const locations = await this.writeLocationsToDb(deviceId, receivedPings);
-  //     const earliest = firstOrThrow(locations);
-  //     await this.writeIfStateChanged(deviceId, earliest, previous, current);
-  //     return { count: locations.length };
-  //   }
-  //
-  //   if (current.isMoving) {
-  //     const locations = await this.writeLocationsToDb(deviceId, receivedPings);
-  //     const earliest = firstOrThrow(locations);
-  //     await this.writeIfStateChanged(deviceId, earliest, previous, current);
-  //     return { count: locations.length };
-  //   }
-  //
-  //   //not moving && wasnotMoving
-  //
-  //   if (!previous.isMoving && !current.isMoving) {
-  //     const savedCount = await this.saveHeartBeatOrDrop(
-  //       deviceId,
-  //       previousTenPings,
-  //       receivedPings,
-  //     );
-  //     return { count: savedCount };
-  //   }
-  //
-  //   // currentlystill  but previously moving
-  //
-  //   const locations = await this.writeLocationsToDb(deviceId, receivedPings);
-  //   const earliest = firstOrThrow(locations);
-  //   await this.writeIfStateChanged(deviceId, earliest, previous, current);
-  //   return { count: locations.length };
-  // }
 }
