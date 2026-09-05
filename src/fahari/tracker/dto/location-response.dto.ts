@@ -3,7 +3,7 @@ import { Location } from '@/generated/prisma/client';
 
 export class LocationResponseDto {
   @ApiProperty({ description: 'Location record id' })
-  id: string;
+  id: number;
 
   @ApiProperty({ description: 'Device id' })
   deviceId: string;
