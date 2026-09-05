@@ -6,4 +6,5 @@ export async function resetDb(prismaService: PrismaService) {
   await prismaService.workspace.deleteMany();
   await prismaService.companyProfile.deleteMany();
   await prismaService.device.deleteMany();
+  await prismaService.user.deleteMany();
 }

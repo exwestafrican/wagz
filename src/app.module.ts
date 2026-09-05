@@ -15,6 +15,7 @@ import { TeammatesModule } from '@/envoye/teammates/teammates.module';
 import { CommonModule } from '@/common/common.module';
 import { BackfillModule } from '@/envoye/backfill/backfill.module';
 import { CommandsModule } from '@/envoye/commands/commands.module';
+import { CommandsModule as FahariCommandsModule } from '@/fahari/commands/commands.module';
 import { AdminModule } from '@/envoye/admin/admin.module';
 import { ConversationsModule } from '@/envoye/conversations/conversations.module';
 import { TrackerModule } from '@/fahari/tracker/tracker.module';
@@ -37,6 +38,7 @@ import { TrackerModule } from '@/fahari/tracker/tracker.module';
     CommonModule,
     BackfillModule,
     CommandsModule,
+    FahariCommandsModule,
     AdminModule,
     ConversationsModule,
     TrackerModule,
