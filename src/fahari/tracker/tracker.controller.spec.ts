@@ -31,6 +31,7 @@ import teammateFactory from '@/factories/teammate.factory';
 import { ENVOYE_WORKSPACE_CODE } from '@/common/envoye-workspace.const';
 import { ROLES } from '@/permission/types';
 import { hashDeviceApiKey } from '@/fahari/auth/device-api-key';
+import GeofenceService from '@/fahari/tracker/geofence.service';
 
 describe('TrackerController', () => {
   let app: INestApplication;
@@ -46,7 +47,10 @@ describe('TrackerController', () => {
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
-    trackerService = new TrackerService(prismaService);
+    trackerService = new TrackerService(
+      prismaService,
+      new GeofenceService(prismaService),
+    );
     controller = new TrackerController(trackerService);
   });
 
@@ -104,7 +108,7 @@ describe('TrackerController ping', () => {
     const module = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule],
       controllers: [TrackerController],
-      providers: [TrackerService, DeviceAuthGuard],
+      providers: [TrackerService, DeviceAuthGuard, GeofenceService],
     }).compile();
 
     app = await createTestApp(module);
@@ -186,7 +190,7 @@ describe('TrackerController device auth', () => {
     const module = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule],
       controllers: [TrackerController],
-      providers: [TrackerService, DeviceAuthGuard],
+      providers: [TrackerService, DeviceAuthGuard, GeofenceService],
     }).compile();
 
     app = await createTestApp(module);
@@ -289,7 +293,10 @@ describe('TrackerAdminController', () => {
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
     factory = Factory.createStrategy(prismaService);
-    trackerService = new TrackerService(prismaService);
+    trackerService = new TrackerService(
+      prismaService,
+      new GeofenceService(prismaService),
+    );
     const permissionService = new PermissionService(
       prismaService,
       new RoleService(),
