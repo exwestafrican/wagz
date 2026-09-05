@@ -21,6 +21,10 @@ export class LinkService {
     return `${this.siteUrl}/admin`;
   }
 
+  fahariAdminLoginUrl(): string {
+    return `${this.siteUrl}/fahari/admin`;
+  }
+
   conversationUrl(workspaceCode: string, conversationId: number): string {
     return `${this.siteUrl}/workspace/conversation?code=${workspaceCode}&conversationId=${conversationId}`;
   }
