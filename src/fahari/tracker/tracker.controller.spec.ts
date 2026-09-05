@@ -108,7 +108,7 @@ describe('TrackerController ping', () => {
     const module = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule],
       controllers: [TrackerController],
-      providers: [TrackerService, DeviceAuthGuard],
+      providers: [TrackerService, DeviceAuthGuard, GeofenceService],
     }).compile();
 
     app = await createTestApp(module);
@@ -190,7 +190,7 @@ describe('TrackerController device auth', () => {
     const module = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule],
       controllers: [TrackerController],
-      providers: [TrackerService, DeviceAuthGuard],
+      providers: [TrackerService, DeviceAuthGuard, GeofenceService],
     }).compile();
 
     app = await createTestApp(module);
