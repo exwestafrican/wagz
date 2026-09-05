@@ -24,9 +24,6 @@ export default class GeofenceService {
       tag: tag,
       latitude: new Decimal(latitude),
       longitude: new Decimal(longitude),
-      // location: 'Home',
-      // latitude: 6.497747,
-      // longitude: 3.381939,
       radiusMeters: 75,
       transitionZoneMeters: 12,
     };
