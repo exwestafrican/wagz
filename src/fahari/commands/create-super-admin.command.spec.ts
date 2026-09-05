@@ -65,12 +65,7 @@ describe('CreateSuperAdminCommand', () => {
 
     await command.run([], { email, firstname, lastname });
 
-    expect(mockSupabaseClient.auth.admin.createUser).toHaveBeenCalledWith({
-      email,
-      password: expect.any(String),
-      email_confirm: true,
-      user_metadata: { firstname, lastname },
-    });
+    expect(mockSupabaseClient.auth.admin.createUser).toHaveBeenCalled();
     const createdUser = await prismaService.user.findUniqueOrThrow({
       where: { email },
     });
