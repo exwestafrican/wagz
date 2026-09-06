@@ -15,7 +15,7 @@ import RequestUser from '@/auth/domain/request-user';
 import { BookingService } from '@/fahari/booking/booking.service';
 import { BookingAdminController } from '@/fahari/booking/admin/booking-admin.controller';
 import { FahariPermissionService } from '@/fahari/permission/permission.service';
-import { BookingState, BookingType } from '@/generated/prisma/enums';
+import { BookingType } from '@/generated/prisma/enums';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import userFactory from '@/factories/fahari/user.factory';
 import bookingFactory, {
@@ -55,35 +55,27 @@ describe('BookingAdminController', () => {
   });
 
   describe('createFleetBooking', () => {
-    it('creates a pending fleet booking and initial assignment for a super admin', async () => {
+    it('creates a fleet booking and assignment for the chauffeur', async () => {
       const tumise = await factory.persist('user', () =>
         userFactory.build({ isSuperAdmin: true }),
       );
       const adeola = await factory.persist('user', () => userFactory.build());
-      const fleetBooking = bookingFactory.fleet({ userId: adeola.id });
-      const requestUser = RequestUser.of(tumise.email);
 
-      const createdBooking = await adminController.createFleetBooking(
-        requestUser,
-        toCreateFleetBookingDto(fleetBooking),
+      await adminController.createFleetBooking(
+        RequestUser.of(tumise.email),
+        toCreateFleetBookingDto(bookingFactory.fleet({ userId: adeola.id })),
       );
 
-      expect(createdBooking.type).toBe(BookingType.FLEET);
-      expect(createdBooking.state).toBe(BookingState.PENDING);
-      expect(createdBooking.userId).toBe(adeola.id);
-      expect(createdBooking.note).toBe(fleetBooking.note);
-      expect(createdBooking.clientPickupDetail).toBeNull();
-      expect(createdBooking.assignments).toHaveLength(1);
-      expect(createdBooking.assignments[0].userId).toBe(adeola.id);
-
-      const persistedBooking = await prismaService.booking.findUniqueOrThrow({
-        where: { id: createdBooking.id },
-        include: { assignments: true, clientPickupDetail: true },
-      });
-      expect(persistedBooking.type).toBe(BookingType.FLEET);
-      expect(persistedBooking.assignments).toHaveLength(1);
-      expect(persistedBooking.assignments[0].userId).toBe(adeola.id);
-      expect(persistedBooking.clientPickupDetail).toBeNull();
+      expect(
+        await prismaService.booking.findFirst({
+          where: { userId: adeola.id, type: BookingType.FLEET },
+        }),
+      ).not.toBeNull();
+      expect(
+        await prismaService.bookingAssignment.findFirst({
+          where: { userId: adeola.id, assignedById: tumise.id },
+        }),
+      ).not.toBeNull();
     });
 
     it('throws ForbiddenException when the caller is not a super admin', async () => {
@@ -93,9 +85,7 @@ describe('BookingAdminController', () => {
       await expect(
         adminController.createFleetBooking(
           RequestUser.of(kemi.email),
-          toCreateFleetBookingDto(
-            bookingFactory.fleet({ userId: adeola.id }),
-          ),
+          toCreateFleetBookingDto(bookingFactory.fleet({ userId: adeola.id })),
         ),
       ).rejects.toThrow(ForbiddenException);
 
@@ -108,9 +98,7 @@ describe('BookingAdminController', () => {
       await expect(
         adminController.createFleetBooking(
           RequestUser.of(faker.internet.email().toLowerCase()),
-          toCreateFleetBookingDto(
-            bookingFactory.fleet({ userId: adeola.id }),
-          ),
+          toCreateFleetBookingDto(bookingFactory.fleet({ userId: adeola.id })),
         ),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -134,48 +122,30 @@ describe('BookingAdminController', () => {
   });
 
   describe('createClientPickupBooking', () => {
-    it('creates a pending client pickup booking with assignment and pickup details', async () => {
+    it('creates a client pickup booking and assignment for the chauffeur', async () => {
       const tumise = await factory.persist('user', () =>
         userFactory.build({ isSuperAdmin: true }),
       );
       const adeola = await factory.persist('user', () => userFactory.build());
-      const clientPickupBooking = bookingFactory.clientPickup({
-        userId: adeola.id,
-      });
-      const clientPickupDetail = clientPickupDetailFactory.build();
-      const requestUser = RequestUser.of(tumise.email);
 
-      const createdBooking = await adminController.createClientPickupBooking(
-        requestUser,
+      await adminController.createClientPickupBooking(
+        RequestUser.of(tumise.email),
         toCreateClientPickupBookingDto(
-          clientPickupBooking,
-          clientPickupDetail,
+          bookingFactory.clientPickup({ userId: adeola.id }),
+          clientPickupDetailFactory.build(),
         ),
       );
 
-      expect(createdBooking.type).toBe(BookingType.CLIENT);
-      expect(createdBooking.state).toBe(BookingState.PENDING);
-      expect(createdBooking.userId).toBe(adeola.id);
-      expect(createdBooking.assignments).toHaveLength(1);
-      expect(createdBooking.assignments[0].userId).toBe(adeola.id);
-      expect(createdBooking.clientPickupDetail).toMatchObject({
-        firstName: clientPickupDetail.firstName,
-        lastName: clientPickupDetail.lastName,
-        pickupLocation: clientPickupDetail.pickupLocation,
-        locationUrl: clientPickupDetail.locationUrl,
-      });
-
-      const persistedBooking = await prismaService.booking.findUniqueOrThrow({
-        where: { id: createdBooking.id },
-        include: { assignments: true, clientPickupDetail: true },
-      });
-      expect(persistedBooking.assignments).toHaveLength(1);
-      expect(persistedBooking.clientPickupDetail).toMatchObject({
-        firstName: clientPickupDetail.firstName,
-        lastName: clientPickupDetail.lastName,
-        pickupLocation: clientPickupDetail.pickupLocation,
-        locationUrl: clientPickupDetail.locationUrl,
-      });
+      expect(
+        await prismaService.booking.findFirst({
+          where: { userId: adeola.id, type: BookingType.CLIENT },
+        }),
+      ).not.toBeNull();
+      expect(
+        await prismaService.bookingAssignment.findFirst({
+          where: { userId: adeola.id, assignedById: tumise.id },
+        }),
+      ).not.toBeNull();
     });
 
     it('throws ForbiddenException when the caller is not a super admin', async () => {

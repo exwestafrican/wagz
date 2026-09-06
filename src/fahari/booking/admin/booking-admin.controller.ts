@@ -53,7 +53,11 @@ export class BookingAdminController {
     try {
       return await this.fahariPermissionService.runIfSuperAdmin(
         requestUser,
-        () => this.bookingService.createFleetBooking(createFleetBookingDto),
+        (assignedBy) =>
+          this.bookingService.createFleetBooking(
+            assignedBy,
+            createFleetBookingDto,
+          ),
       );
     } catch (error) {
       if (error instanceof NotFoundInDb) {
@@ -89,8 +93,9 @@ export class BookingAdminController {
     try {
       return await this.fahariPermissionService.runIfSuperAdmin(
         requestUser,
-        () =>
+        (assignedBy) =>
           this.bookingService.createClientPickupBooking(
+            assignedBy,
             createClientPickupBookingDto,
           ),
       );

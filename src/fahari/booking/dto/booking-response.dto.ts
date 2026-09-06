@@ -25,6 +25,9 @@ export class BookingAssignmentResponseDto {
   @ApiProperty({ description: 'Assigned chauffeur user id' })
   userId: number;
 
+  @ApiProperty({ description: 'User id of the admin who made this assignment' })
+  assignedById: number;
+
   @ApiProperty({ description: 'When this assignment was created' })
   createdAt: Date;
 
@@ -112,6 +115,7 @@ function toAssignmentResponse(
     id: assignment.id,
     bookingId: assignment.bookingId,
     userId: assignment.userId,
+    assignedById: assignment.assignedById,
     createdAt: assignment.createdAt,
     updatedAt: assignment.updatedAt,
   };
