@@ -43,14 +43,12 @@ CREATE TABLE "booking_assignment" (
     "id" SERIAL NOT NULL,
     "bookingId" INTEGER NOT NULL,
     "userId" INTEGER NOT NULL,
+    "assignedById" INTEGER NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "booking_assignment_pkey" PRIMARY KEY ("id")
 );
-
--- CreateIndex
-CREATE UNIQUE INDEX "client_pickup_detail_bookingId_key" ON "client_pickup_detail"("bookingId");
 
 -- CreateIndex
 CREATE INDEX "booking_userId_idx" ON "booking"("userId");
@@ -59,7 +57,13 @@ CREATE INDEX "booking_userId_idx" ON "booking"("userId");
 CREATE INDEX "booking_userId_date_idx" ON "booking"("userId", "date");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "client_pickup_detail_bookingId_key" ON "client_pickup_detail"("bookingId");
+
+-- CreateIndex
 CREATE INDEX "booking_assignment_bookingId_idx" ON "booking_assignment"("bookingId");
+
+-- CreateIndex
+CREATE INDEX "booking_assignment_assignedById_idx" ON "booking_assignment"("assignedById");
 
 -- AddForeignKey
 ALTER TABLE "booking" ADD CONSTRAINT "booking_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -72,3 +76,6 @@ ALTER TABLE "booking_assignment" ADD CONSTRAINT "booking_assignment_bookingId_fk
 
 -- AddForeignKey
 ALTER TABLE "booking_assignment" ADD CONSTRAINT "booking_assignment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "booking_assignment" ADD CONSTRAINT "booking_assignment_assignedById_fkey" FOREIGN KEY ("assignedById") REFERENCES "user"("id") ON DELETE CASCADE ON UPDATE CASCADE;

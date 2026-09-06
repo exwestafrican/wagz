@@ -52,15 +52,18 @@ model ClientPickupDetail {
 }
 
 model BookingAssignment {
-  id        Int      @id @default(autoincrement())
-  bookingId Int
-  userId    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int      @id @default(autoincrement())
+  bookingId    Int
+  userId       Int
+  assignedById Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
-  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
-  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  booking    Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user       User    @relation("BookingAssignee", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy User    @relation("BookingAssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
 
   @@index([bookingId])
+  @@index([assignedById])
   @@map("booking_assignment")
 }
