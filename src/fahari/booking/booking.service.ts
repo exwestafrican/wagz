@@ -1,3 +1,4 @@
+import { User } from '@/generated/prisma/client';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import NotFoundInDb from '@/common/exceptions/not-found';
@@ -26,6 +27,7 @@ export class BookingService {
   constructor(private readonly prismaService: PrismaService) {}
 
   async createFleetBooking(
+    assignedBy: User,
     createFleetBookingDto: CreateFleetBookingDto,
   ): Promise<BookingResponseDto> {
     const chauffeur = await this.findChauffeurOrThrow(
@@ -41,20 +43,24 @@ export class BookingService {
         type: BookingType.FLEET,
         note: createFleetBookingDto.note,
         assignments: {
-          create: { userId: chauffeur.id },
+          create: {
+            userId: chauffeur.id,
+            assignedById: assignedBy.id,
+          },
         },
       },
       include: bookingWithDetailsInclude,
     });
 
     this.logger.log(
-      `created fleet booking id=${booking.id} userId=${chauffeur.id}`,
+      `created fleet booking id=${booking.id} userId=${chauffeur.id} assignedById=${assignedBy.id}`,
     );
 
     return toBookingResponse(booking as BookingWithDetails);
   }
 
   async createClientPickupBooking(
+    assignedBy: User,
     createClientPickupBookingDto: CreateClientPickupBookingDto,
   ): Promise<BookingResponseDto> {
     const chauffeur = await this.findChauffeurOrThrow(
@@ -71,7 +77,10 @@ export class BookingService {
         type: BookingType.CLIENT,
         note: createClientPickupBookingDto.note,
         assignments: {
-          create: { userId: chauffeur.id },
+          create: {
+            userId: chauffeur.id,
+            assignedById: assignedBy.id,
+          },
         },
         clientPickupDetail: {
           create: {
@@ -86,7 +95,7 @@ export class BookingService {
     });
 
     this.logger.log(
-      `created client pickup booking id=${booking.id} userId=${chauffeur.id}`,
+      `created client pickup booking id=${booking.id} userId=${chauffeur.id} assignedById=${assignedBy.id}`,
     );
 
     return toBookingResponse(booking as BookingWithDetails);
