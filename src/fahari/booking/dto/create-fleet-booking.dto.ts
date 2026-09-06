@@ -1,17 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsDate,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
-  Matches,
   MaxLength,
 } from 'class-validator';
-import {
-  HOURS_MINUTES_PATTERN,
-  ISO_CALENDAR_DATE_PATTERN,
-} from '@/fahari/booking/const';
 
 export class CreateFleetBookingDto {
   @ApiProperty({
@@ -23,34 +19,26 @@ export class CreateFleetBookingDto {
   userId: number;
 
   @ApiProperty({
-    description: 'Calendar date of the booking (YYYY-MM-DD)',
-    example: '2026-09-15',
+    description: 'Start of the booking',
+    type: String,
+    format: 'date-time',
+    example: '2026-09-15T09:00:00.000Z',
   })
-  @IsString()
-  @Matches(ISO_CALENDAR_DATE_PATTERN, {
-    message: 'date must be an ISO calendar date (YYYY-MM-DD)',
-  })
-  date: string;
+  @Type(() => Date)
+  @IsDate()
+  @IsNotEmpty()
+  startDateTime: Date;
 
   @ApiProperty({
-    description: 'Start time of the booking (HH:mm, 24-hour)',
-    example: '09:00',
+    description: 'End of the booking',
+    type: String,
+    format: 'date-time',
+    example: '2026-09-15T17:00:00.000Z',
   })
-  @IsString()
-  @Matches(HOURS_MINUTES_PATTERN, {
-    message: 'startTime must be a 24-hour time (HH:mm)',
-  })
-  startTime: string;
-
-  @ApiProperty({
-    description: 'End time of the booking (HH:mm, 24-hour)',
-    example: '17:00',
-  })
-  @IsString()
-  @Matches(HOURS_MINUTES_PATTERN, {
-    message: 'endTime must be a 24-hour time (HH:mm)',
-  })
-  endTime: string;
+  @Type(() => Date)
+  @IsDate()
+  @IsNotEmpty()
+  endDateTime: Date;
 
   @ApiPropertyOptional({
     description: 'Optional details about this booking',

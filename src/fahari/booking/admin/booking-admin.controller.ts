@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   HttpCode,
@@ -50,6 +51,16 @@ export class BookingAdminController {
     @User() requestUser: RequestUser,
     @Body() createFleetBookingDto: CreateFleetBookingDto,
   ): Promise<BookingResponseDto> {
+    const startUtcDay = createFleetBookingDto.startDateTime
+      .toISOString()
+      .slice(0, 10);
+    const endUtcDay = createFleetBookingDto.endDateTime
+      .toISOString()
+      .slice(0, 10);
+    if (startUtcDay !== endUtcDay) {
+      throw new BadRequestException('start and end must be on the same day');
+    }
+
     try {
       return await this.fahariPermissionService.runIfSuperAdmin(
         requestUser,
