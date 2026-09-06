@@ -18,8 +18,12 @@ import { FahariPermissionService } from '@/fahari/permission/permission.service'
 import { BookingState, BookingType } from '@/generated/prisma/enums';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import userFactory from '@/factories/fahari/user.factory';
-import createFleetBookingFactory from '@/factories/fahari/create-fleet-booking.factory';
-import createClientPickupBookingFactory from '@/factories/fahari/create-client-pickup-booking.factory';
+import bookingFactory, {
+  toCreateFleetBookingDto,
+} from '@/factories/fahari/booking.factory';
+import clientPickupDetailFactory, {
+  toCreateClientPickupBookingDto,
+} from '@/factories/fahari/client-pickup-detail.factory';
 
 describe('BookingAdminController', () => {
   let app: INestApplication;
@@ -56,17 +60,18 @@ describe('BookingAdminController', () => {
         userFactory.build({ isSuperAdmin: true }),
       );
       const adeola = await factory.persist('user', () => userFactory.build());
+      const fleetBooking = bookingFactory.fleet({ userId: adeola.id });
       const requestUser = RequestUser.of(tumise.email);
 
       const createdBooking = await adminController.createFleetBooking(
         requestUser,
-        createFleetBookingFactory.build({ userId: adeola.id }),
+        toCreateFleetBookingDto(fleetBooking),
       );
 
       expect(createdBooking.type).toBe(BookingType.FLEET);
       expect(createdBooking.state).toBe(BookingState.PENDING);
       expect(createdBooking.userId).toBe(adeola.id);
-      expect(createdBooking.note).toBe('Airport run after the board meeting');
+      expect(createdBooking.note).toBe(fleetBooking.note);
       expect(createdBooking.clientPickupDetail).toBeNull();
       expect(createdBooking.assignments).toHaveLength(1);
       expect(createdBooking.assignments[0].userId).toBe(adeola.id);
@@ -88,7 +93,9 @@ describe('BookingAdminController', () => {
       await expect(
         adminController.createFleetBooking(
           RequestUser.of(kemi.email),
-          createFleetBookingFactory.build({ userId: adeola.id }),
+          toCreateFleetBookingDto(
+            bookingFactory.fleet({ userId: adeola.id }),
+          ),
         ),
       ).rejects.toThrow(ForbiddenException);
 
@@ -101,7 +108,9 @@ describe('BookingAdminController', () => {
       await expect(
         adminController.createFleetBooking(
           RequestUser.of(faker.internet.email().toLowerCase()),
-          createFleetBookingFactory.build({ userId: adeola.id }),
+          toCreateFleetBookingDto(
+            bookingFactory.fleet({ userId: adeola.id }),
+          ),
         ),
       ).rejects.toThrow(ForbiddenException);
     });
@@ -114,7 +123,9 @@ describe('BookingAdminController', () => {
       await expect(
         adminController.createFleetBooking(
           RequestUser.of(tumise.email),
-          createFleetBookingFactory.build({ userId: 999_999 }),
+          toCreateFleetBookingDto(
+            bookingFactory.fleet({ userId: 999_999 }),
+          ),
         ),
       ).rejects.toThrow(NotFoundException);
 
@@ -128,11 +139,18 @@ describe('BookingAdminController', () => {
         userFactory.build({ isSuperAdmin: true }),
       );
       const adeola = await factory.persist('user', () => userFactory.build());
+      const clientPickupBooking = bookingFactory.clientPickup({
+        userId: adeola.id,
+      });
+      const clientPickupDetail = clientPickupDetailFactory.build();
       const requestUser = RequestUser.of(tumise.email);
 
       const createdBooking = await adminController.createClientPickupBooking(
         requestUser,
-        createClientPickupBookingFactory.build({ userId: adeola.id }),
+        toCreateClientPickupBookingDto(
+          clientPickupBooking,
+          clientPickupDetail,
+        ),
       );
 
       expect(createdBooking.type).toBe(BookingType.CLIENT);
@@ -141,10 +159,10 @@ describe('BookingAdminController', () => {
       expect(createdBooking.assignments).toHaveLength(1);
       expect(createdBooking.assignments[0].userId).toBe(adeola.id);
       expect(createdBooking.clientPickupDetail).toMatchObject({
-        firstName: 'Amara',
-        lastName: 'Okafor',
-        pickupLocation: 'JKIA Terminal 1, Nairobi',
-        locationUrl: 'https://maps.google.com/?q=JKIA',
+        firstName: clientPickupDetail.firstName,
+        lastName: clientPickupDetail.lastName,
+        pickupLocation: clientPickupDetail.pickupLocation,
+        locationUrl: clientPickupDetail.locationUrl,
       });
 
       const persistedBooking = await prismaService.booking.findUniqueOrThrow({
@@ -153,10 +171,10 @@ describe('BookingAdminController', () => {
       });
       expect(persistedBooking.assignments).toHaveLength(1);
       expect(persistedBooking.clientPickupDetail).toMatchObject({
-        firstName: 'Amara',
-        lastName: 'Okafor',
-        pickupLocation: 'JKIA Terminal 1, Nairobi',
-        locationUrl: 'https://maps.google.com/?q=JKIA',
+        firstName: clientPickupDetail.firstName,
+        lastName: clientPickupDetail.lastName,
+        pickupLocation: clientPickupDetail.pickupLocation,
+        locationUrl: clientPickupDetail.locationUrl,
       });
     });
 
@@ -167,7 +185,10 @@ describe('BookingAdminController', () => {
       await expect(
         adminController.createClientPickupBooking(
           RequestUser.of(kemi.email),
-          createClientPickupBookingFactory.build({ userId: adeola.id }),
+          toCreateClientPickupBookingDto(
+            bookingFactory.clientPickup({ userId: adeola.id }),
+            clientPickupDetailFactory.build(),
+          ),
         ),
       ).rejects.toThrow(ForbiddenException);
 
@@ -182,7 +203,10 @@ describe('BookingAdminController', () => {
       await expect(
         adminController.createClientPickupBooking(
           RequestUser.of(tumise.email),
-          createClientPickupBookingFactory.build({ userId: 999_999 }),
+          toCreateClientPickupBookingDto(
+            bookingFactory.clientPickup({ userId: 999_999 }),
+            clientPickupDetailFactory.build(),
+          ),
         ),
       ).rejects.toThrow(NotFoundException);
     });
