@@ -4,7 +4,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import {
   createMockSupabaseClient,
   MockSupabaseClient,
-} from './test-utils/supabase.mock';
+} from '@/test-helpers/supabase.mock';
 import PasswordGenerator from './services/password.generator';
 import { ConfigModule } from '@nestjs/config';
 import { PrismaService } from '@/prisma/prisma.service';

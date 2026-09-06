@@ -40,6 +40,12 @@ describe('LinkService', () => {
     expect(service.adminLoginUrl()).toBe('https://app.usewaggz.com/admin');
   });
 
+  it('builds fahari admin login url', () => {
+    expect(service.fahariAdminLoginUrl()).toBe(
+      'https://app.usewaggz.com/fahari/admin',
+    );
+  });
+
   it('builds conversation url', () => {
     expect(service.conversationUrl('w3456j', 7)).toBe(
       'https://app.usewaggz.com/workspace/conversation?code=w3456j&conversationId=7',

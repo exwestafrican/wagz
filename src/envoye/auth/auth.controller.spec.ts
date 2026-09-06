@@ -10,7 +10,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import {
   createMockSupabaseClient,
   MockSupabaseClient,
-} from './test-utils/supabase.mock';
+} from '@/test-helpers/supabase.mock';
 import PasswordGenerator from './services/password.generator';
 import { AuthEndpoints } from './consts';
 import { Server } from 'http';
