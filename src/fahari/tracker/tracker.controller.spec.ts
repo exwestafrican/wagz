@@ -33,29 +33,6 @@ import { ROLES } from '@/permission/types';
 import { hashDeviceApiKey } from '@/fahari/auth/device-api-key';
 import GeofenceService from '@/fahari/tracker/geofence.service';
 
-async function createTrackerHttpApp() {
-  const module = await Test.createTestingModule({
-    imports: [ConfigModule.forRoot(), PrismaModule],
-    controllers: [TrackerController],
-    providers: [
-      DeviceAuthGuard,
-      {
-        provide: TrackerService,
-        useFactory: (prisma: PrismaService) =>
-          new TrackerService(prisma, new GeofenceService(prisma)),
-        inject: [PrismaService],
-      },
-    ],
-  }).compile();
-
-  const app = await createTestApp(module);
-  return {
-    app,
-    prismaService: app.get(PrismaService),
-    trackerService: app.get(TrackerService),
-  };
-}
-
 describe('TrackerController', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
@@ -63,7 +40,23 @@ describe('TrackerController', () => {
   let controller: TrackerController;
 
   beforeAll(async () => {
-    ({ app, prismaService, trackerService } = await createTrackerHttpApp());
+    const module = await Test.createTestingModule({
+      imports: [ConfigModule.forRoot(), PrismaModule],
+      controllers: [TrackerController],
+      providers: [
+        DeviceAuthGuard,
+        {
+          provide: TrackerService,
+          useFactory: (prisma: PrismaService) =>
+            new TrackerService(prisma, new GeofenceService(prisma)),
+          inject: [PrismaService],
+        },
+      ],
+    }).compile();
+
+    app = await createTestApp(module);
+    prismaService = app.get(PrismaService);
+    trackerService = app.get(TrackerService);
     controller = new TrackerController(trackerService);
   });
 
