@@ -7,5 +7,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  bookings           Booking[]
+  bookingAssignments BookingAssignment[]
+
   @@map("user")
 }
