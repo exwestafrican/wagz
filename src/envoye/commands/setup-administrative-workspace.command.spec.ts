@@ -10,7 +10,7 @@ import { SetupAdministrativeWorkspaceCommand } from '@/envoye/commands/setup-adm
 import {
   createMockSupabaseClient,
   type MockSupabaseClient,
-} from '@/envoye/auth/test-utils/supabase.mock';
+} from '@/test-helpers/supabase.mock';
 import { ENVOYE_WORKSPACE_CODE } from '@/envoye/feature-flag/const';
 import { ROLES } from '@/permission/types';
 import workspaceFactory from '@/factories/workspace.factory';

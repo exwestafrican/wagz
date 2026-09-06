@@ -13,15 +13,14 @@ import { mockConfigService } from '@/test-helpers/mocks';
 import getHttpServer from '@/test-helpers/get-http-server';
 import ValidationErrorResponseDto from '@/common/dto/validation-error.dto';
 import { LinkService } from '@/common/link-service';
-import { PermissionService } from '@/permission/permission.service';
-import { RoleService } from '@/permission/role/role.service';
+import { FahariPermissionService } from '@/fahari/permission/permission.service';
 import { AuthController } from '@/fahari/auth/auth.controller';
 import { AuthService } from '@/fahari/auth/auth.service';
 import { AuthEndpoints } from '@/fahari/auth/consts';
 import {
   createMockSupabaseClient,
   MockSupabaseClient,
-} from '@/fahari/auth/test-utils/supabase.mock';
+} from '@/test-helpers/supabase.mock';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -40,7 +39,7 @@ describe('AuthController', () => {
             new AuthService(
               mockSupabaseClient as unknown as SupabaseClient,
               new LinkService(mockConfigService),
-              new PermissionService(prisma, new RoleService()),
+              new FahariPermissionService(prisma),
             ),
           inject: [PrismaService],
         },

@@ -10,27 +10,10 @@ import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
 import { CreateSuperAdminCommand } from '@/fahari/commands/create-super-admin.command';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
-
-type MockSupabaseClient = {
-  auth: {
-    admin: {
-      createUser: jest.Mock;
-    };
-  };
-};
-
-function createMockSupabaseClient(): MockSupabaseClient {
-  return {
-    auth: {
-      admin: {
-        createUser: jest.fn().mockResolvedValue({
-          data: { user: { id: 'mock-user' } },
-          error: null,
-        }),
-      },
-    },
-  };
-}
+import {
+  createMockSupabaseClient,
+  MockSupabaseClient,
+} from '@/test-helpers/supabase.mock';
 
 describe('CreateSuperAdminCommand', () => {
   let app: INestApplication;

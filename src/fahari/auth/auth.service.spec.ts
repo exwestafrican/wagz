@@ -10,13 +10,12 @@ import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
 import { mockConfigService } from '@/test-helpers/mocks';
 import { LinkService } from '@/common/link-service';
-import { PermissionService } from '@/permission/permission.service';
-import { RoleService } from '@/permission/role/role.service';
+import { FahariPermissionService } from '@/fahari/permission/permission.service';
 import { AuthService } from '@/fahari/auth/auth.service';
 import {
   createMockSupabaseClient,
   MockSupabaseClient,
-} from '@/fahari/auth/test-utils/supabase.mock';
+} from '@/test-helpers/supabase.mock';
 
 describe('AuthService', () => {
   let app: INestApplication;
@@ -36,7 +35,7 @@ describe('AuthService', () => {
     authService = new AuthService(
       mockSupabaseClient as unknown as SupabaseClient,
       new LinkService(mockConfigService),
-      new PermissionService(prismaService, new RoleService()),
+      new FahariPermissionService(prismaService),
     );
   });
 

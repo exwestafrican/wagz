@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { SupabaseClient } from '@supabase/supabase-js';
 import { LinkService } from '@/common/link-service';
-import { PermissionService } from '@/permission/permission.service';
+import { FahariPermissionService } from '@/fahari/permission/permission.service';
 import RequestUser from '@/auth/domain/request-user';
 
 @Injectable()
@@ -16,13 +16,14 @@ export class AuthService {
   constructor(
     private readonly supabaseClient: SupabaseClient,
     private readonly linkService: LinkService,
-    private readonly permissionService: PermissionService,
+    private readonly fahariPermissionService: FahariPermissionService,
   ) {}
 
   async requestAdminMagicLinkOrThrow(email: string): Promise<void> {
     try {
-      await this.permissionService.runIfSuperAdmin(RequestUser.of(email), () =>
-        this.signInWithOtp(email),
+      await this.fahariPermissionService.runIfSuperAdmin(
+        RequestUser.of(email),
+        () => this.signInWithOtp(email),
       );
     } catch (error) {
       if (error instanceof ForbiddenException) {
