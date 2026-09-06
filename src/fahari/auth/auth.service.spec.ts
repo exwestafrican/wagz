@@ -40,6 +40,7 @@ describe('AuthService', () => {
       mockSupabaseClient as unknown as SupabaseClient,
       new LinkService(mockConfigService),
       new FahariPermissionService(prismaService),
+      prismaService,
     );
   });
 
@@ -99,6 +100,14 @@ describe('AuthService', () => {
     const otp = '123456';
 
     it('returns the access token when supabase verifies the OTP', async () => {
+      await prismaService.user.create({
+        data: {
+          email: tumiseEmail,
+          firstname: 'Tumise',
+          lastname: 'Adekoya',
+          isSuperAdmin: true,
+        },
+      });
       mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
         data: { session: { access_token: 'a-valid-access-token' } },
         error: null,

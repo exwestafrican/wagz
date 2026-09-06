@@ -10,6 +10,7 @@ import { LinkService } from '@/common/link-service';
 import { FahariPermissionService } from '@/fahari/permission/permission.service';
 import RequestUser from '@/auth/domain/request-user';
 import OtpVerification from '@/fahari/auth/domain/otp-verification';
+import { PrismaService } from '@/prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     private readonly supabaseClient: SupabaseClient,
     private readonly linkService: LinkService,
     private readonly fahariPermissionService: FahariPermissionService,
+    private readonly prismaService: PrismaService,
   ) {}
 
   async requestAdminMagicLinkOrThrow(email: string): Promise<void> {
@@ -66,7 +68,10 @@ export class AuthService {
       this.logger.error('No session returned after OTP verification');
       throw new ServiceUnavailableException();
     } else {
-      const { access_token, user } = session;
+      const { access_token } = session;
+      const user = await this.prismaService.user.findUniqueOrThrow({
+        where: { email },
+      });
       this.logger.log(`OTP verified successfully for user: ${user.id}`);
       return {
         accessToken: access_token,

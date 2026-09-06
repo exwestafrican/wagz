@@ -41,6 +41,7 @@ describe('AuthController', () => {
               mockSupabaseClient as unknown as SupabaseClient,
               new LinkService(mockConfigService),
               new FahariPermissionService(prisma),
+              prisma,
             ),
           inject: [PrismaService],
         },
@@ -150,6 +151,14 @@ describe('AuthController', () => {
     });
 
     it('returns 200 with the access token when the OTP is valid', async () => {
+      await prismaService.user.create({
+        data: {
+          email: tumiseEmail,
+          firstname: 'Tumise',
+          lastname: 'Adekoya',
+          isSuperAdmin: true,
+        },
+      });
       mockVerifyOtpSuccess('a-valid-access-token');
 
       const response = await request(getHttpServer(app))

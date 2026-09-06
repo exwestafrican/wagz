@@ -99,21 +99,36 @@ describe('TrackerController', () => {
   });
 });
 
+async function createTrackerHttpApp() {
+  const module = await Test.createTestingModule({
+    imports: [ConfigModule.forRoot(), PrismaModule],
+    controllers: [TrackerController],
+    providers: [
+      DeviceAuthGuard,
+      {
+        provide: TrackerService,
+        useFactory: (prisma: PrismaService) =>
+          new TrackerService(prisma, new GeofenceService(prisma)),
+        inject: [PrismaService],
+      },
+    ],
+  }).compile();
+
+  const app = await createTestApp(module);
+  return {
+    app,
+    prismaService: app.get(PrismaService),
+    trackerService: app.get(TrackerService),
+  };
+}
+
 describe('TrackerController ping', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let trackerService: TrackerService;
 
   beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), PrismaModule],
-      controllers: [TrackerController],
-      providers: [TrackerService, DeviceAuthGuard, GeofenceService],
-    }).compile();
-
-    app = await createTestApp(module);
-    prismaService = app.get(PrismaService);
-    trackerService = app.get(TrackerService);
+    ({ app, prismaService, trackerService } = await createTrackerHttpApp());
   });
 
   afterEach(async () => {
@@ -187,15 +202,7 @@ describe('TrackerController device auth', () => {
   let trackerService: TrackerService;
 
   beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), PrismaModule],
-      controllers: [TrackerController],
-      providers: [TrackerService, DeviceAuthGuard, GeofenceService],
-    }).compile();
-
-    app = await createTestApp(module);
-    prismaService = app.get(PrismaService);
-    trackerService = app.get(TrackerService);
+    ({ app, prismaService, trackerService } = await createTrackerHttpApp());
   });
 
   afterEach(async () => {

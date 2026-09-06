@@ -247,8 +247,11 @@ export class AuthService {
       throw new ServiceUnavailableException();
     } else {
       //TODO: Look into supporting refresh tokens in the future, for now we will just use the access token and not refresh it.
-      const { access_token, user } = session;
-      this.logger.log(`OTP verified successfully for user: ${user.id}`);
+      const { access_token } = session;
+      const teammate = await this.prismaService.teammate.findFirstOrThrow({
+        where: { email },
+      });
+      this.logger.log(`OTP verified successfully for user: ${teammate.id}`);
       const primaryWorkspace =
         await this.teammatesService.primaryWorkspace(email);
       return {
