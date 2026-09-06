@@ -15,26 +15,24 @@ enum BookingType {
 }
 
 model Booking {
-  id          Int            @id @default(autoincrement())
-  userId      Int
-  date        DateTime       @db.Date
-  startTime   DateTime       @db.Time(0)
-  endTime     DateTime?      @db.Time(0)
-  state       BookingState   @default(PENDING)
-  reason      BookingReason?
-  type        BookingType
-  note        String?        @db.Text
-  confirmedAt DateTime?
-  cancelledAt DateTime?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  startDateTime DateTime
+  endDateTime   DateTime?
+  state         BookingState   @default(PENDING)
+  reason        BookingReason?
+  type          BookingType
+  note          String?        @db.Text
+  confirmedAt   DateTime?
+  cancelledAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
   assignments        BookingAssignment[]
   clientPickupDetail ClientPickupDetail?
 
   @@index([userId])
-  @@index([userId, date])
   @@map("booking")
 }
 

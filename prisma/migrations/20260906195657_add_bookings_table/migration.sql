@@ -11,9 +11,8 @@ CREATE TYPE "BookingType" AS ENUM ('FLEET', 'CLIENT');
 CREATE TABLE "booking" (
     "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
-    "date" DATE NOT NULL,
-    "startTime" TIME(0) NOT NULL,
-    "endTime" TIME(0),
+    "startDateTime" TIMESTAMP(3) NOT NULL,
+    "endDateTime" TIMESTAMP(3),
     "state" "BookingState" NOT NULL DEFAULT 'PENDING',
     "reason" "BookingReason",
     "type" "BookingType" NOT NULL,
@@ -52,9 +51,6 @@ CREATE TABLE "booking_assignment" (
 
 -- CreateIndex
 CREATE INDEX "booking_userId_idx" ON "booking"("userId");
-
--- CreateIndex
-CREATE INDEX "booking_userId_date_idx" ON "booking"("userId", "date");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "client_pickup_detail_bookingId_key" ON "client_pickup_detail"("bookingId");
