@@ -10,10 +10,6 @@ import {
   toBookingResponse,
   BookingResponseDto,
 } from '@/fahari/booking/dto/booking-response.dto';
-import {
-  calendarDateFromIsoDate,
-  timeOfDayFromHoursMinutes,
-} from '@/fahari/booking/utils/booking-datetime';
 
 const bookingWithDetailsInclude = {
   assignments: true,
@@ -37,9 +33,8 @@ export class BookingService {
     const booking = await this.prismaService.booking.create({
       data: {
         userId: chauffeur.id,
-        date: calendarDateFromIsoDate(createFleetBookingDto.date),
-        startTime: timeOfDayFromHoursMinutes(createFleetBookingDto.startTime),
-        endTime: timeOfDayFromHoursMinutes(createFleetBookingDto.endTime),
+        startDateTime: createFleetBookingDto.startDateTime,
+        endDateTime: createFleetBookingDto.endDateTime,
         type: BookingType.FLEET,
         note: createFleetBookingDto.note,
         assignments: {
@@ -70,10 +65,7 @@ export class BookingService {
     const booking = await this.prismaService.booking.create({
       data: {
         userId: chauffeur.id,
-        date: calendarDateFromIsoDate(createClientPickupBookingDto.date),
-        startTime: timeOfDayFromHoursMinutes(
-          createClientPickupBookingDto.startTime,
-        ),
+        startDateTime: createClientPickupBookingDto.startDateTime,
         type: BookingType.CLIENT,
         note: createClientPickupBookingDto.note,
         assignments: {

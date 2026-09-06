@@ -1,17 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsDate,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
-  Matches,
   MaxLength,
 } from 'class-validator';
-import {
-  HOURS_MINUTES_PATTERN,
-  ISO_CALENDAR_DATE_PATTERN,
-} from '@/fahari/booking/const';
 
 export class CreateClientPickupBookingDto {
   @ApiProperty({
@@ -23,24 +19,15 @@ export class CreateClientPickupBookingDto {
   userId: number;
 
   @ApiProperty({
-    description: 'Pickup date (YYYY-MM-DD)',
-    example: '2026-09-15',
+    description: 'Pickup date and time',
+    type: String,
+    format: 'date-time',
+    example: '2026-09-16T08:30:00.000Z',
   })
-  @IsString()
-  @Matches(ISO_CALENDAR_DATE_PATTERN, {
-    message: 'date must be an ISO calendar date (YYYY-MM-DD)',
-  })
-  date: string;
-
-  @ApiProperty({
-    description: 'Pickup time (HH:mm, 24-hour)',
-    example: '09:00',
-  })
-  @IsString()
-  @Matches(HOURS_MINUTES_PATTERN, {
-    message: 'startTime must be a 24-hour time (HH:mm)',
-  })
-  startTime: string;
+  @Type(() => Date)
+  @IsDate()
+  @IsNotEmpty()
+  startDateTime: Date;
 
   @ApiProperty({
     description: 'Client first name',

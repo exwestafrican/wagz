@@ -62,14 +62,11 @@ export class BookingResponseDto {
   @ApiProperty({ description: 'Current chauffeur user id' })
   userId: number;
 
-  @ApiProperty({ description: 'Calendar date of the booking' })
-  date: Date;
+  @ApiProperty({ description: 'Start of the booking' })
+  startDateTime: Date;
 
-  @ApiProperty({ description: 'Start time of the booking' })
-  startTime: Date;
-
-  @ApiPropertyOptional({ description: 'End time of the booking' })
-  endTime: Date | null;
+  @ApiPropertyOptional({ description: 'End of the booking' })
+  endDateTime: Date | null;
 
   @ApiProperty({ enum: BookingState, description: 'Booking state' })
   state: BookingState;
@@ -140,9 +137,8 @@ export function toBookingResponse(
   return {
     id: booking.id,
     userId: booking.userId,
-    date: booking.date,
-    startTime: booking.startTime,
-    endTime: booking.endTime,
+    startDateTime: booking.startDateTime,
+    endDateTime: booking.endDateTime,
     state: booking.state,
     reason: booking.reason,
     type: booking.type,

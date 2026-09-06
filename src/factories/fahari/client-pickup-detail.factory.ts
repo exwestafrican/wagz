@@ -2,10 +2,6 @@ import { Factory } from 'fishery';
 import { Booking, ClientPickupDetail } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateClientPickupBookingDto } from '@/fahari/booking/dto/create-client-pickup-booking.dto';
-import {
-  hoursMinutesFromTimeOfDay,
-  isoDateFromCalendarDate,
-} from '@/fahari/booking/utils/booking-datetime';
 
 const clientPickupDetailFactory = Factory.define<ClientPickupDetail>(
   ({ sequence }) => {
@@ -33,8 +29,7 @@ export function toCreateClientPickupBookingDto(
 ): CreateClientPickupBookingDto {
   return {
     userId: booking.userId,
-    date: isoDateFromCalendarDate(booking.date),
-    startTime: hoursMinutesFromTimeOfDay(booking.startTime),
+    startDateTime: booking.startDateTime,
     firstName: clientPickupDetail.firstName,
     lastName: clientPickupDetail.lastName ?? undefined,
     pickupLocation: clientPickupDetail.pickupLocation,

@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import {
+  BadRequestException,
   ForbiddenException,
   INestApplication,
   NotFoundException,
@@ -76,6 +77,26 @@ describe('BookingAdminController', () => {
           where: { userId: adeola.id, assignedById: tumise.id },
         }),
       ).not.toBeNull();
+    });
+
+    it('throws BadRequestException when start and end are on different UTC days', async () => {
+      const tumise = await factory.persist('user', () =>
+        userFactory.build({ isSuperAdmin: true }),
+      );
+      const adeola = await factory.persist('user', () => userFactory.build());
+      const fleetBooking = toCreateFleetBookingDto(
+        bookingFactory.fleet({ userId: adeola.id }),
+      );
+      fleetBooking.endDateTime = new Date('2026-09-16T01:00:00.000Z');
+
+      await expect(
+        adminController.createFleetBooking(
+          RequestUser.of(tumise.email),
+          fleetBooking,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(await prismaService.booking.count()).toBe(0);
     });
 
     it('throws ForbiddenException when the caller is not a super admin', async () => {
