@@ -19,6 +19,7 @@ import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import NotFoundInDb from '@/common/exceptions/not-found';
+import { differenceInCalendarDays } from 'date-fns';
 
 @Controller('fahari/admin/bookings')
 @ApiTags('fahari-bookings')
@@ -51,15 +52,7 @@ export class BookingAdminController {
     @User() requestUser: RequestUser,
     @Body() createFleetBookingDto: CreateFleetBookingDto,
   ): Promise<BookingResponseDto> {
-    const startUtcDay = createFleetBookingDto.startDateTime
-      .toISOString()
-      .slice(0, 10);
-    const endUtcDay = createFleetBookingDto.endDateTime
-      .toISOString()
-      .slice(0, 10);
-    if (startUtcDay !== endUtcDay) {
-      throw new BadRequestException('start and end must be on the same day');
-    }
+    this.validateOrThrow(createFleetBookingDto);
 
     try {
       return await this.fahariPermissionService.runIfSuperAdmin(
@@ -115,6 +108,17 @@ export class BookingAdminController {
         throw new NotFoundException(error.message);
       }
       throw error;
+    }
+  }
+
+  private validateOrThrow(createFleetBookingDto: CreateFleetBookingDto) {
+    if (
+      differenceInCalendarDays(
+        createFleetBookingDto.endDateTime,
+        createFleetBookingDto.startDateTime,
+      ) !== 0
+    ) {
+      throw new BadRequestException('start and end must be on the same day');
     }
   }
 }
