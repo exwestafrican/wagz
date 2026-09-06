@@ -66,8 +66,8 @@ export class AuthService {
       this.logger.error('No session returned after OTP verification');
       throw new ServiceUnavailableException();
     } else {
-      this.logger.log(`OTP verified successfully for email: ${email}`);
-      const { access_token } = session;
+      const { access_token, user } = session;
+      this.logger.log(`OTP verified successfully for user: ${user.id}`);
       return {
         accessToken: access_token,
       };

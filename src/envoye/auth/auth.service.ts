@@ -246,9 +246,9 @@ export class AuthService {
       this.logger.error('No session returned after OTP verification');
       throw new ServiceUnavailableException();
     } else {
-      this.logger.log(`OTP verified successfully for email: ${email}`);
       //TODO: Look into supporting refresh tokens in the future, for now we will just use the access token and not refresh it.
-      const { access_token } = session;
+      const { access_token, user } = session;
+      this.logger.log(`OTP verified successfully for user: ${user.id}`);
       const primaryWorkspace =
         await this.teammatesService.primaryWorkspace(email);
       return {
