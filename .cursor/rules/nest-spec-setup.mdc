@@ -69,6 +69,27 @@ Call methods on the manually constructed instance (e.g. `controller.createDirect
 - GET / list permission denials → assert `NotFoundException` (callers pass `NotFoundException` as the denial exception).
 - Mutations → assert `ForbiddenException` (default denial exception), unless the endpoint maps otherwise.
 
-## HTTP / auth guard tests
+## HTTP tests (status codes, guards)
 
-Use `TestControllerModuleWithAuthUser` + `supertest` only when the test specifically covers routing, guards, or status codes that require the HTTP layer (e.g. 401 without a token). For business logic and permission checks, prefer direct method calls.
+When the HTTP layer is required, register the controller and provide application services with `useFactory` so the graph is still built with `new`:
+
+```typescript
+controllers: [AuthController],
+providers: [
+  {
+    provide: AuthService,
+    useFactory: (prisma: PrismaService) =>
+      new AuthService(
+        mockSupabaseClient as unknown as SupabaseClient,
+        new LinkService(mockConfigService),
+        new FahariPermissionService(prisma),
+        prisma,
+      ),
+    inject: [PrismaService],
+  },
+],
+```
+
+Nest guards that must run (e.g. `DeviceAuthGuard`) can be listed in `providers`. Do not list application service classes.
+
+Use `TestControllerModuleWithAuthUser` + `supertest` only when the test needs a fake authenticated user on the request. For business logic and permission checks, prefer direct method calls.

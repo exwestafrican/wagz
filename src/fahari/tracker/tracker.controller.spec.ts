@@ -39,23 +39,32 @@ describe('TrackerController', () => {
   let trackerService: TrackerService;
   let controller: TrackerController;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule],
-      providers: [],
+      controllers: [TrackerController],
+      providers: [
+        DeviceAuthGuard,
+        {
+          provide: TrackerService,
+          useFactory: (prisma: PrismaService) =>
+            new TrackerService(prisma, new GeofenceService(prisma)),
+          inject: [PrismaService],
+        },
+      ],
     }).compile();
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
-    trackerService = new TrackerService(
-      prismaService,
-      new GeofenceService(prismaService),
-    );
+    trackerService = app.get(TrackerService);
     controller = new TrackerController(trackerService);
   });
 
   afterEach(async () => {
     await resetDb(prismaService);
+  });
+
+  afterAll(async () => {
     await app.close();
   });
 
@@ -97,194 +106,147 @@ describe('TrackerController', () => {
       );
     });
   });
-});
 
-describe('TrackerController ping', () => {
-  let app: INestApplication;
-  let prismaService: PrismaService;
-  let trackerService: TrackerService;
+  describe('ping', () => {
+    it('returns 200 when the api key is valid', async () => {
+      const { apiKey } = await trackerService.registerDevice(
+        faker.string.numeric(15),
+      );
 
-  beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), PrismaModule],
-      controllers: [TrackerController],
-      providers: [TrackerService, DeviceAuthGuard, GeofenceService],
-    }).compile();
-
-    app = await createTestApp(module);
-    prismaService = app.get(PrismaService);
-    trackerService = app.get(TrackerService);
-  });
-
-  afterEach(async () => {
-    await resetDb(prismaService);
-    await app.close();
-  });
-
-  it('returns 200 when the api key is valid', async () => {
-    const { apiKey } = await trackerService.registerDevice(
-      faker.string.numeric(15),
-    );
-
-    await request(getHttpServer(app))
-      .get('/tracker/ping')
-      .set('Authorization', `Bearer ${apiKey}`)
-      .expect(HttpStatus.OK);
-  });
-
-  it('returns 401 when authorization header is missing', async () => {
-    await request(getHttpServer(app))
-      .get('/tracker/ping')
-      .expect(HttpStatus.UNAUTHORIZED);
-  });
-
-  it('returns 401 when the api key is wrong', async () => {
-    await trackerService.registerDevice(faker.string.numeric(15));
-
-    await request(getHttpServer(app))
-      .get('/tracker/ping')
-      .set('Authorization', 'Bearer trk_not-a-real-key')
-      .expect(HttpStatus.UNAUTHORIZED);
-  });
-
-  it('returns 401 when the device is inactive', async () => {
-    const { device, apiKey } = await trackerService.registerDevice(
-      faker.string.numeric(15),
-    );
-    await prismaService.device.update({
-      where: { id: device.id },
-      data: { isActive: false },
+      await request(getHttpServer(app))
+        .get('/tracker/ping')
+        .set('Authorization', `Bearer ${apiKey}`)
+        .expect(HttpStatus.OK);
     });
 
-    await request(getHttpServer(app))
-      .get('/tracker/ping')
-      .set('Authorization', `Bearer ${apiKey}`)
-      .expect(HttpStatus.UNAUTHORIZED);
-  });
-
-  it('returns 401 when the api key has been revoked', async () => {
-    const { device, apiKey: previousApiKey } =
-      await trackerService.registerDevice(faker.string.numeric(15));
-    const { apiKey: rotatedApiKey } = await trackerService.rotateDeviceApiKey(
-      device.id,
-    );
-
-    await request(getHttpServer(app))
-      .get('/tracker/ping')
-      .set('Authorization', `Bearer ${previousApiKey}`)
-      .expect(HttpStatus.UNAUTHORIZED);
-
-    await request(getHttpServer(app))
-      .get('/tracker/ping')
-      .set('Authorization', `Bearer ${rotatedApiKey}`)
-      .expect(HttpStatus.OK);
-  });
-});
-
-describe('TrackerController device auth', () => {
-  let app: INestApplication;
-  let prismaService: PrismaService;
-  let trackerService: TrackerService;
-
-  beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), PrismaModule],
-      controllers: [TrackerController],
-      providers: [TrackerService, DeviceAuthGuard, GeofenceService],
-    }).compile();
-
-    app = await createTestApp(module);
-    prismaService = app.get(PrismaService);
-    trackerService = app.get(TrackerService);
-  });
-
-  afterEach(async () => {
-    await resetDb(prismaService);
-    await app.close();
-  });
-
-  const locationBatchBody = {
-    locations: [
-      {
-        latitude: 6.5244,
-        longitude: 3.3792,
-        speed: 1,
-        capturedAt: '2026-08-15T20:01:02.000Z',
-      },
-    ],
-  };
-
-  it('returns 401 when authorization header is missing', async () => {
-    await request(getHttpServer(app))
-      .post('/tracker/locations')
-      .send(locationBatchBody)
-      .expect(HttpStatus.UNAUTHORIZED);
-  });
-
-  it('returns 401 when the api key is wrong', async () => {
-    await trackerService.registerDevice(faker.string.numeric(15));
-
-    await request(getHttpServer(app))
-      .post('/tracker/locations')
-      .set('Authorization', 'Bearer trk_not-a-real-key')
-      .send(locationBatchBody)
-      .expect(HttpStatus.UNAUTHORIZED);
-
-    expect(await prismaService.location.count()).toBe(0);
-  });
-
-  it('returns 401 when the device is inactive', async () => {
-    const { device, apiKey } = await trackerService.registerDevice(
-      faker.string.numeric(15),
-    );
-    await prismaService.device.update({
-      where: { id: device.id },
-      data: { isActive: false },
+    it('returns 401 when authorization header is missing', async () => {
+      await request(getHttpServer(app))
+        .get('/tracker/ping')
+        .expect(HttpStatus.UNAUTHORIZED);
     });
 
-    await request(getHttpServer(app))
-      .post('/tracker/locations')
-      .set('Authorization', `Bearer ${apiKey}`)
-      .send(locationBatchBody)
-      .expect(HttpStatus.UNAUTHORIZED);
+    it('returns 401 when the api key is wrong', async () => {
+      await trackerService.registerDevice(faker.string.numeric(15));
 
-    expect(await prismaService.location.count()).toBe(0);
+      await request(getHttpServer(app))
+        .get('/tracker/ping')
+        .set('Authorization', 'Bearer trk_not-a-real-key')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('returns 401 when the device is inactive', async () => {
+      const { device, apiKey } = await trackerService.registerDevice(
+        faker.string.numeric(15),
+      );
+      await prismaService.device.update({
+        where: { id: device.id },
+        data: { isActive: false },
+      });
+
+      await request(getHttpServer(app))
+        .get('/tracker/ping')
+        .set('Authorization', `Bearer ${apiKey}`)
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('returns 401 when the api key has been revoked', async () => {
+      const { device, apiKey: previousApiKey } =
+        await trackerService.registerDevice(faker.string.numeric(15));
+      const { apiKey: rotatedApiKey } =
+        await trackerService.rotateDeviceApiKey(device.id);
+
+      await request(getHttpServer(app))
+        .get('/tracker/ping')
+        .set('Authorization', `Bearer ${previousApiKey}`)
+        .expect(HttpStatus.UNAUTHORIZED);
+
+      await request(getHttpServer(app))
+        .get('/tracker/ping')
+        .set('Authorization', `Bearer ${rotatedApiKey}`)
+        .expect(HttpStatus.OK);
+    });
   });
 
-  it('returns 401 when the api key has been revoked', async () => {
-    const { device, apiKey: previousApiKey } =
+  describe('device auth', () => {
+    const locationBatchBody = {
+      locations: [
+        {
+          latitude: 6.5244,
+          longitude: 3.3792,
+          speed: 1,
+          capturedAt: '2026-08-15T20:01:02.000Z',
+        },
+      ],
+    };
+
+    it('returns 401 when authorization header is missing', async () => {
+      await request(getHttpServer(app))
+        .post('/tracker/locations')
+        .send(locationBatchBody)
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('returns 401 when the api key is wrong', async () => {
       await trackerService.registerDevice(faker.string.numeric(15));
-    const { apiKey: rotatedApiKey } = await trackerService.rotateDeviceApiKey(
-      device.id,
-    );
 
-    await request(getHttpServer(app))
-      .post('/tracker/locations')
-      .set('Authorization', `Bearer ${previousApiKey}`)
-      .send(locationBatchBody)
-      .expect(HttpStatus.UNAUTHORIZED);
+      await request(getHttpServer(app))
+        .post('/tracker/locations')
+        .set('Authorization', 'Bearer trk_not-a-real-key')
+        .send(locationBatchBody)
+        .expect(HttpStatus.UNAUTHORIZED);
 
-    await request(getHttpServer(app))
-      .post('/tracker/locations')
-      .set('Authorization', `Bearer ${rotatedApiKey}`)
-      .send(locationBatchBody)
-      .expect(HttpStatus.CREATED);
+      expect(await prismaService.location.count()).toBe(0);
+    });
 
-    expect(await prismaService.location.count()).toBe(1);
+    it('returns 401 when the device is inactive', async () => {
+      const { device, apiKey } = await trackerService.registerDevice(
+        faker.string.numeric(15),
+      );
+      await prismaService.device.update({
+        where: { id: device.id },
+        data: { isActive: false },
+      });
+
+      await request(getHttpServer(app))
+        .post('/tracker/locations')
+        .set('Authorization', `Bearer ${apiKey}`)
+        .send(locationBatchBody)
+        .expect(HttpStatus.UNAUTHORIZED);
+
+      expect(await prismaService.location.count()).toBe(0);
+    });
+
+    it('returns 401 when the api key has been revoked', async () => {
+      const { device, apiKey: previousApiKey } =
+        await trackerService.registerDevice(faker.string.numeric(15));
+      const { apiKey: rotatedApiKey } =
+        await trackerService.rotateDeviceApiKey(device.id);
+
+      await request(getHttpServer(app))
+        .post('/tracker/locations')
+        .set('Authorization', `Bearer ${previousApiKey}`)
+        .send(locationBatchBody)
+        .expect(HttpStatus.UNAUTHORIZED);
+
+      await request(getHttpServer(app))
+        .post('/tracker/locations')
+        .set('Authorization', `Bearer ${rotatedApiKey}`)
+        .send(locationBatchBody)
+        .expect(HttpStatus.CREATED);
+
+      expect(await prismaService.location.count()).toBe(1);
+    });
   });
 });
 
 describe('TrackerAdminController', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
-  let trackerService: TrackerService;
   let adminController: TrackerAdminController;
   let factory: PersistStrategy;
-  let requestUser: RequestUser;
+  const requestUser = RequestUser.of('admin@useEnvoye.co');
 
-  beforeEach(async () => {
-    requestUser = RequestUser.of('admin@useEnvoye.co');
-
+  beforeAll(async () => {
     const module = await Test.createTestingModule({
       imports: [ConfigModule.forRoot(), PrismaModule],
       providers: [],
@@ -293,22 +255,21 @@ describe('TrackerAdminController', () => {
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
     factory = Factory.createStrategy(prismaService);
-    trackerService = new TrackerService(
+    const trackerService = new TrackerService(
       prismaService,
       new GeofenceService(prismaService),
     );
-    const permissionService = new PermissionService(
-      prismaService,
-      new RoleService(),
-    );
     adminController = new TrackerAdminController(
       trackerService,
-      permissionService,
+      new PermissionService(prismaService, new RoleService()),
     );
   });
 
   afterEach(async () => {
     await resetDb(prismaService);
+  });
+
+  afterAll(async () => {
     await app.close();
   });
 

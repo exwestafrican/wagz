@@ -1,0 +1,29 @@
+---
+description: Never log emails or other PII; identify people by user ID only.
+alwaysApply: true
+---
+
+# No PII in logs
+
+Do not log personally identifiable information. Identify a person by **user ID** only.
+
+**Do not log**
+
+- Email addresses
+- Phone numbers
+- Names
+- OTPs, access tokens, API keys, or other secrets
+
+**Prefer**
+
+```typescript
+this.logger.log(`OTP verified successfully for user: ${user.id}`);
+```
+
+**Avoid**
+
+```typescript
+this.logger.log(`OTP verified successfully for email: ${email}`);
+```
+
+If you only have an email at the call site, look up or use the auth/session user ID before logging. If no user ID is available, log the event without an identifier.
