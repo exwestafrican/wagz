@@ -1,4 +1,6 @@
 import {
+  Booking,
+  ClientPickupDetail,
   CompanyProfile,
   FeatureFlag,
   PreVerification,
@@ -15,6 +17,8 @@ import { persistWorkspaceInvite } from '@/factories/workspace-invite.factory';
 import { persistFeatureFlag } from '@/factories/feature-flag.factory';
 import { persistCompanyProfile } from '@/factories/company-profile.factory';
 import { persistUser } from '@/factories/fahari/user.factory';
+import { persistBooking } from '@/factories/fahari/booking.factory';
+import { persistClientPickupDetail } from '@/factories/fahari/client-pickup-detail.factory';
 
 export interface PersistStrategy {
   persist: <T>(strategy: string, buildObject: () => T) => Promise<T>;
@@ -54,6 +58,17 @@ function createPersistStrategy(prismaService: PrismaService): PersistStrategy {
         }
         case 'user': {
           await persistUser(prismaService, obj as User);
+          return obj;
+        }
+        case 'booking': {
+          await persistBooking(prismaService, obj as Booking);
+          return obj;
+        }
+        case 'clientPickupDetail': {
+          await persistClientPickupDetail(
+            prismaService,
+            obj as ClientPickupDetail,
+          );
           return obj;
         }
         default: {
