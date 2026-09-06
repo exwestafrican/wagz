@@ -3,6 +3,7 @@ import {
   FeatureFlag,
   PreVerification,
   Teammate,
+  User,
   Workspace,
   WorkspaceInvite,
 } from '@/generated/prisma/client';
@@ -13,6 +14,7 @@ import { persistTeammate } from '@/factories/teammate.factory';
 import { persistWorkspaceInvite } from '@/factories/workspace-invite.factory';
 import { persistFeatureFlag } from '@/factories/feature-flag.factory';
 import { persistCompanyProfile } from '@/factories/company-profile.factory';
+import { persistUser } from '@/factories/fahari/user.factory';
 
 export interface PersistStrategy {
   persist: <T>(strategy: string, buildObject: () => T) => Promise<T>;
@@ -48,6 +50,10 @@ function createPersistStrategy(prismaService: PrismaService): PersistStrategy {
         }
         case 'companyProfile': {
           await persistCompanyProfile(prismaService, obj as CompanyProfile);
+          return obj;
+        }
+        case 'user': {
+          await persistUser(prismaService, obj as User);
           return obj;
         }
         default: {

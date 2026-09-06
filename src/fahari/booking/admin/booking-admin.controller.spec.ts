@@ -16,12 +16,15 @@ import { BookingService } from '@/fahari/booking/booking.service';
 import { BookingAdminController } from '@/fahari/booking/admin/booking-admin.controller';
 import { FahariPermissionService } from '@/fahari/permission/permission.service';
 import { BookingState, BookingType } from '@/generated/prisma/enums';
-import { CreateFleetBookingDto } from '@/fahari/booking/dto/create-fleet-booking.dto';
-import { CreateClientPickupBookingDto } from '@/fahari/booking/dto/create-client-pickup-booking.dto';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import userFactory from '@/factories/fahari/user.factory';
+import createFleetBookingFactory from '@/factories/fahari/create-fleet-booking.factory';
+import createClientPickupBookingFactory from '@/factories/fahari/create-client-pickup-booking.factory';
 
 describe('BookingAdminController', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
+  let factory: PersistStrategy;
   let adminController: BookingAdminController;
 
   beforeAll(async () => {
@@ -32,6 +35,7 @@ describe('BookingAdminController', () => {
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
+    factory = Factory.createStrategy(prismaService);
     adminController = new BookingAdminController(
       new BookingService(prismaService),
       new FahariPermissionService(prismaService),
@@ -46,51 +50,17 @@ describe('BookingAdminController', () => {
     await app.close();
   });
 
-  async function createFahariUser(isSuperAdmin: boolean) {
-    return prismaService.user.create({
-      data: {
-        email: faker.internet.email().toLowerCase(),
-        firstname: faker.person.firstName(),
-        lastname: faker.person.lastName(),
-        isSuperAdmin,
-      },
-    });
-  }
-
-  function fleetBookingBody(userId: number): CreateFleetBookingDto {
-    return {
-      userId,
-      date: '2026-09-15',
-      startTime: '09:00',
-      endTime: '17:00',
-      note: 'Airport run after the board meeting',
-    };
-  }
-
-  function clientPickupBookingBody(
-    userId: number,
-  ): CreateClientPickupBookingDto {
-    return {
-      userId,
-      date: '2026-09-16',
-      startTime: '08:30',
-      firstName: 'Amara',
-      lastName: 'Okafor',
-      pickupLocation: 'JKIA Terminal 1, Nairobi',
-      locationUrl: 'https://maps.google.com/?q=JKIA',
-      note: 'Client asked for a child seat',
-    };
-  }
-
   describe('createFleetBooking', () => {
     it('creates a pending fleet booking and initial assignment for a super admin', async () => {
-      const tumise = await createFahariUser(true);
-      const adeola = await createFahariUser(false);
+      const tumise = await factory.persist('user', () =>
+        userFactory.build({ isSuperAdmin: true }),
+      );
+      const adeola = await factory.persist('user', () => userFactory.build());
       const requestUser = RequestUser.of(tumise.email);
 
       const createdBooking = await adminController.createFleetBooking(
         requestUser,
-        fleetBookingBody(adeola.id),
+        createFleetBookingFactory.build({ userId: adeola.id }),
       );
 
       expect(createdBooking.type).toBe(BookingType.FLEET);
@@ -112,13 +82,13 @@ describe('BookingAdminController', () => {
     });
 
     it('throws ForbiddenException when the caller is not a super admin', async () => {
-      const kemi = await createFahariUser(false);
-      const adeola = await createFahariUser(false);
+      const kemi = await factory.persist('user', () => userFactory.build());
+      const adeola = await factory.persist('user', () => userFactory.build());
 
       await expect(
         adminController.createFleetBooking(
           RequestUser.of(kemi.email),
-          fleetBookingBody(adeola.id),
+          createFleetBookingFactory.build({ userId: adeola.id }),
         ),
       ).rejects.toThrow(ForbiddenException);
 
@@ -126,23 +96,25 @@ describe('BookingAdminController', () => {
     });
 
     it('throws ForbiddenException when the caller does not exist', async () => {
-      const adeola = await createFahariUser(false);
+      const adeola = await factory.persist('user', () => userFactory.build());
 
       await expect(
         adminController.createFleetBooking(
           RequestUser.of(faker.internet.email().toLowerCase()),
-          fleetBookingBody(adeola.id),
+          createFleetBookingFactory.build({ userId: adeola.id }),
         ),
       ).rejects.toThrow(ForbiddenException);
     });
 
     it('throws NotFoundException when the chauffeur does not exist', async () => {
-      const tumise = await createFahariUser(true);
+      const tumise = await factory.persist('user', () =>
+        userFactory.build({ isSuperAdmin: true }),
+      );
 
       await expect(
         adminController.createFleetBooking(
           RequestUser.of(tumise.email),
-          fleetBookingBody(999_999),
+          createFleetBookingFactory.build({ userId: 999_999 }),
         ),
       ).rejects.toThrow(NotFoundException);
 
@@ -152,13 +124,15 @@ describe('BookingAdminController', () => {
 
   describe('createClientPickupBooking', () => {
     it('creates a pending client pickup booking with assignment and pickup details', async () => {
-      const tumise = await createFahariUser(true);
-      const adeola = await createFahariUser(false);
+      const tumise = await factory.persist('user', () =>
+        userFactory.build({ isSuperAdmin: true }),
+      );
+      const adeola = await factory.persist('user', () => userFactory.build());
       const requestUser = RequestUser.of(tumise.email);
 
       const createdBooking = await adminController.createClientPickupBooking(
         requestUser,
-        clientPickupBookingBody(adeola.id),
+        createClientPickupBookingFactory.build({ userId: adeola.id }),
       );
 
       expect(createdBooking.type).toBe(BookingType.CLIENT);
@@ -187,13 +161,13 @@ describe('BookingAdminController', () => {
     });
 
     it('throws ForbiddenException when the caller is not a super admin', async () => {
-      const kemi = await createFahariUser(false);
-      const adeola = await createFahariUser(false);
+      const kemi = await factory.persist('user', () => userFactory.build());
+      const adeola = await factory.persist('user', () => userFactory.build());
 
       await expect(
         adminController.createClientPickupBooking(
           RequestUser.of(kemi.email),
-          clientPickupBookingBody(adeola.id),
+          createClientPickupBookingFactory.build({ userId: adeola.id }),
         ),
       ).rejects.toThrow(ForbiddenException);
 
@@ -201,12 +175,14 @@ describe('BookingAdminController', () => {
     });
 
     it('throws NotFoundException when the chauffeur does not exist', async () => {
-      const tumise = await createFahariUser(true);
+      const tumise = await factory.persist('user', () =>
+        userFactory.build({ isSuperAdmin: true }),
+      );
 
       await expect(
         adminController.createClientPickupBooking(
           RequestUser.of(tumise.email),
-          clientPickupBookingBody(999_999),
+          createClientPickupBookingFactory.build({ userId: 999_999 }),
         ),
       ).rejects.toThrow(NotFoundException);
     });
