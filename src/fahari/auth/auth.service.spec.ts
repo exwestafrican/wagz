@@ -1,6 +1,10 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { INestApplication, UnauthorizedException } from '@nestjs/common';
+import {
+  INestApplication,
+  ServiceUnavailableException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 import { SupabaseClient } from '@supabase/supabase-js';
 
@@ -88,5 +92,53 @@ describe('AuthService', () => {
       ),
     ).rejects.toBeInstanceOf(UnauthorizedException);
     expect(mockSupabaseClient.auth.signInWithOtp).not.toHaveBeenCalled();
+  });
+
+  describe('verifyOtpOrThrow', () => {
+    const tumiseEmail = 'tumise@usewaggz.com';
+    const otp = '123456';
+
+    it('returns the access token when supabase verifies the OTP', async () => {
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: { access_token: 'a-valid-access-token' } },
+        error: null,
+      });
+
+      const otpVerification = await authService.verifyOtpOrThrow(
+        tumiseEmail,
+        otp,
+      );
+
+      expect(mockSupabaseClient.auth.verifyOtp).toHaveBeenCalledWith({
+        email: tumiseEmail,
+        token: otp,
+        type: 'email',
+      });
+      expect(otpVerification).toEqual({
+        accessToken: 'a-valid-access-token',
+      });
+    });
+
+    it('throws UnauthorizedException when supabase rejects the OTP', async () => {
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: null },
+        error: { message: 'Token has expired or is invalid' },
+      });
+
+      await expect(
+        authService.verifyOtpOrThrow(tumiseEmail, 'wrong-otp'),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+    });
+
+    it('throws ServiceUnavailableException when supabase returns no session', async () => {
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: null },
+        error: null,
+      });
+
+      await expect(
+        authService.verifyOtpOrThrow(tumiseEmail, otp),
+      ).rejects.toBeInstanceOf(ServiceUnavailableException);
+    });
   });
 });

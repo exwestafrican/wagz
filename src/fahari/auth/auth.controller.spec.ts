@@ -17,6 +17,7 @@ import { FahariPermissionService } from '@/fahari/permission/permission.service'
 import { AuthController } from '@/fahari/auth/auth.controller';
 import { AuthService } from '@/fahari/auth/auth.service';
 import { AuthEndpoints } from '@/fahari/auth/consts';
+import { OtpVerificationResponseDto } from '@/fahari/auth/dto/otp-verification-response.dto';
 import {
   createMockSupabaseClient,
   MockSupabaseClient,
@@ -114,5 +115,84 @@ describe('AuthController', () => {
       .send({ email: faker.internet.email().toLowerCase() })
       .set('Accept', 'application/json')
       .expect(HttpStatus.UNAUTHORIZED);
+  });
+
+  describe('otp verification', () => {
+    const tumiseEmail = 'tumise@usewaggz.com';
+
+    function mockVerifyOtpSuccess(accessToken = 'mock-access-token') {
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: { access_token: accessToken } },
+        error: null,
+      });
+    }
+
+    it('returns 400 if the email is invalid', async () => {
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email: 'invalid-email', otp: '123456' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['email']);
+    });
+
+    it('returns 400 if the OTP is empty', async () => {
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email: tumiseEmail, otp: '' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.BAD_REQUEST);
+
+      const body = response.body as ValidationErrorResponseDto;
+      expect(body.property).toMatchObject(['otp']);
+    });
+
+    it('returns 200 with the access token when the OTP is valid', async () => {
+      mockVerifyOtpSuccess('a-valid-access-token');
+
+      const response = await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email: tumiseEmail, otp: '123456' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.OK);
+
+      expect(mockSupabaseClient.auth.verifyOtp).toHaveBeenCalledWith({
+        email: tumiseEmail,
+        token: '123456',
+        type: 'email',
+      });
+      const body = response.body as OtpVerificationResponseDto;
+      expect(body).toEqual({
+        accessToken: 'a-valid-access-token',
+      });
+    });
+
+    it('returns 401 when supabase rejects the OTP', async () => {
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: null },
+        error: { message: 'Token has expired or is invalid' },
+      });
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email: tumiseEmail, otp: 'wrong-otp' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.UNAUTHORIZED);
+    });
+
+    it('returns 503 when supabase returns no session and no error', async () => {
+      mockSupabaseClient.auth.verifyOtp.mockResolvedValue({
+        data: { session: null },
+        error: null,
+      });
+
+      await request(getHttpServer(app))
+        .post(AuthEndpoints.VERIFY_OTP)
+        .send({ email: tumiseEmail, otp: '123456' })
+        .set('Accept', 'application/json')
+        .expect(HttpStatus.SERVICE_UNAVAILABLE);
+    });
   });
 });
