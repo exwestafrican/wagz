@@ -3,7 +3,7 @@ import { ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { isEmpty } from '@/common/utils';
 import { RoleService } from './role/role.service';
 import RequestUser from '@/auth/domain/request-user';
-import { Teammate, TeammateStatus, User } from '@/generated/prisma/client';
+import { Teammate, TeammateStatus } from '@/generated/prisma/client';
 import { Permission } from '@/permission/domain/permission';
 
 export type DenialException = new () => Error;
@@ -125,19 +125,5 @@ export class PermissionService {
     // TODO: write the attempt into the db  and log id of atttmept. let attempt contain user email.
     this.logger.log('Tried to access workspace without permission');
     throw new ForbiddenException();
-  }
-
-  async runIfSuperAdmin<T>(
-    requestUser: RequestUser,
-    authorizedAction: (user: User) => T,
-    DenialException: DenialException = ForbiddenException,
-  ): Promise<T> {
-    const user = await this.prismaService.user.findUnique({
-      where: { email: requestUser.email },
-    });
-    if (user?.isSuperAdmin) {
-      return authorizedAction(user);
-    }
-    throw new DenialException();
   }
 }
