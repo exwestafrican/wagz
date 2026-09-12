@@ -5,8 +5,8 @@ export interface ReserveAccountRequest {
   contractCode: string;
   customerEmail: string;
   customerName: string;
-  bvn?: string;
-  nin?: string;
+  bvn: string;
+  nin: string;
   getAllAvailableBanks?: boolean;
 }
 

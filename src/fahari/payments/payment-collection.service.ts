@@ -33,19 +33,12 @@ export class PaymentCollectionService {
     }
 
     const { eventData } = payload;
-    if (eventData.product?.type !== MONNIFY_RESERVED_ACCOUNT_PRODUCT) {
+    if (eventData.product.type !== MONNIFY_RESERVED_ACCOUNT_PRODUCT) {
       return null;
     }
 
     const accountReference = eventData.product.reference;
     const transactionReference = eventData.transactionReference;
-    this.logIfMissing(
-      accountReference && transactionReference,
-      'Reserved-account webhook missing accountReference or transactionReference',
-    );
-    if (!accountReference || !transactionReference) {
-      return null;
-    }
 
     const existing = await this.prismaService.paymentCollection.findUnique({
       where: { transactionReference },
