@@ -1,10 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import {
-  BadRequestException,
-  INestApplication,
-  NotFoundException,
-} from '@nestjs/common';
+import { INestApplication, NotFoundException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 
 import { PrismaModule } from '@/prisma/prisma.module';
@@ -19,6 +15,9 @@ import {
   ReserveAccountResponseBody,
 } from '@/fahari/payments/monnify/monnify.types';
 import { ReservedAccountStatus } from '@/generated/prisma/client';
+
+const DRIVER_BVN = '21212121212';
+const DRIVER_NIN = '12034875601';
 
 describe('ReservedAccountService', () => {
   let app: INestApplication;
@@ -96,7 +95,8 @@ describe('ReservedAccountService', () => {
 
     const reservedAccount = await reservedAccountService.provisionForUser({
       userId: driver.id,
-      bvn: '21212121212',
+      bvn: DRIVER_BVN,
+      nin: DRIVER_NIN,
     });
 
     expect(reservedAccount).toMatchObject({
@@ -112,7 +112,8 @@ describe('ReservedAccountService', () => {
       expect.objectContaining({
         accountReference,
         customerEmail: driver.email,
-        bvn: '21212121212',
+        bvn: DRIVER_BVN,
+        nin: DRIVER_NIN,
         contractCode: 'contract_code',
       }),
     );
@@ -134,25 +135,20 @@ describe('ReservedAccountService', () => {
 
     const reservedAccount = await reservedAccountService.provisionForUser({
       userId: driver.id,
+      bvn: DRIVER_BVN,
+      nin: DRIVER_NIN,
     });
 
     expect(reservedAccount.accountNumber).toBe('1111222233');
     expect(monnifyClient.reserveAccount).not.toHaveBeenCalled();
   });
 
-  it('requires bvn or nin when provisioning a new account', async () => {
-    const driver = await createDriver();
-
-    await expect(
-      reservedAccountService.provisionForUser({ userId: driver.id }),
-    ).rejects.toBeInstanceOf(BadRequestException);
-  });
-
   it('throws when the driver does not exist', async () => {
     await expect(
       reservedAccountService.provisionForUser({
         userId: 999_999,
-        bvn: '21212121212',
+        bvn: DRIVER_BVN,
+        nin: DRIVER_NIN,
       }),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
@@ -173,7 +169,8 @@ describe('ReservedAccountService', () => {
 
     const reservedAccount = await reservedAccountService.provisionForUser({
       userId: driver.id,
-      nin: '12034875601',
+      bvn: DRIVER_BVN,
+      nin: DRIVER_NIN,
     });
 
     expect(reservedAccount.status).toBe(ReservedAccountStatus.ACTIVE);

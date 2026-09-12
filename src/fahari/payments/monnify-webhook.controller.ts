@@ -63,9 +63,8 @@ export class MonnifyWebhookController {
     monnifySignature: string | undefined,
   ): void {
     const nodeEnv = this.configService.get<string>('NODE_ENV');
-    const isProduction = nodeEnv === ENVIROMENT.PRODUCTION;
-
-    if (!isProduction && !monnifySignature) {
+    if (nodeEnv !== ENVIROMENT.PRODUCTION) {
+      // Monnify does not send monnify-signature in sandbox.
       return;
     }
 

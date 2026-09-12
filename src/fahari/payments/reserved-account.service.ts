@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Injectable,
   Logger,
   NotFoundException,
@@ -18,8 +17,8 @@ import {
 
 export interface ProvisionReservedAccountInput {
   userId: number;
-  bvn?: string;
-  nin?: string;
+  bvn: string;
+  nin: string;
 }
 
 @Injectable()
@@ -43,10 +42,6 @@ export class ReservedAccountService {
       existing.accountNumber
     ) {
       return existing;
-    }
-
-    if (!input.bvn && !input.nin) {
-      throw new BadRequestException('Either bvn or nin is required');
     }
 
     const driver = await this.prismaService.user.findUnique({
