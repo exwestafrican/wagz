@@ -20,6 +20,7 @@ import { AuthModule as FahariAuthModule } from '@/fahari/auth/auth.module';
 import { AdminModule } from '@/envoye/admin/admin.module';
 import { ConversationsModule } from '@/envoye/conversations/conversations.module';
 import { TrackerModule } from '@/fahari/tracker/tracker.module';
+import { QueueModule } from '@/queue/queue.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { TrackerModule } from '@/fahari/tracker/tracker.module';
     PermissionModule,
     WorkspaceModule,
     MessagingModule,
+    QueueModule,
     FeatureFlagModule,
     TeammatesModule,
     CommonModule,

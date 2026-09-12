@@ -18,6 +18,8 @@
     "start:container-dev": "pnpm supabase start && docker compose -f docker-compose.local.yml up --build ",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
+    "start:worker": "node dist/src/worker",
+    "start:worker:dev": "nest start --entryFile worker --watch",
     "lint": "eslint \"{src,apps,libs,test}/**/*.{ts,tsx}\" --fix",
     "test": "jest",
     "test:failed": "jest --onlyFailures",
@@ -27,6 +29,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.1131.0",
     "@nestjs/common": "^11.0.1",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.0.1",
