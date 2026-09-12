@@ -17,9 +17,9 @@ describe('QueueModule', () => {
     expect(queueProvider).toBeInstanceOf(InMemoryQueueProvider);
     expect(jobQueue).toBeInstanceOf(JobQueue);
 
-    await jobQueue.enqueue('fahari.geofence-alert', { deviceId: 'device-1' });
-    const queuedMessage = await queueProvider.dequeue('fahari');
-    expect(queuedMessage?.body.name).toBe('fahari.geofence-alert');
+    await jobQueue.enqueue('process-transaction', { transactionId: 'txn-1' });
+    const queuedMessage = await queueProvider.dequeue('process-transaction');
+    expect(queuedMessage?.body.name).toBe('process-transaction');
 
     await testingModule.close();
   });

@@ -1,10 +1,10 @@
 import { JobEnvelope } from '@/queue/job';
 import { InMemoryQueueProvider } from '@/queue/in-memory-queue-provider';
 
-function inviteEnvelope(id: string): JobEnvelope {
+function notificationEnvelope(id: string): JobEnvelope {
   return {
     id,
-    name: 'envoye.send-invite',
+    name: 'email-notification',
     payload: { workspaceId: id },
     enqueuedAt: '2026-09-12T12:00:00.000Z',
   };
@@ -13,62 +13,70 @@ function inviteEnvelope(id: string): JobEnvelope {
 describe('InMemoryQueueProvider', () => {
   it('dequeues in FIFO order', async () => {
     const queueProvider = new InMemoryQueueProvider();
-    const firstInvite = inviteEnvelope('workspace-first');
-    const secondInvite = inviteEnvelope('workspace-second');
+    const firstNotification = notificationEnvelope('workspace-first');
+    const secondNotification = notificationEnvelope('workspace-second');
 
-    await queueProvider.enqueue('envoye', firstInvite);
-    await queueProvider.enqueue('envoye', secondInvite);
+    await queueProvider.enqueue('email-notification', firstNotification);
+    await queueProvider.enqueue('email-notification', secondNotification);
 
-    const firstQueuedMessage = await queueProvider.dequeue('envoye');
-    const secondQueuedMessage = await queueProvider.dequeue('envoye');
+    const firstQueuedMessage =
+      await queueProvider.dequeue('email-notification');
+    const secondQueuedMessage =
+      await queueProvider.dequeue('email-notification');
 
-    expect(firstQueuedMessage?.body).toEqual(firstInvite);
-    expect(secondQueuedMessage?.body).toEqual(secondInvite);
+    expect(firstQueuedMessage?.body).toEqual(firstNotification);
+    expect(secondQueuedMessage?.body).toEqual(secondNotification);
   });
 
-  it('keeps product queues isolated', async () => {
+  it('keeps named queues isolated', async () => {
     const queueProvider = new InMemoryQueueProvider();
-    const inviteJob = inviteEnvelope('workspace-kobo');
-    const geofenceJob: JobEnvelope = {
-      id: 'geofence-1',
-      name: 'fahari.geofence-alert',
-      payload: { deviceId: 'device-1' },
+    const notificationJob = notificationEnvelope('workspace-kobo');
+    const transactionJob: JobEnvelope = {
+      id: 'txn-1',
+      name: 'process-transaction',
+      payload: { transactionId: 'txn-1' },
       enqueuedAt: '2026-09-12T12:00:00.000Z',
     };
 
-    await queueProvider.enqueue('envoye', inviteJob);
-    await queueProvider.enqueue('fahari', geofenceJob);
+    await queueProvider.enqueue('email-notification', notificationJob);
+    await queueProvider.enqueue('process-transaction', transactionJob);
 
-    expect(await queueProvider.dequeue('fahari')).toMatchObject({
-      body: geofenceJob,
+    expect(await queueProvider.dequeue('process-transaction')).toMatchObject({
+      body: transactionJob,
     });
-    expect(await queueProvider.dequeue('envoye')).toMatchObject({
-      body: inviteJob,
+    expect(await queueProvider.dequeue('email-notification')).toMatchObject({
+      body: notificationJob,
     });
   });
 
   it('does not redeliver after ack', async () => {
     const queueProvider = new InMemoryQueueProvider();
-    await queueProvider.enqueue('envoye', inviteEnvelope('workspace-kobo'));
+    await queueProvider.enqueue(
+      'email-notification',
+      notificationEnvelope('workspace-kobo'),
+    );
 
-    const queuedMessage = await queueProvider.dequeue('envoye');
+    const queuedMessage = await queueProvider.dequeue('email-notification');
     expect(queuedMessage).not.toBeNull();
     if (!queuedMessage) {
       return;
     }
     await queueProvider.ack(queuedMessage);
 
-    expect(await queueProvider.dequeue('envoye')).toBeNull();
+    expect(await queueProvider.dequeue('email-notification')).toBeNull();
   });
 
   it('redelivers an unacked message and increments receiveCount', async () => {
     const queueProvider = new InMemoryQueueProvider(0);
-    await queueProvider.enqueue('envoye', inviteEnvelope('workspace-kobo'));
+    await queueProvider.enqueue(
+      'email-notification',
+      notificationEnvelope('workspace-kobo'),
+    );
 
-    const firstDelivery = await queueProvider.dequeue('envoye');
+    const firstDelivery = await queueProvider.dequeue('email-notification');
     expect(firstDelivery?.receiveCount).toBe(1);
 
-    const redelivery = await queueProvider.dequeue('envoye');
+    const redelivery = await queueProvider.dequeue('email-notification');
     expect(redelivery?.receipt).toBe(firstDelivery?.receipt);
     expect(redelivery?.receiveCount).toBe(2);
     expect(redelivery?.body).toEqual(firstDelivery?.body);
@@ -76,6 +84,6 @@ describe('InMemoryQueueProvider', () => {
 
   it('returns null when the queue is empty', async () => {
     const queueProvider = new InMemoryQueueProvider();
-    expect(await queueProvider.dequeue('envoye')).toBeNull();
+    expect(await queueProvider.dequeue('email-notification')).toBeNull();
   });
 });

@@ -1,4 +1,4 @@
-import { JobEnvelope, QueueName } from '@/queue/job';
+import { JobEnvelope, QUEUE_NAMES, QueueName } from '@/queue/job';
 import { type QueuedMessage, type QueueProvider } from '@/queue/queue-provider';
 
 type InFlightMessage = {
@@ -9,11 +9,16 @@ type InFlightMessage = {
   visibleAt: number;
 };
 
+function emptyWaitingBuffers(): Record<QueueName, JobEnvelope[]> {
+  const waitingBuffers = {} as Record<QueueName, JobEnvelope[]>;
+  for (const queueName of QUEUE_NAMES) {
+    waitingBuffers[queueName] = [];
+  }
+  return waitingBuffers;
+}
+
 export class InMemoryQueueProvider implements QueueProvider {
-  private readonly waiting: Record<QueueName, JobEnvelope[]> = {
-    envoye: [],
-    fahari: [],
-  };
+  private readonly waiting = emptyWaitingBuffers();
   private readonly inFlight = new Map<string, InFlightMessage>();
   private receiptSequence = 0;
 

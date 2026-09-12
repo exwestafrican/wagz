@@ -1,5 +1,6 @@
 import {
   DeleteMessageCommand,
+  GetQueueUrlCommand,
   ReceiveMessageCommand,
   SendMessageCommand,
   SQSClient,
@@ -7,18 +8,21 @@ import {
 import { JobEnvelope } from '@/queue/job';
 import { SqsQueueProvider } from '@/queue/sqs-queue-provider';
 
-const ENVOYE_QUEUE_URL = 'https://sqs.eu-west-2.amazonaws.com/123/envoye';
-const FAHARI_QUEUE_URL = 'https://sqs.eu-west-2.amazonaws.com/123/fahari';
+const EMAIL_NOTIFICATION_QUEUE_URL =
+  'https://sqs.eu-west-2.amazonaws.com/123/email-notification';
+const PROCESS_TRANSACTION_QUEUE_URL =
+  'https://sqs.eu-west-2.amazonaws.com/123/process-transaction';
 
 type SqsCommand =
+  | GetQueueUrlCommand
   | SendMessageCommand
   | ReceiveMessageCommand
   | DeleteMessageCommand;
 
-function inviteEnvelope(): JobEnvelope {
+function notificationEnvelope(): JobEnvelope {
   return {
     id: 'job-1',
-    name: 'envoye.send-invite',
+    name: 'email-notification',
     payload: { workspaceId: 'workspace-kobo' },
     enqueuedAt: '2026-09-12T12:00:00.000Z',
   };
@@ -26,13 +30,11 @@ function inviteEnvelope(): JobEnvelope {
 
 describe('SqsQueueProvider', () => {
   const send = jest.fn();
-  const queueProvider = new SqsQueueProvider({ send } as unknown as SQSClient, {
-    envoye: ENVOYE_QUEUE_URL,
-    fahari: FAHARI_QUEUE_URL,
-  });
+  let queueProvider: SqsQueueProvider;
 
   beforeEach(() => {
     send.mockReset();
+    queueProvider = new SqsQueueProvider({ send } as unknown as SQSClient);
   });
 
   function sentCommandAt(callIndex: number): SqsCommand {
@@ -44,26 +46,59 @@ describe('SqsQueueProvider', () => {
     return command;
   }
 
-  it('sends the job envelope to the product queue URL', async () => {
+  function mockQueueUrl(
+    queueUrl: string,
+  ): ReturnType<typeof send.mockResolvedValueOnce> {
+    return send.mockResolvedValueOnce({ QueueUrl: queueUrl });
+  }
+
+  it('resolves the queue URL then sends the job envelope', async () => {
+    mockQueueUrl(EMAIL_NOTIFICATION_QUEUE_URL);
     send.mockResolvedValueOnce({});
-    const jobEnvelope = inviteEnvelope();
+    const jobEnvelope = notificationEnvelope();
 
-    await queueProvider.enqueue('envoye', jobEnvelope);
+    await queueProvider.enqueue('email-notification', jobEnvelope);
 
-    expect(send).toHaveBeenCalledTimes(1);
-    const sendCommand = sentCommandAt(0);
+    expect(send).toHaveBeenCalledTimes(2);
+    const getQueueUrlCommand = sentCommandAt(0);
+    expect(getQueueUrlCommand).toBeInstanceOf(GetQueueUrlCommand);
+    if (!(getQueueUrlCommand instanceof GetQueueUrlCommand)) {
+      throw new Error('expected GetQueueUrlCommand');
+    }
+    expect(getQueueUrlCommand.input).toEqual({
+      QueueName: 'email-notification',
+    });
+
+    const sendCommand = sentCommandAt(1);
     expect(sendCommand).toBeInstanceOf(SendMessageCommand);
     if (!(sendCommand instanceof SendMessageCommand)) {
       throw new Error('expected SendMessageCommand');
     }
     expect(sendCommand.input).toEqual({
-      QueueUrl: ENVOYE_QUEUE_URL,
+      QueueUrl: EMAIL_NOTIFICATION_QUEUE_URL,
       MessageBody: JSON.stringify(jobEnvelope),
     });
   });
 
+  it('caches the queue URL across calls', async () => {
+    mockQueueUrl(EMAIL_NOTIFICATION_QUEUE_URL);
+    send.mockResolvedValueOnce({});
+    send.mockResolvedValueOnce({});
+    const jobEnvelope = notificationEnvelope();
+
+    await queueProvider.enqueue('email-notification', jobEnvelope);
+    await queueProvider.enqueue('email-notification', jobEnvelope);
+
+    const sentCommands = send.mock.calls as Array<[SqsCommand]>;
+    const getQueueUrlCalls = sentCommands.filter(
+      ([command]) => command instanceof GetQueueUrlCommand,
+    );
+    expect(getQueueUrlCalls).toHaveLength(1);
+  });
+
   it('returns a queued message from a receive', async () => {
-    const jobEnvelope = inviteEnvelope();
+    const jobEnvelope = notificationEnvelope();
+    mockQueueUrl(EMAIL_NOTIFICATION_QUEUE_URL);
     send.mockResolvedValueOnce({
       Messages: [
         {
@@ -74,31 +109,33 @@ describe('SqsQueueProvider', () => {
       ],
     });
 
-    const queuedMessage = await queueProvider.dequeue('envoye');
+    const queuedMessage = await queueProvider.dequeue('email-notification');
 
     expect(queuedMessage).toEqual({
-      queueName: 'envoye',
+      queueName: 'email-notification',
       receipt: 'receipt-1',
       body: jobEnvelope,
       receiveCount: 2,
     });
-    const receiveCommand = sentCommandAt(0);
+    const receiveCommand = sentCommandAt(1);
     expect(receiveCommand).toBeInstanceOf(ReceiveMessageCommand);
     if (!(receiveCommand instanceof ReceiveMessageCommand)) {
       throw new Error('expected ReceiveMessageCommand');
     }
-    expect(receiveCommand.input.QueueUrl).toBe(ENVOYE_QUEUE_URL);
+    expect(receiveCommand.input.QueueUrl).toBe(EMAIL_NOTIFICATION_QUEUE_URL);
     expect(receiveCommand.input.WaitTimeSeconds).toBe(20);
     expect(receiveCommand.input.VisibilityTimeout).toBe(30);
   });
 
   it('returns null when SQS has no messages', async () => {
+    mockQueueUrl(PROCESS_TRANSACTION_QUEUE_URL);
     send.mockResolvedValueOnce({ Messages: [] });
 
-    expect(await queueProvider.dequeue('fahari')).toBeNull();
+    expect(await queueProvider.dequeue('process-transaction')).toBeNull();
   });
 
   it('deletes an invalid envelope so it is not retried', async () => {
+    mockQueueUrl(EMAIL_NOTIFICATION_QUEUE_URL);
     send
       .mockResolvedValueOnce({
         Messages: [
@@ -110,7 +147,34 @@ describe('SqsQueueProvider', () => {
       })
       .mockResolvedValueOnce({});
 
-    expect(await queueProvider.dequeue('envoye')).toBeNull();
+    expect(await queueProvider.dequeue('email-notification')).toBeNull();
+
+    const deleteCommand = sentCommandAt(2);
+    expect(deleteCommand).toBeInstanceOf(DeleteMessageCommand);
+    if (!(deleteCommand instanceof DeleteMessageCommand)) {
+      throw new Error('expected DeleteMessageCommand');
+    }
+    expect(deleteCommand.input).toEqual({
+      QueueUrl: EMAIL_NOTIFICATION_QUEUE_URL,
+      ReceiptHandle: 'poison-receipt',
+    });
+  });
+
+  it('acks by deleting the SQS message', async () => {
+    mockQueueUrl(PROCESS_TRANSACTION_QUEUE_URL);
+    send.mockResolvedValueOnce({});
+
+    await queueProvider.ack({
+      queueName: 'process-transaction',
+      receipt: 'receipt-txn',
+      body: {
+        id: 'job-2',
+        name: 'process-transaction',
+        payload: {},
+        enqueuedAt: '2026-09-12T12:00:00.000Z',
+      },
+      receiveCount: 1,
+    });
 
     const deleteCommand = sentCommandAt(1);
     expect(deleteCommand).toBeInstanceOf(DeleteMessageCommand);
@@ -118,34 +182,8 @@ describe('SqsQueueProvider', () => {
       throw new Error('expected DeleteMessageCommand');
     }
     expect(deleteCommand.input).toEqual({
-      QueueUrl: ENVOYE_QUEUE_URL,
-      ReceiptHandle: 'poison-receipt',
-    });
-  });
-
-  it('acks by deleting the SQS message', async () => {
-    send.mockResolvedValueOnce({});
-
-    await queueProvider.ack({
-      queueName: 'fahari',
-      receipt: 'receipt-fahari',
-      body: {
-        id: 'job-2',
-        name: 'fahari.geofence-alert',
-        payload: {},
-        enqueuedAt: '2026-09-12T12:00:00.000Z',
-      },
-      receiveCount: 1,
-    });
-
-    const deleteCommand = sentCommandAt(0);
-    expect(deleteCommand).toBeInstanceOf(DeleteMessageCommand);
-    if (!(deleteCommand instanceof DeleteMessageCommand)) {
-      throw new Error('expected DeleteMessageCommand');
-    }
-    expect(deleteCommand.input).toEqual({
-      QueueUrl: FAHARI_QUEUE_URL,
-      ReceiptHandle: 'receipt-fahari',
+      QueueUrl: PROCESS_TRANSACTION_QUEUE_URL,
+      ReceiptHandle: 'receipt-txn',
     });
   });
 });

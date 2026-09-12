@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
-import { JobEnvelope } from '@/queue/job';
-import { JobRouter } from '@/queue/job-router';
+import { isQueueName, JobEnvelope } from '@/queue/job';
 import { QUEUE_PROVIDER, type QueueProvider } from '@/queue/queue-provider';
+import { UnknownQueueName } from '@/queue/unknown-queue-name';
 
 export const JOB_QUEUE = Symbol('JOB_QUEUE');
 
@@ -10,14 +10,16 @@ export const JOB_QUEUE = Symbol('JOB_QUEUE');
 export class JobQueue {
   constructor(
     @Inject(QUEUE_PROVIDER) private readonly queueProvider: QueueProvider,
-    private readonly jobRouter: JobRouter,
   ) {}
 
-  async enqueue(jobName: string, payload: unknown): Promise<void> {
-    const queueName = this.jobRouter.route(jobName);
+  async enqueue(queueName: string, payload: unknown): Promise<void> {
+    if (!isQueueName(queueName)) {
+      throw new UnknownQueueName(queueName);
+    }
+
     const jobEnvelope: JobEnvelope = {
       id: randomUUID(),
-      name: jobName,
+      name: queueName,
       payload,
       enqueuedAt: new Date().toISOString(),
     };

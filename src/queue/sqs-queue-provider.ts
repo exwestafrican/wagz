@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import {
   DeleteMessageCommand,
+  GetQueueUrlCommand,
   ReceiveMessageCommand,
   SendMessageCommand,
   SQSClient,
@@ -8,28 +9,29 @@ import {
 import { isJobEnvelope, JobEnvelope, QueueName } from '@/queue/job';
 import { type QueuedMessage, type QueueProvider } from '@/queue/queue-provider';
 
+export const SQS_REGION = 'eu-west-2';
+
 const SQS_WAIT_TIME_SECONDS = 20;
 const SQS_VISIBILITY_TIMEOUT_SECONDS = 30;
 
 export class SqsQueueProvider implements QueueProvider {
   private readonly logger = new Logger(SqsQueueProvider.name);
+  private readonly queueUrls = new Map<QueueName, string>();
 
-  constructor(
-    private readonly sqsClient: SQSClient,
-    private readonly queueUrls: Record<QueueName, string>,
-  ) {}
+  constructor(private readonly sqsClient: SQSClient) {}
 
   async enqueue(queueName: QueueName, body: JobEnvelope): Promise<void> {
+    const queueUrl = await this.queueUrl(queueName);
     await this.sqsClient.send(
       new SendMessageCommand({
-        QueueUrl: this.queueUrl(queueName),
+        QueueUrl: queueUrl,
         MessageBody: JSON.stringify(body),
       }),
     );
   }
 
   async dequeue(queueName: QueueName): Promise<QueuedMessage | null> {
-    const queueUrl = this.queueUrl(queueName);
+    const queueUrl = await this.queueUrl(queueName);
     const receiveResult = await this.sqsClient.send(
       new ReceiveMessageCommand({
         QueueUrl: queueUrl,
@@ -68,8 +70,21 @@ export class SqsQueueProvider implements QueueProvider {
     await this.deleteMessage(message.queueName, message.receipt);
   }
 
-  private queueUrl(queueName: QueueName): string {
-    return this.queueUrls[queueName];
+  private async queueUrl(queueName: QueueName): Promise<string> {
+    const cachedQueueUrl = this.queueUrls.get(queueName);
+    if (cachedQueueUrl) {
+      return cachedQueueUrl;
+    }
+
+    const getQueueUrlResult = await this.sqsClient.send(
+      new GetQueueUrlCommand({ QueueName: queueName }),
+    );
+    if (!getQueueUrlResult.QueueUrl) {
+      throw new Error(`SQS queue URL not found for ${queueName}`);
+    }
+
+    this.queueUrls.set(queueName, getQueueUrlResult.QueueUrl);
+    return getQueueUrlResult.QueueUrl;
   }
 
   private parseEnvelope(messageBody: string | undefined): JobEnvelope | null {
@@ -89,9 +104,10 @@ export class SqsQueueProvider implements QueueProvider {
     queueName: QueueName,
     receipt: string,
   ): Promise<void> {
+    const queueUrl = await this.queueUrl(queueName);
     await this.sqsClient.send(
       new DeleteMessageCommand({
-        QueueUrl: this.queueUrl(queueName),
+        QueueUrl: queueUrl,
         ReceiptHandle: receipt,
       }),
     );

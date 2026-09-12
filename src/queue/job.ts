@@ -1,4 +1,7 @@
-export const QUEUE_NAMES = ['envoye', 'fahari'] as const;
+export const QUEUE_NAMES = [
+  'email-notification',
+  'process-transaction',
+] as const;
 
 export type QueueName = (typeof QUEUE_NAMES)[number];
 
