@@ -18,10 +18,11 @@ export class PaymentNotificationService {
   ) {}
 
   async notifyDriverOfPayment(collection: PaymentCollection): Promise<void> {
+    this.logIfMissing(
+      collection.userId,
+      `Skipping payment notification; no user for collection ${collection.id}`,
+    );
     if (!collection.userId) {
-      this.logger.warn(
-        `Skipping payment notification; no user for collection ${collection.id}`,
-      );
       return;
     }
     if (collection.notifiedAt) {
@@ -31,10 +32,11 @@ export class PaymentNotificationService {
     const driver = await this.prismaService.user.findUnique({
       where: { id: collection.userId },
     });
+    this.logIfMissing(
+      driver,
+      `Skipping payment notification; user ${collection.userId} not found`,
+    );
     if (!driver) {
-      this.logger.warn(
-        `Skipping payment notification; user ${collection.userId} not found`,
-      );
       return;
     }
 
@@ -44,6 +46,8 @@ export class PaymentNotificationService {
         driverFirstName: driver.firstname,
         amountPaid,
         currency: collection.currency,
+        senderAccountName: collection.senderAccountName ?? 'Not provided',
+        senderAccountNumber: collection.senderAccountNumber ?? 'Not provided',
       }),
     );
 
@@ -61,5 +65,11 @@ export class PaymentNotificationService {
     this.logger.log(
       `Payment received email sent for user: ${driver.id} collection: ${collection.id}`,
     );
+  }
+
+  private logIfMissing(value: unknown, message: string): void {
+    if (!value) {
+      this.logger.warn(message);
+    }
   }
 }

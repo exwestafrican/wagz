@@ -17,6 +17,7 @@ import { accountReferenceForUser } from '@/fahari/payments/monnify/monnify.const
 import { computeMonnifySignature } from '@/fahari/payments/monnify/monnify-signature';
 import { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.types';
 import { ReservedAccountStatus } from '@/generated/prisma/client';
+import { render } from '@react-email/render';
 import { ENVIROMENT } from '@/common/const';
 
 class RecordingEmailClient implements EmailClient {
@@ -131,6 +132,15 @@ describe('MonnifyWebhookController', () => {
         currency: 'NGN',
         paidOn: '2021-11-17 11:28:42.615',
         paymentStatus: 'PAID',
+        paymentSourceInformation: [
+          {
+            bankCode: '232',
+            amountPaid,
+            accountName: 'Monnify Limited',
+            sessionId: 'e6cV1smlpkwG38Cg6d5F9B2PRnIq5FqA',
+            accountNumber: '0065432190',
+          },
+        ],
       },
     };
   }
@@ -161,11 +171,21 @@ describe('MonnifyWebhookController', () => {
       transactionReference: 'MNFY|04|20211117112842|000170',
       accountReference,
       userId: driver.id,
+      senderAccountName: 'Monnify Limited',
+      senderAccountNumber: '0065432190',
     });
     expect(collections[0].notifiedAt).not.toBeNull();
     expect(emailClient.sent).toHaveLength(1);
     expect(emailClient.sent[0].to.email).toBe(driver.email);
     expect(emailClient.sent[0].subject).toContain('5000.00');
+    expect(render).toHaveBeenCalledWith(
+      expect.objectContaining({
+        props: expect.objectContaining({
+          senderAccountName: 'Monnify Limited',
+          senderAccountNumber: '0065432190',
+        }),
+      }),
+    );
   });
 
   it('does not email twice when the same webhook is replayed', async () => {

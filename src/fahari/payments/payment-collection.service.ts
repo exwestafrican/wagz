@@ -6,7 +6,10 @@ import {
   MONNIFY_RESERVED_ACCOUNT_PRODUCT,
   MONNIFY_SUCCESSFUL_TRANSACTION,
 } from '@/fahari/payments/monnify/monnify.constants';
-import type { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.types';
+import type {
+  MonnifyReservedAccountPaymentSource,
+  MonnifyWebhookPayload,
+} from '@/fahari/payments/monnify/monnify.types';
 
 export interface IngestedPaymentCollection {
   collection: PaymentCollection;
@@ -36,10 +39,11 @@ export class PaymentCollectionService {
 
     const accountReference = eventData.product.reference;
     const transactionReference = eventData.transactionReference;
+    this.logIfMissing(
+      accountReference && transactionReference,
+      'Reserved-account webhook missing accountReference or transactionReference',
+    );
     if (!accountReference || !transactionReference) {
-      this.logger.warn(
-        'Webhook missing accountReference or transactionReference',
-      );
       return null;
     }
 
@@ -54,11 +58,18 @@ export class PaymentCollectionService {
       await this.reservedAccountService.findByAccountReference(
         accountReference,
       );
-    if (!reservedAccount) {
-      this.logger.warn(
-        `Unmatched payment collection for accountReference=${accountReference}`,
-      );
-    }
+    this.logIfMissing(
+      reservedAccount,
+      `Unmatched payment collection for accountReference=${accountReference}`,
+    );
+
+    const paymentSource = primaryReservedAccountPaymentSource(
+      eventData.paymentSourceInformation,
+    );
+    this.logIfMissing(
+      paymentSource,
+      `Reserved-account collection missing sender account details for transactionReference=${transactionReference}`,
+    );
 
     try {
       const collection = await this.prismaService.paymentCollection.create({
@@ -69,6 +80,8 @@ export class PaymentCollectionService {
           amountPaid: new Prisma.Decimal(eventData.amountPaid),
           paidOn: parseMonnifyPaidOn(eventData.paidOn),
           currency: eventData.currency ?? 'NGN',
+          senderAccountNumber: paymentSource?.accountNumber ?? null,
+          senderAccountName: paymentSource?.accountName ?? null,
         },
       });
       return { collection, isNew: true };
@@ -93,6 +106,29 @@ export class PaymentCollectionService {
       data: { notifiedAt: new Date() },
     });
   }
+
+  private logIfMissing(value: unknown, message: string): void {
+    if (!value) {
+      this.logger.warn(message);
+    }
+  }
+}
+
+function primaryReservedAccountPaymentSource(
+  paymentSources: MonnifyReservedAccountPaymentSource[] | undefined,
+): MonnifyReservedAccountPaymentSource | null {
+  const paymentSource = paymentSources?.[0];
+  if (
+    !paymentSource?.accountName?.trim() ||
+    !paymentSource?.accountNumber?.trim()
+  ) {
+    return null;
+  }
+  return {
+    ...paymentSource,
+    accountName: paymentSource.accountName.trim(),
+    accountNumber: paymentSource.accountNumber.trim(),
+  };
 }
 
 function parseMonnifyPaidOn(paidOn?: string): Date | null {

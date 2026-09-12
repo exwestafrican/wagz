@@ -7,15 +7,9 @@ import {
   ReserveAccountResponseBody,
 } from '@/fahari/payments/monnify/monnify.types';
 
-interface CachedAccessToken {
-  accessToken: string;
-  expiresAtMs: number;
-}
-
 @Injectable()
 export class MonnifyClient {
   private readonly logger = new Logger(MonnifyClient.name);
-  private cachedAccessToken: CachedAccessToken | null = null;
 
   constructor(private readonly configService: ConfigService) {}
 
@@ -97,15 +91,10 @@ export class MonnifyClient {
     return this.configService.getOrThrow<string>('MONNIFY_BASE_URL');
   }
 
+  // TODO: install a cache (e.g. cache-manager / @nestjs/cache-manager) and
+  // cache the Monnify access token until near expiresIn instead of logging in
+  // on every request.
   private async getAccessToken(): Promise<string> {
-    const now = Date.now();
-    if (
-      this.cachedAccessToken &&
-      this.cachedAccessToken.expiresAtMs > now + 30_000
-    ) {
-      return this.cachedAccessToken.accessToken;
-    }
-
     const apiKey = this.configService.getOrThrow<string>('MONNIFY_API_KEY');
     const secretKey = this.clientSecret();
     const basicAuth = Buffer.from(`${apiKey}:${secretKey}`).toString('base64');
@@ -130,11 +119,6 @@ export class MonnifyClient {
       );
     }
 
-    this.cachedAccessToken = {
-      accessToken: envelope.responseBody.accessToken,
-      expiresAtMs: now + envelope.responseBody.expiresIn * 1000,
-    };
-
-    return this.cachedAccessToken.accessToken;
+    return envelope.responseBody.accessToken;
   }
 }
