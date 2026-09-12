@@ -35,13 +35,24 @@ export interface MonnifyApiEnvelope<T> {
   responseBody: T;
 }
 
-export interface MonnifyWebhookProduct {
-  reference: string;
-  type: string;
+/** Payer bank details on a reserved-account collection webhook. */
+export interface MonnifyReservedAccountPaymentSource {
+  accountName: string;
+  accountNumber: string;
+  bankCode?: string;
+  amountPaid?: number;
+  sessionId?: string;
 }
 
-export interface MonnifySuccessfulTransactionEventData {
-  product: MonnifyWebhookProduct;
+/**
+ * Successful collection into a reserved account.
+ * We only process webhooks where product.type is RESERVED_ACCOUNT.
+ */
+export interface MonnifyReservedAccountCollectionEventData {
+  product: {
+    reference: string;
+    type: string;
+  };
   transactionReference: string;
   paymentReference?: string;
   paidOn?: string;
@@ -49,6 +60,7 @@ export interface MonnifySuccessfulTransactionEventData {
   totalPayable?: number;
   currency?: string;
   paymentStatus?: string;
+  paymentSourceInformation: MonnifyReservedAccountPaymentSource[];
   customer?: {
     name?: string;
     email?: string;
@@ -57,7 +69,7 @@ export interface MonnifySuccessfulTransactionEventData {
 
 export interface MonnifyWebhookPayload {
   eventType: string;
-  eventData: MonnifySuccessfulTransactionEventData;
+  eventData: MonnifyReservedAccountCollectionEventData;
 }
 
 export class MonnifyApiError extends Error {
