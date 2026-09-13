@@ -43,7 +43,7 @@ describe('ReservedAccountService', () => {
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
-    accountManager = new AccountManager();
+    accountManager = new AccountManager(prismaService);
     monnifyClient = {
       reserveAccount: jest.fn(),
       getReservedAccount: jest.fn(),
@@ -117,7 +117,12 @@ describe('ReservedAccountService', () => {
       customerEmail: owner.email,
       status: ReservedAccountStatus.ACTIVE,
     });
-    expect(reservedAccount.accountReference).toMatch(/^FAH\d{6}$/);
+    expect(reservedAccount.accountReference).toMatch(/^FAH\d+$/);
+    expect(Number(reservedAccount.accountReference.slice(3))).toBeGreaterThanOrEqual(
+      10000,
+    );
+    expect(reservedAccount).not.toHaveProperty('accountPrefix');
+    expect(reservedAccount).not.toHaveProperty('accountCode');
     expect(monnifyClient.reserveAccount).toHaveBeenCalledWith(
       expect.objectContaining({
         accountReference: reservedAccount.accountReference,
@@ -138,8 +143,38 @@ describe('ReservedAccountService', () => {
     expect(requestLog).toMatchObject({
       requestedBy: requester.id,
       ownerId: owner.id,
+      accountPrefix: 'FAH',
+      accountCode: Number(reservedAccount.accountReference.slice(3)),
       status: ReservedAccountRequestStatus.SUCCESS,
     });
+  });
+
+  it('allocates sequential account codes starting at 10000', async () => {
+    const requester = await createUser();
+    const firstOwner = await createUser();
+    const secondOwner = await createUser();
+    monnifyClient.reserveAccount.mockImplementation(
+      (request: ReserveAccountRequest) =>
+        Promise.resolve(
+          monnifyResponse(request.accountReference, request.customerEmail),
+        ),
+    );
+
+    const firstAccount = await reservedAccountService.provisionForUser({
+      requestedBy: requester.id,
+      ownerId: firstOwner.id,
+      bvn: DRIVER_BVN,
+      nin: DRIVER_NIN,
+    });
+    const secondAccount = await reservedAccountService.provisionForUser({
+      requestedBy: requester.id,
+      ownerId: secondOwner.id,
+      bvn: DRIVER_BVN,
+      nin: DRIVER_NIN,
+    });
+
+    expect(firstAccount.accountReference).toBe('FAH10000');
+    expect(secondAccount.accountReference).toBe('FAH10001');
   });
 
   it('returns the existing active account without calling Monnify again', async () => {
@@ -148,7 +183,9 @@ describe('ReservedAccountService', () => {
     await prismaService.reservedAccount.create({
       data: {
         userId: owner.id,
-        accountReference: 'FAH111111',
+        accountPrefix: 'FAH',
+        accountCode: 11111,
+        accountReference: 'FAH11111',
         accountNumber: '1111222233',
         bankCode: '50515',
         bankName: 'Moniepoint Microfinance Bank',
@@ -165,6 +202,7 @@ describe('ReservedAccountService', () => {
     });
 
     expect(reservedAccount.accountNumber).toBe('1111222233');
+    expect(reservedAccount.accountReference).toBe('FAH11111');
     expect(monnifyClient.reserveAccount).not.toHaveBeenCalled();
   });
 
@@ -173,7 +211,9 @@ describe('ReservedAccountService', () => {
     await prismaService.reservedAccount.create({
       data: {
         userId: owner.id,
-        accountReference: 'FAH222222',
+        accountPrefix: 'FAH',
+        accountCode: 22222,
+        accountReference: 'FAH22222',
         accountNumber: '1111222233',
         bankCode: '50515',
         bankName: 'Moniepoint Microfinance Bank',
@@ -184,7 +224,9 @@ describe('ReservedAccountService', () => {
     await prismaService.reservedAccount.create({
       data: {
         userId: owner.id,
-        accountReference: 'FAH333333',
+        accountPrefix: 'FAH',
+        accountCode: 33333,
+        accountReference: 'FAH33333',
         accountNumber: '4444555566',
         bankCode: '50515',
         bankName: 'Moniepoint Microfinance Bank',
@@ -241,6 +283,7 @@ describe('ReservedAccountService', () => {
       status: ReservedAccountRequestStatus.FAILED,
       failureMessage: 'Unable to create reserved account',
     });
+    expect(requestLog?.accountReference).toMatch(/^FAH\d+$/);
     expect(
       await prismaService.reservedAccount.count({
         where: { userId: owner.id },
@@ -272,7 +315,7 @@ describe('ReservedAccountService', () => {
 
     expect(reservedAccount.status).toBe(ReservedAccountStatus.ACTIVE);
     expect(reservedAccount.accountNumber).toBe('6254727989');
-    expect(reservedAccount.accountReference).toMatch(/^FAH\d{6}$/);
+    expect(reservedAccount.accountReference).toMatch(/^FAH\d+$/);
     expect(monnifyClient.getReservedAccount).toHaveBeenCalledWith(
       reservedAccount.accountReference,
     );

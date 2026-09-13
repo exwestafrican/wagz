@@ -1,5 +1,4 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AccountManager } from '@/fahari/payments/account-manager';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
@@ -9,11 +8,15 @@ import {
   ReserveAccountResponseBody,
 } from '@/fahari/payments/monnify/monnify.types';
 import {
-  ReservedAccount,
   ReservedAccountRequestLog,
   ReservedAccountRequestStatus,
   ReservedAccountStatus,
 } from '@/generated/prisma/client';
+import {
+  ReservedAccount,
+  toDomainReservedAccount,
+} from '@/fahari/payments/domain/reserved-account';
+import { ACCOUNT_REFERENCE_PREFIX } from '@/fahari/payments/monnify/monnify.constants';
 
 export interface ProvisionReservedAccountInput {
   requestedBy: number;
@@ -21,8 +24,6 @@ export interface ProvisionReservedAccountInput {
   bvn: string;
   nin: string;
 }
-
-const ACCOUNT_REFERENCE_CREATE_ATTEMPTS = 5;
 
 @Injectable()
 export class ReservedAccountService {
@@ -37,12 +38,9 @@ export class ReservedAccountService {
   async provisionForUser(
     input: ProvisionReservedAccountInput,
   ): Promise<ReservedAccount> {
-    const existingActive = await this.prismaService.reservedAccount.findFirst({
-      where: {
-        userId: input.ownerId,
-        status: ReservedAccountStatus.ACTIVE,
-      },
-    });
+    const existingActive = await this.accountManager.getReservedAccount(
+      input.ownerId,
+    );
     if (existingActive) {
       return existingActive;
     }
@@ -108,44 +106,27 @@ export class ReservedAccountService {
   async findByAccountReference(
     accountReference: string,
   ): Promise<ReservedAccount | null> {
-    return this.prismaService.reservedAccount.findUnique({
+    const persisted = await this.prismaService.reservedAccount.findUnique({
       where: { accountReference },
     });
+    if (!persisted) {
+      return null;
+    }
+    return toDomainReservedAccount(persisted);
   }
 
   private async createPendingRequestLog(
     requestedBy: number,
     ownerId: number,
   ): Promise<ReservedAccountRequestLog> {
-    for (
-      let attempt = 0;
-      attempt < ACCOUNT_REFERENCE_CREATE_ATTEMPTS;
-      attempt++
-    ) {
-      const accountReference = this.accountManager.generateAccountReference();
-      try {
-        return await this.prismaService.reservedAccountRequestLog.create({
-          data: {
-            requestedBy,
-            ownerId,
-            accountReference,
-            status: ReservedAccountRequestStatus.PENDING,
-          },
-        });
-      } catch (error) {
-        if (
-          error instanceof Prisma.PrismaClientKnownRequestError &&
-          error.code === 'P2002'
-        ) {
-          continue;
-        }
-        throw error;
-      }
-    }
-
-    throw new MonnifyApiError(
-      'Unable to allocate a unique reserved account reference',
-    );
+    return this.prismaService.reservedAccountRequestLog.create({
+      data: {
+        requestedBy,
+        ownerId,
+        accountPrefix: ACCOUNT_REFERENCE_PREFIX,
+        status: ReservedAccountRequestStatus.PENDING,
+      },
+    });
   }
 
   private async completeSuccessfulProvision(
@@ -159,7 +140,9 @@ export class ReservedAccountService {
       );
     }
 
-    const [, reservedAccount] = await this.prismaService.$transaction([
+    const accountReference = `${requestLog.accountPrefix}${requestLog.accountCode}`;
+
+    const [, persisted] = await this.prismaService.$transaction([
       this.prismaService.reservedAccountRequestLog.update({
         where: { id: requestLog.id },
         data: { status: ReservedAccountRequestStatus.SUCCESS },
@@ -167,7 +150,9 @@ export class ReservedAccountService {
       this.prismaService.reservedAccount.create({
         data: {
           userId: requestLog.ownerId,
-          accountReference: monnifyAccount.accountReference,
+          accountPrefix: requestLog.accountPrefix,
+          accountCode: requestLog.accountCode,
+          accountReference,
           accountNumber: primaryBankAccount.accountNumber,
           bankCode: primaryBankAccount.bankCode,
           bankName: primaryBankAccount.bankName,
@@ -177,7 +162,7 @@ export class ReservedAccountService {
       }),
     ]);
 
-    return reservedAccount;
+    return toDomainReservedAccount(persisted);
   }
 
   private isDuplicateAccountError(error: MonnifyApiError): boolean {
