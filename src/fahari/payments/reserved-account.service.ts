@@ -42,10 +42,7 @@ export class ReservedAccountService {
     const owner = await this.findOwnerOrThrow(ownerId);
     const customerName = fullName(owner);
     const customerEmail = owner.email;
-    const requestLog = await this.createPendingRequestLog(
-      requestedBy,
-      ownerId,
-    );
+    const requestLog = await this.createPendingRequestLog(requestedBy, ownerId);
 
     try {
       const monnifyAccount = await this.monnifyClient.reserveAccount({

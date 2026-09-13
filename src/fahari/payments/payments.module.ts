@@ -32,10 +32,7 @@ const MonnifyClientProvider = {
 const MonnifyWebhookAuthProvider = {
   provide: MONNIFY_WEBHOOK_AUTH,
   inject: [ConfigService, MonnifyClient],
-  useFactory: (
-    configService: ConfigService,
-    monnifyClient: MonnifyClient,
-  ) => {
+  useFactory: (configService: ConfigService, monnifyClient: MonnifyClient) => {
     if (configService.get<string>('NODE_ENV') === ENVIROMENT.PRODUCTION) {
       return new ProductionMonnifyWebhookAuth(monnifyClient);
     }

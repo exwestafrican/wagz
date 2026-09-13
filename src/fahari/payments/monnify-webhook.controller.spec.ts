@@ -151,7 +151,8 @@ describe('MonnifyWebhookController', () => {
   });
 
   it('does not email twice when the same webhook is replayed', async () => {
-    const { driver, accountReference } = await createDriverWithReservedAccount();
+    const { driver, accountReference } =
+      await createDriverWithReservedAccount();
     const payload = successfulCollectionPayload(
       accountReference,
       'MNFY|04|20211117112842|000171',
@@ -203,7 +204,8 @@ describe('MonnifyWebhookController', () => {
   });
 
   it('accepts a valid production signature', async () => {
-    const { driver, accountReference } = await createDriverWithReservedAccount();
+    const { driver, accountReference } =
+      await createDriverWithReservedAccount();
     const payload = successfulCollectionPayload(
       accountReference,
       'MNFY|04|20211117112842|000173',

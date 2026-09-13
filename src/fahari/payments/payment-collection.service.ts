@@ -7,10 +7,9 @@ import {
 import { PaymentCollection, Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AccountManager } from '@/fahari/payments/account-manager';
-import type {
-  MonnifyReservedAccountPaymentSource,
-  MonnifyWebhookPayload,
-} from '@/fahari/payments/monnify/monnify.types';
+import { existsInDbError } from '@/common/error-type';
+import { firstOrThrow } from '@/common/utils';
+import type { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.types';
 
 @Injectable()
 export class PaymentCollectionService {
@@ -46,17 +45,7 @@ export class PaymentCollectionService {
       );
     }
 
-    const paymentSource = primaryReservedAccountPaymentSource(
-      eventData.paymentSourceInformation,
-    );
-    if (!paymentSource) {
-      this.logger.error(
-        `Reserved-account collection missing sender account details for transactionReference=${transactionReference}`,
-      );
-      throw new BadRequestException(
-        `Missing sender account details for transactionReference=${transactionReference}`,
-      );
-    }
+    const paymentSource = firstOrThrow(eventData.paymentSourceInformation);
 
     try {
       return await this.prismaService.paymentCollection.create({
@@ -65,17 +54,14 @@ export class PaymentCollectionService {
           accountReference,
           userId: reservedAccount.userId,
           amountPaid: new Prisma.Decimal(eventData.amountPaid),
-          paidOn: parseMonnifyPaidOn(eventData.paidOn),
+          paidOn: parseMonnifyPaidOnOrThrow(eventData.paidOn),
           currency: eventData.currency,
           senderAccountNumber: paymentSource.accountNumber,
           senderAccountName: paymentSource.accountName,
         },
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === 'P2002'
-      ) {
+      if (existsInDbError(error)) {
         return this.prismaService.paymentCollection.findUniqueOrThrow({
           where: { transactionReference },
         });
@@ -92,28 +78,10 @@ export class PaymentCollectionService {
   }
 }
 
-function primaryReservedAccountPaymentSource(
-  paymentSources: MonnifyReservedAccountPaymentSource[] | undefined,
-): MonnifyReservedAccountPaymentSource | null {
-  const paymentSource = paymentSources?.[0];
-  if (
-    !paymentSource?.accountName?.trim() ||
-    !paymentSource?.accountNumber?.trim()
-  ) {
-    return null;
-  }
-  return {
-    ...paymentSource,
-    accountName: paymentSource.accountName.trim(),
-    accountNumber: paymentSource.accountNumber.trim(),
-  };
-}
-
-function parseMonnifyPaidOn(paidOn: string): Date | null {
-  const normalized = paidOn.includes('T') ? paidOn : paidOn.replace(' ', 'T');
-  const paidOnDate = new Date(normalized);
+function parseMonnifyPaidOnOrThrow(paidOn: string): Date {
+  const paidOnDate = new Date(paidOn.split(' ').join('T')); //example 2021-11-17 11:28:42.615 => 2021-11-17T11:28:42.615
   if (Number.isNaN(paidOnDate.getTime())) {
-    return null;
+    throw new BadRequestException(`Invalid paidOn date: ${paidOn}`);
   }
   return paidOnDate;
 }

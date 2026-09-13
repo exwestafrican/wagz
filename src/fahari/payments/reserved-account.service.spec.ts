@@ -115,9 +115,9 @@ describe('ReservedAccountService', () => {
       status: ReservedAccountStatus.ACTIVE,
     });
     expect(reservedAccount.accountReference).toMatch(/^FAH\d+$/);
-    expect(Number(reservedAccount.accountReference.slice(3))).toBeGreaterThanOrEqual(
-      10000,
-    );
+    expect(
+      Number(reservedAccount.accountReference.slice(3)),
+    ).toBeGreaterThanOrEqual(10000);
     expect(reservedAccount).not.toHaveProperty('accountPrefix');
     expect(reservedAccount).not.toHaveProperty('accountCode');
     expect(monnifyClient.reserveAccount).toHaveBeenCalledWith(

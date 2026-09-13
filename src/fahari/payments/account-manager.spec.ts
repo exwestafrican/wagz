@@ -78,7 +78,9 @@ describe('AccountManager', () => {
       },
     });
 
-    await expect(accountManager.getReservedAccount(owner.id)).resolves.toBeNull();
+    await expect(
+      accountManager.getReservedAccount(owner.id),
+    ).resolves.toBeNull();
   });
 
   it('throws when getReservedAccountOrThrow finds no active account', async () => {
