@@ -80,14 +80,13 @@ describe('MonnifyWebhookController', () => {
   });
 
   async function createDriverWithReservedAccount() {
-    const driver = userFactory.build();
-    await factory.persist('user', () => driver);
-
-    const reservedAccount = reservedAccountFactory.build({
-      userId: driver.id,
-      customerEmail: driver.email,
-    });
-    await factory.persist('reservedAccount', () => reservedAccount);
+    const driver = await factory.persist('user', () => userFactory.build());
+    const reservedAccount = await factory.persist('reservedAccount', () =>
+      reservedAccountFactory.monnifyAccount({
+        userId: driver.id,
+        customerEmail: driver.email,
+      }),
+    );
 
     return { driver, accountReference: reservedAccount.accountReference };
   }
