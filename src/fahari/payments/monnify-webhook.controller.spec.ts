@@ -8,12 +8,12 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
 import { Mail, EmailClient } from '@/messaging/email/email-client';
+import { AccountManager } from '@/fahari/payments/account-manager';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
 import { PaymentNotificationService } from '@/fahari/payments/payment-notification.service';
 import { MonnifyWebhookController } from '@/fahari/payments/monnify-webhook.controller';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
-import { accountReferenceForUser } from '@/fahari/payments/monnify/monnify.constants';
 import { computeMonnifySignature } from '@/fahari/payments/monnify/monnify-signature';
 import { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.types';
 import { ReservedAccountStatus } from '@/generated/prisma/client';
@@ -68,6 +68,7 @@ describe('MonnifyWebhookController', () => {
     const reservedAccountService = new ReservedAccountService(
       prismaService,
       monnifyClient,
+      new AccountManager(),
     );
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,
@@ -100,7 +101,7 @@ describe('MonnifyWebhookController', () => {
         lastname: faker.person.lastName(),
       },
     });
-    const accountReference = accountReferenceForUser(driver.id);
+    const accountReference = 'FAH102938';
     await prismaService.reservedAccount.create({
       data: {
         userId: driver.id,
@@ -245,6 +246,7 @@ describe('MonnifyWebhookController', () => {
     const reservedAccountService = new ReservedAccountService(
       prismaService,
       monnifyClient,
+      new AccountManager(),
     );
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,
@@ -302,6 +304,7 @@ describe('MonnifyWebhookController', () => {
     const reservedAccountService = new ReservedAccountService(
       prismaService,
       monnifyClient,
+      new AccountManager(),
     );
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,

@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { FahariPermissionModule } from '@/fahari/permission/permission.module';
+import { AccountManager } from '@/fahari/payments/account-manager';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
@@ -11,6 +12,7 @@ import { MonnifyWebhookController } from '@/fahari/payments/monnify-webhook.cont
 @Module({
   imports: [PrismaModule, FahariPermissionModule],
   providers: [
+    AccountManager,
     MonnifyClient,
     ReservedAccountService,
     PaymentCollectionService,
