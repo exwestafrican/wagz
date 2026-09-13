@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { ReservedAccount } from '@/generated/prisma/client';
+import { ReservedAccount } from '@/fahari/payments/domain/reserved-account';
 
 export class ReservedAccountResponseDto {
   @ApiProperty()

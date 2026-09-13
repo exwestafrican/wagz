@@ -68,7 +68,7 @@ describe('MonnifyWebhookController', () => {
     const reservedAccountService = new ReservedAccountService(
       prismaService,
       monnifyClient,
-      new AccountManager(),
+      new AccountManager(prismaService),
     );
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,
@@ -105,6 +105,8 @@ describe('MonnifyWebhookController', () => {
     await prismaService.reservedAccount.create({
       data: {
         userId: driver.id,
+        accountPrefix: 'FAH',
+        accountCode: 102938,
         accountReference,
         accountNumber: '6254727989',
         bankCode: '50515',
@@ -246,7 +248,7 @@ describe('MonnifyWebhookController', () => {
     const reservedAccountService = new ReservedAccountService(
       prismaService,
       monnifyClient,
-      new AccountManager(),
+      new AccountManager(prismaService),
     );
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,
@@ -304,7 +306,7 @@ describe('MonnifyWebhookController', () => {
     const reservedAccountService = new ReservedAccountService(
       prismaService,
       monnifyClient,
-      new AccountManager(),
+      new AccountManager(prismaService),
     );
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,
