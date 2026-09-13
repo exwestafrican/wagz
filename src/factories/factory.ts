@@ -4,6 +4,7 @@ import {
   CompanyProfile,
   FeatureFlag,
   PreVerification,
+  ReservedAccount,
   Teammate,
   User,
   Workspace,
@@ -19,6 +20,7 @@ import { persistCompanyProfile } from '@/factories/company-profile.factory';
 import { persistUser } from '@/factories/fahari/user.factory';
 import { persistBooking } from '@/factories/fahari/booking.factory';
 import { persistClientPickupDetail } from '@/factories/fahari/client-pickup-detail.factory';
+import { persistReservedAccount } from '@/factories/fahari/reserved-account.factory';
 
 export interface PersistStrategy {
   persist: <T>(strategy: string, buildObject: () => T) => Promise<T>;
@@ -54,6 +56,10 @@ function createPersistStrategy(prismaService: PrismaService): PersistStrategy {
         }
         case 'companyProfile': {
           await persistCompanyProfile(prismaService, obj as CompanyProfile);
+          return obj;
+        }
+        case 'reservedAccount': {
+          await persistReservedAccount(prismaService, obj as ReservedAccount);
           return obj;
         }
         case 'user': {
