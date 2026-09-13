@@ -7,10 +7,6 @@ import {
 import { PaymentCollection, Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AccountManager } from '@/fahari/payments/account-manager';
-import {
-  MONNIFY_RESERVED_ACCOUNT_PRODUCT,
-  MONNIFY_SUCCESSFUL_TRANSACTION,
-} from '@/fahari/payments/monnify/monnify.constants';
 import type {
   MonnifyReservedAccountPaymentSource,
   MonnifyWebhookPayload,
@@ -32,16 +28,8 @@ export class PaymentCollectionService {
 
   async ingestSuccessfulCollection(
     payload: MonnifyWebhookPayload,
-  ): Promise<IngestedPaymentCollection | null> {
-    if (payload.eventType !== MONNIFY_SUCCESSFUL_TRANSACTION) {
-      return null;
-    }
-
+  ): Promise<IngestedPaymentCollection> {
     const { eventData } = payload;
-    if (eventData.product.type !== MONNIFY_RESERVED_ACCOUNT_PRODUCT) {
-      return null;
-    }
-
     const accountReference = eventData.product.reference;
     const transactionReference = eventData.transactionReference;
 
