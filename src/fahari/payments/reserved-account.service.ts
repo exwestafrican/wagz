@@ -3,20 +3,15 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { AccountManager } from '@/fahari/payments/account-manager';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { defaultMonnifyBankConfig } from '@/fahari/payments/monnify/monnify-bank-config';
-import {
-  MonnifyApiError,
-  ReserveAccountResponseBody,
-} from '@/fahari/payments/monnify/monnify.types';
+import { failureMessageFrom } from '@/fahari/payments/monnify/monnify.types';
 import {
   ReservedAccountRequestLog,
   ReservedAccountRequestStatus,
-  ReservedAccountStatus,
 } from '@/generated/prisma/client';
-import {
-  ReservedAccount,
-  toDomainReservedAccount,
-} from '@/fahari/payments/domain/reserved-account';
+import { ReservedAccount } from '@/fahari/payments/domain/reserved-account';
 import { ACCOUNT_REFERENCE_PREFIX } from '@/fahari/payments/monnify/monnify.constants';
+import { fullName } from '@/fahari/user/full-name';
+import { notInDbError } from '@/common/error-type';
 
 export interface ProvisionReservedAccountInput {
   requestedBy: number;
@@ -45,14 +40,8 @@ export class ReservedAccountService {
       return existingActive;
     }
 
-    const owner = await this.prismaService.user.findUnique({
-      where: { id: input.ownerId },
-    });
-    if (!owner) {
-      throw new NotFoundException(`User ${input.ownerId} not found`);
-    }
-
-    const customerName = `${owner.firstname} ${owner.lastname}`.trim();
+    const owner = await this.findOwnerOrThrow(input.ownerId);
+    const customerName = fullName(owner);
     const customerEmail = owner.email;
     const requestLog = await this.createPendingRequestLog(
       input.requestedBy,
@@ -72,28 +61,13 @@ export class ReservedAccountService {
         ...defaultMonnifyBankConfig(),
       });
 
-      return this.completeSuccessfulProvision(requestLog, monnifyAccount);
+      return this.accountManager.provisionAccount(requestLog, monnifyAccount);
     } catch (error) {
-      if (
-        error instanceof MonnifyApiError &&
-        this.isDuplicateAccountError(error)
-      ) {
-        const existingOnMonnify = await this.monnifyClient.getReservedAccount(
-          requestLog.accountReference,
-        );
-        return this.completeSuccessfulProvision(requestLog, existingOnMonnify);
-      }
-
       await this.prismaService.reservedAccountRequestLog.update({
         where: { id: requestLog.id },
         data: {
           status: ReservedAccountRequestStatus.FAILED,
-          failureMessage:
-            error instanceof MonnifyApiError
-              ? (error.responseMessage ?? error.message)
-              : error instanceof Error
-                ? error.message
-                : 'Unknown error',
+          failureMessage: failureMessageFrom(error),
         },
       });
       this.logger.error(
@@ -106,13 +80,20 @@ export class ReservedAccountService {
   async findByAccountReference(
     accountReference: string,
   ): Promise<ReservedAccount | null> {
-    const persisted = await this.prismaService.reservedAccount.findUnique({
-      where: { accountReference },
-    });
-    if (!persisted) {
-      return null;
+    return this.accountManager.findByAccountReference(accountReference);
+  }
+
+  private async findOwnerOrThrow(ownerId: number) {
+    try {
+      return await this.prismaService.user.findUniqueOrThrow({
+        where: { id: ownerId },
+      });
+    } catch (error) {
+      if (notInDbError(error)) {
+        throw new NotFoundException(`User ${ownerId} not found`);
+      }
+      throw error;
     }
-    return toDomainReservedAccount(persisted);
   }
 
   private async createPendingRequestLog(
@@ -127,50 +108,5 @@ export class ReservedAccountService {
         status: ReservedAccountRequestStatus.PENDING,
       },
     });
-  }
-
-  private async completeSuccessfulProvision(
-    requestLog: ReservedAccountRequestLog,
-    monnifyAccount: ReserveAccountResponseBody,
-  ): Promise<ReservedAccount> {
-    const primaryBankAccount = monnifyAccount.accounts[0];
-    if (!primaryBankAccount) {
-      throw new MonnifyApiError(
-        'Monnify reserved account response had no banks',
-      );
-    }
-
-    const accountReference = `${requestLog.accountPrefix}${requestLog.accountCode}`;
-
-    const [, persisted] = await this.prismaService.$transaction([
-      this.prismaService.reservedAccountRequestLog.update({
-        where: { id: requestLog.id },
-        data: { status: ReservedAccountRequestStatus.SUCCESS },
-      }),
-      this.prismaService.reservedAccount.create({
-        data: {
-          userId: requestLog.ownerId,
-          accountPrefix: requestLog.accountPrefix,
-          accountCode: requestLog.accountCode,
-          accountReference,
-          accountNumber: primaryBankAccount.accountNumber,
-          bankCode: primaryBankAccount.bankCode,
-          bankName: primaryBankAccount.bankName,
-          customerEmail: monnifyAccount.customerEmail,
-          status: ReservedAccountStatus.ACTIVE,
-        },
-      }),
-    ]);
-
-    return toDomainReservedAccount(persisted);
-  }
-
-  private isDuplicateAccountError(error: MonnifyApiError): boolean {
-    const message = (error.responseMessage ?? '').toLowerCase();
-    return (
-      message.includes('same reference') ||
-      message.includes('more than 1 account') ||
-      message.includes('already')
-    );
   }
 }
