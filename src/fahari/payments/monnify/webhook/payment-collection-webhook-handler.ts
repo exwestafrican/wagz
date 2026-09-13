@@ -28,11 +28,7 @@ export class PaymentCollectionWebhookHandler implements MonnifyWebhookHandler {
     const ingested =
       await this.paymentCollectionService.ingestSuccessfulCollection(payload);
 
-    if (
-      ingested?.isNew &&
-      ingested.collection.userId &&
-      !ingested.collection.notifiedAt
-    ) {
+    if (ingested?.isNew && !ingested.collection.notifiedAt) {
       void this.paymentNotificationService
         .notifyDriverOfPayment(ingested.collection)
         .catch((error: unknown) => {
