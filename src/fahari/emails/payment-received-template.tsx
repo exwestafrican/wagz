@@ -128,10 +128,11 @@ export const PaymentReceivedTemplate = ({
               If you were not expecting this payment, contact support.
             </Text>
 
-            <Section className="mt-[32px]">
+            <Section className="mt-[28px]">
               <Img
                 src={FAHARI_FULL_LOGO_SRC}
-                width="96"
+                width="110"
+                height="66"
                 alt="Fahari"
                 className="block"
               />
