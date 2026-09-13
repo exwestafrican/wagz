@@ -100,12 +100,11 @@ describe('ReservedAccountService', () => {
         Promise.resolve(monnifyResponse(request.accountReference, owner.email)),
     );
 
-    const reservedAccount = await reservedAccountService.provision({
-      requestedBy: requester.id,
-      ownerId: owner.id,
-      bvn: DRIVER_BVN,
-      nin: DRIVER_NIN,
-    });
+    const reservedAccount = await reservedAccountService.provision(
+      requester.id,
+      owner.id,
+      { bvn: DRIVER_BVN, nin: DRIVER_NIN },
+    );
 
     expect(reservedAccount).toMatchObject({
       userId: owner.id,
@@ -158,18 +157,16 @@ describe('ReservedAccountService', () => {
   //       ),
   //   );
   //
-  //   const firstAccount = await reservedAccountService.provision({
-  //     requestedBy: requester.id,
-  //     ownerId: firstOwner.id,
-  //     bvn: DRIVER_BVN,
-  //     nin: DRIVER_NIN,
-  //   });
-  //   const secondAccount = await reservedAccountService.provision({
-  //     requestedBy: requester.id,
-  //     ownerId: secondOwner.id,
-  //     bvn: DRIVER_BVN,
-  //     nin: DRIVER_NIN,
-  //   });
+  //   const firstAccount = await reservedAccountService.provision(
+  //     requester.id,
+  //     firstOwner.id,
+  //     { bvn: DRIVER_BVN, nin: DRIVER_NIN },
+  //   );
+  //   const secondAccount = await reservedAccountService.provision(
+  //     requester.id,
+  //     secondOwner.id,
+  //     { bvn: DRIVER_BVN, nin: DRIVER_NIN },
+  //   );
   //
   //   expect(firstAccount.accountReference).toBe('FAH10000');
   //   expect(secondAccount.accountReference).toBe('FAH10001');
@@ -192,12 +189,11 @@ describe('ReservedAccountService', () => {
       },
     });
 
-    const reservedAccount = await reservedAccountService.provision({
-      requestedBy: requester.id,
-      ownerId: owner.id,
-      bvn: DRIVER_BVN,
-      nin: DRIVER_NIN,
-    });
+    const reservedAccount = await reservedAccountService.provision(
+      requester.id,
+      owner.id,
+      { bvn: DRIVER_BVN, nin: DRIVER_NIN },
+    );
 
     expect(reservedAccount.accountNumber).toBe('1111222233');
     expect(reservedAccount.accountReference).toBe('FAH11111');
@@ -243,9 +239,7 @@ describe('ReservedAccountService', () => {
   it('throws when the owner does not exist', async () => {
     const requester = await createUser();
     await expect(
-      reservedAccountService.provision({
-        requestedBy: requester.id,
-        ownerId: 999_999,
+      reservedAccountService.provision(requester.id, 999_999, {
         bvn: DRIVER_BVN,
         nin: DRIVER_NIN,
       }),
@@ -264,9 +258,7 @@ describe('ReservedAccountService', () => {
     );
 
     await expect(
-      reservedAccountService.provision({
-        requestedBy: requester.id,
-        ownerId: owner.id,
+      reservedAccountService.provision(requester.id, owner.id, {
         bvn: DRIVER_BVN,
         nin: DRIVER_NIN,
       }),
