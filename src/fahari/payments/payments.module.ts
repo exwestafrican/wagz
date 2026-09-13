@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { FahariPermissionModule } from '@/fahari/permission/permission.module';
+import { ENVIROMENT } from '@/common/const';
 import { AccountManager } from '@/fahari/payments/account-manager';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
@@ -9,6 +10,12 @@ import { PaymentCollectionService } from '@/fahari/payments/payment-collection.s
 import { PaymentNotificationService } from '@/fahari/payments/payment-notification.service';
 import { PaymentsAdminController } from '@/fahari/payments/admin/payments-admin.controller';
 import { MonnifyWebhookController } from '@/fahari/payments/monnify-webhook.controller';
+import { MONNIFY_WEBHOOK_AUTH } from '@/fahari/payments/monnify/webhook/monnify-webhook-auth';
+import { ProductionMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/production-monnify-webhook-auth';
+import { NoopMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/noop-monnify-webhook-auth';
+import { MONNIFY_WEBHOOK_HANDLERS } from '@/fahari/payments/monnify/webhook/monnify-webhook-handler';
+import { PaymentCollectionWebhookHandler } from '@/fahari/payments/monnify/webhook/payment-collection-webhook-handler';
+import { MonnifyWebhookRouter } from '@/fahari/payments/monnify/webhook/monnify-webhook-router';
 
 const MonnifyClientProvider = {
   provide: MonnifyClient,
@@ -22,6 +29,28 @@ const MonnifyClientProvider = {
     ),
 };
 
+const MonnifyWebhookAuthProvider = {
+  provide: MONNIFY_WEBHOOK_AUTH,
+  inject: [ConfigService, MonnifyClient],
+  useFactory: (
+    configService: ConfigService,
+    monnifyClient: MonnifyClient,
+  ) => {
+    if (configService.get<string>('NODE_ENV') === ENVIROMENT.PRODUCTION) {
+      return new ProductionMonnifyWebhookAuth(monnifyClient);
+    }
+    return new NoopMonnifyWebhookAuth();
+  },
+};
+
+const MonnifyWebhookHandlersProvider = {
+  provide: MONNIFY_WEBHOOK_HANDLERS,
+  inject: [PaymentCollectionWebhookHandler],
+  useFactory: (
+    paymentCollectionWebhookHandler: PaymentCollectionWebhookHandler,
+  ) => [paymentCollectionWebhookHandler],
+};
+
 @Module({
   imports: [PrismaModule, FahariPermissionModule],
   providers: [
@@ -30,6 +59,10 @@ const MonnifyClientProvider = {
     ReservedAccountService,
     PaymentCollectionService,
     PaymentNotificationService,
+    PaymentCollectionWebhookHandler,
+    MonnifyWebhookHandlersProvider,
+    MonnifyWebhookRouter,
+    MonnifyWebhookAuthProvider,
   ],
   controllers: [PaymentsAdminController, MonnifyWebhookController],
   exports: [ReservedAccountService, PaymentCollectionService],
