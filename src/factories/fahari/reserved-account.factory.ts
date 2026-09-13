@@ -20,7 +20,8 @@ class ReservedAccountFactory extends Factory<ReservedAccount> {
 const reservedAccountFactory = ReservedAccountFactory.define(
   ({ sequence, params }) => {
     const accountPrefix = params.accountPrefix ?? ACCOUNT_REFERENCE_PREFIX;
-    const accountCode = params.accountCode ?? 10_000 + sequence;
+    const accountCode =
+      params.accountCode ?? faker.number.int({ min: 10_000, max: 999_999 });
     return {
       id: faker.string.uuid(),
       userId: sequence,
