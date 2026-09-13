@@ -40,9 +40,9 @@ export interface MonnifyApiEnvelope<T> {
 export interface MonnifyReservedAccountPaymentSource {
   accountName: string;
   accountNumber: string;
-  bankCode?: string;
-  amountPaid?: number;
-  sessionId?: string;
+  bankCode: string;
+  amountPaid: number;
+  sessionId: string;
 }
 
 /**
