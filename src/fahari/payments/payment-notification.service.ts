@@ -18,52 +18,41 @@ export class PaymentNotificationService {
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
   ) {}
 
-  async notifyDriverOfPayment(collection: PaymentCollection): Promise<void> {
-    if (collection.notifiedAt) {
-      return;
-    }
+  async notifyOrSkip(collection: PaymentCollection): Promise<void> {
+    if (shouldNotify(collection)) {
+      const driver = await this.prismaService.user.findUniqueOrThrow({
+        where: { id: collection.userId },
+      });
 
-    const driver = await this.prismaService.user.findUnique({
-      where: { id: collection.userId },
-    });
-    this.logIfMissing(
-      driver,
-      `Skipping payment notification; user ${collection.userId} not found`,
-    );
-    if (!driver) {
-      return;
-    }
+      const amountPaid = collection.amountPaid.toFixed(2);
+      const emailHtml = await render(
+        React.createElement(PaymentReceivedTemplate, {
+          driverFirstName: driver.firstname,
+          amountPaid,
+          currency: collection.currency,
+          senderAccountName: collection.senderAccountName,
+          senderAccountNumber: collection.senderAccountNumber,
+        }),
+      );
 
-    const amountPaid = collection.amountPaid.toFixed(2);
-    const emailHtml = await render(
-      React.createElement(PaymentReceivedTemplate, {
-        driverFirstName: driver.firstname,
-        amountPaid,
-        currency: collection.currency,
-        senderAccountName: collection.senderAccountName,
-        senderAccountNumber: collection.senderAccountNumber,
-      }),
-    );
+      await this.emailClient.send({
+        from: { email: 'payments@fahari.co', name: 'Fahari Payments' },
+        to: {
+          email: driver.email,
+          name: fullName(driver),
+        },
+        subject: `Payment received: ${collection.currency} ${amountPaid}`,
+        html: emailHtml,
+      });
 
-    await this.emailClient.send({
-      from: { email: 'payments@fahari.co', name: 'Fahari Payments' },
-      to: {
-        email: driver.email,
-        name: fullName(driver),
-      },
-      subject: `Payment received: ${collection.currency} ${amountPaid}`,
-      html: emailHtml,
-    });
-
-    await this.paymentCollectionService.markNotified(collection.id);
-    this.logger.log(
-      `Payment received email sent for user: ${driver.id} collection: ${collection.id}`,
-    );
-  }
-
-  private logIfMissing(value: unknown, message: string): void {
-    if (!value) {
-      this.logger.warn(message);
+      await this.paymentCollectionService.markNotified(collection.id);
+      this.logger.log(
+        `Payment received email sent for user: ${driver.id} collection: ${collection.id}`,
+      );
     }
   }
+}
+
+function shouldNotify(collection: PaymentCollection): boolean {
+  return collection.notifiedAt == null;
 }
