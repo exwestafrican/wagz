@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PaymentCollection, Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
-import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
+import { AccountManager } from '@/fahari/payments/account-manager';
 import {
   MONNIFY_RESERVED_ACCOUNT_PRODUCT,
   MONNIFY_SUCCESSFUL_TRANSACTION,
@@ -22,7 +22,7 @@ export class PaymentCollectionService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly reservedAccountService: ReservedAccountService,
+    private readonly accountManager: AccountManager,
   ) {}
 
   async ingestSuccessfulCollection(
@@ -48,9 +48,7 @@ export class PaymentCollectionService {
     }
 
     const reservedAccount =
-      await this.reservedAccountService.findByAccountReference(
-        accountReference,
-      );
+      await this.accountManager.findByAccountReference(accountReference);
     this.logIfMissing(
       reservedAccount,
       `Unmatched payment collection for accountReference=${accountReference}`,

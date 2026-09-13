@@ -30,7 +30,7 @@ export class ReservedAccountService {
     private readonly accountManager: AccountManager,
   ) {}
 
-  async provisionForUser(
+  async provision(
     input: ProvisionReservedAccountInput,
   ): Promise<ReservedAccount> {
     const existingActive = await this.accountManager.getReservedAccount(
@@ -75,12 +75,6 @@ export class ReservedAccountService {
       );
       throw error;
     }
-  }
-
-  async findByAccountReference(
-    accountReference: string,
-  ): Promise<ReservedAccount | null> {
-    return this.accountManager.findByAccountReference(accountReference);
   }
 
   private async findOwnerOrThrow(ownerId: number) {
