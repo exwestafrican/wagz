@@ -146,32 +146,6 @@ describe('ReservedAccountService', () => {
     });
   });
 
-  // it('allocates sequential account codes starting at 10000', async () => {
-  //   const requester = await createUser();
-  //   const firstOwner = await createUser();
-  //   const secondOwner = await createUser();
-  //   monnifyClient.reserveAccount.mockImplementation(
-  //     (request: ReserveAccountRequest) =>
-  //       Promise.resolve(
-  //         monnifyResponse(request.accountReference, request.customerEmail),
-  //       ),
-  //   );
-  //
-  //   const firstAccount = await reservedAccountService.provision(
-  //     requester.id,
-  //     firstOwner.id,
-  //     { bvn: DRIVER_BVN, nin: DRIVER_NIN },
-  //   );
-  //   const secondAccount = await reservedAccountService.provision(
-  //     requester.id,
-  //     secondOwner.id,
-  //     { bvn: DRIVER_BVN, nin: DRIVER_NIN },
-  //   );
-  //
-  //   expect(firstAccount.accountReference).toBe('FAH10000');
-  //   expect(secondAccount.accountReference).toBe('FAH10001');
-  // });
-
   it('returns the existing active account without calling Monnify again', async () => {
     const requester = await createUser();
     const owner = await createUser();
