@@ -12,11 +12,6 @@ import type {
   MonnifyWebhookPayload,
 } from '@/fahari/payments/monnify/monnify.types';
 
-export interface IngestedPaymentCollection {
-  collection: PaymentCollection;
-  isNew: boolean;
-}
-
 @Injectable()
 export class PaymentCollectionService {
   private readonly logger = new Logger(PaymentCollectionService.name);
@@ -28,7 +23,7 @@ export class PaymentCollectionService {
 
   async ingestSuccessfulCollection(
     payload: MonnifyWebhookPayload,
-  ): Promise<IngestedPaymentCollection> {
+  ): Promise<PaymentCollection> {
     const { eventData } = payload;
     const accountReference = eventData.product.reference;
     const transactionReference = eventData.transactionReference;
@@ -37,7 +32,7 @@ export class PaymentCollectionService {
       where: { transactionReference },
     });
     if (existing) {
-      return { collection: existing, isNew: false };
+      return existing;
     }
 
     const reservedAccount =
@@ -64,7 +59,7 @@ export class PaymentCollectionService {
     }
 
     try {
-      const collection = await this.prismaService.paymentCollection.create({
+      return await this.prismaService.paymentCollection.create({
         data: {
           transactionReference,
           accountReference,
@@ -76,17 +71,14 @@ export class PaymentCollectionService {
           senderAccountName: paymentSource.accountName,
         },
       });
-      return { collection, isNew: true };
     } catch (error) {
       if (
         error instanceof Prisma.PrismaClientKnownRequestError &&
         error.code === 'P2002'
       ) {
-        const duplicate =
-          await this.prismaService.paymentCollection.findUniqueOrThrow({
-            where: { transactionReference },
-          });
-        return { collection: duplicate, isNew: false };
+        return this.prismaService.paymentCollection.findUniqueOrThrow({
+          where: { transactionReference },
+        });
       }
       throw error;
     }

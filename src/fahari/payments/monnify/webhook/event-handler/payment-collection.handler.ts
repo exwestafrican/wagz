@@ -25,18 +25,17 @@ export class PaymentCollectionWebhookHandler implements MonnifyWebhookHandler {
   }
 
   async handle(payload: MonnifyWebhookPayload): Promise<{ status: string }> {
-    const ingested =
+    const collection =
       await this.paymentCollectionService.ingestSuccessfulCollection(payload);
 
-    if (ingested.isNew && !ingested.collection.notifiedAt) {
-      void this.paymentNotificationService
-        .notifyDriverOfPayment(ingested.collection)
-        .catch((error: unknown) => {
-          this.logger.error(
-            `Failed sending payment notification for collection ${ingested.collection.id}: ${error instanceof Error ? error.message : 'unknown error'}`,
-          );
-        });
-    }
+    void this.paymentNotificationService
+      .notifyOrSkip(collection)
+      .catch((error: unknown) => {
+        //TODO send alert or add metric for this please.
+        this.logger.error(
+          `Failed sending payment notification for collection ${collection.id}: ${error instanceof Error ? error.message : 'unknown error'}`,
+        );
+      });
 
     return { status: 'ok' };
   }
