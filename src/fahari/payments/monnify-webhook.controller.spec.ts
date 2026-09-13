@@ -1,6 +1,6 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { INestApplication, UnauthorizedException } from '@nestjs/common';
+import { INestApplication, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 
 import { PrismaModule } from '@/prisma/prisma.module';
@@ -209,17 +209,18 @@ describe('MonnifyWebhookController', () => {
     expect(emailClient.sent).toHaveLength(1);
   });
 
-  it('stores unmatched collections without sending email', async () => {
+  it('rejects unmatched collections when no reserved account exists', async () => {
     const payload = successfulCollectionPayload(
       'FAH999999999',
       'MNFY|04|20211117112842|000172',
       { name: 'Unknown Driver', email: 'unknown@example.com' },
     );
 
-    await webhookController.handleWebhook(payload);
-    await new Promise((resolve) => setTimeout(resolve, 50));
+    await expect(webhookController.handleWebhook(payload)).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
 
-    expect(await prismaService.paymentCollection.count()).toBe(1);
+    expect(await prismaService.paymentCollection.count()).toBe(0);
     expect(emailClient.sent).toHaveLength(0);
   });
 
