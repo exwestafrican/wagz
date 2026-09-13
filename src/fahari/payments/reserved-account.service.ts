@@ -13,12 +13,10 @@ import { ACCOUNT_REFERENCE_PREFIX } from '@/fahari/payments/monnify/monnify.cons
 import { fullName } from '@/fahari/user/full-name';
 import { notInDbError } from '@/common/error-type';
 
-export interface ProvisionReservedAccountInput {
-  requestedBy: number;
-  ownerId: number;
+export type BankDetails = {
   bvn: string;
   nin: string;
-}
+};
 
 @Injectable()
 export class ReservedAccountService {
@@ -31,21 +29,22 @@ export class ReservedAccountService {
   ) {}
 
   async provision(
-    input: ProvisionReservedAccountInput,
+    requestedBy: number,
+    ownerId: number,
+    bankDetails: BankDetails,
   ): Promise<ReservedAccount> {
-    const existingActive = await this.accountManager.getReservedAccount(
-      input.ownerId,
-    );
+    const existingActive =
+      await this.accountManager.getReservedAccount(ownerId);
     if (existingActive) {
       return existingActive;
     }
 
-    const owner = await this.findOwnerOrThrow(input.ownerId);
+    const owner = await this.findOwnerOrThrow(ownerId);
     const customerName = fullName(owner);
     const customerEmail = owner.email;
     const requestLog = await this.createPendingRequestLog(
-      input.requestedBy,
-      input.ownerId,
+      requestedBy,
+      ownerId,
     );
 
     try {
@@ -56,8 +55,8 @@ export class ReservedAccountService {
         customerEmail,
         currencyCode: 'NGN',
         contractCode: this.monnifyClient.contractCode,
-        bvn: input.bvn,
-        nin: input.nin,
+        bvn: bankDetails.bvn,
+        nin: bankDetails.nin,
         ...defaultMonnifyBankConfig(),
       });
 
