@@ -1,7 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, Length } from 'class-validator';
+import { IsInt, IsNotEmpty, IsString, Length } from 'class-validator';
 
 export class ProvisionReservedAccountDto {
+  @ApiProperty({
+    description: 'Fahari user id of the driver',
+    example: 42,
+  })
+  @IsInt()
+  userId: number;
+
   @ApiProperty({
     description: 'Driver BVN (11 digits)',
     example: '21212121212',

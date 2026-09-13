@@ -118,6 +118,7 @@ describe('MonnifyWebhookController', () => {
   function successfulCollectionPayload(
     accountReference: string,
     transactionReference: string,
+    customer: { name: string; email: string },
     amountPaid = 5000,
   ): MonnifyWebhookPayload {
     return {
@@ -128,10 +129,13 @@ describe('MonnifyWebhookController', () => {
           type: 'RESERVED_ACCOUNT',
         },
         transactionReference,
+        paymentReference: transactionReference,
         amountPaid,
+        totalPayable: amountPaid,
         currency: 'NGN',
         paidOn: '2021-11-17 11:28:42.615',
         paymentStatus: 'PAID',
+        customer,
         paymentSourceInformation: [
           {
             bankCode: '232',
@@ -160,6 +164,10 @@ describe('MonnifyWebhookController', () => {
     const payload = successfulCollectionPayload(
       accountReference,
       'MNFY|04|20211117112842|000170',
+      {
+        name: `${driver.firstname} ${driver.lastname}`,
+        email: driver.email,
+      },
     );
 
     await webhookController.handleWebhook(payload);
@@ -189,10 +197,14 @@ describe('MonnifyWebhookController', () => {
   });
 
   it('does not email twice when the same webhook is replayed', async () => {
-    const { accountReference } = await createDriverWithReservedAccount();
+    const { driver, accountReference } = await createDriverWithReservedAccount();
     const payload = successfulCollectionPayload(
       accountReference,
       'MNFY|04|20211117112842|000171',
+      {
+        name: `${driver.firstname} ${driver.lastname}`,
+        email: driver.email,
+      },
     );
 
     await webhookController.handleWebhook(payload);
@@ -206,8 +218,9 @@ describe('MonnifyWebhookController', () => {
 
   it('stores unmatched collections without sending email', async () => {
     const payload = successfulCollectionPayload(
-      'fahari_user_missing',
+      'FAH999999999',
       'MNFY|04|20211117112842|000172',
+      { name: 'Unknown Driver', email: 'unknown@example.com' },
     );
 
     await webhookController.handleWebhook(payload);
@@ -251,17 +264,24 @@ describe('MonnifyWebhookController', () => {
 
     await expect(
       productionController.handleWebhook(
-        successfulCollectionPayload('ref', 'txn'),
+        successfulCollectionPayload('ref', 'txn', {
+          name: 'Test Driver',
+          email: 'driver@example.com',
+        }),
         'invalid-signature',
       ),
     ).rejects.toBeInstanceOf(UnauthorizedException);
   });
 
   it('accepts a valid production signature', async () => {
-    const { accountReference } = await createDriverWithReservedAccount();
+    const { driver, accountReference } = await createDriverWithReservedAccount();
     const payload = successfulCollectionPayload(
       accountReference,
       'MNFY|04|20211117112842|000173',
+      {
+        name: `${driver.firstname} ${driver.lastname}`,
+        email: driver.email,
+      },
     );
     const signature = computeMonnifySignature(
       clientSecret,
