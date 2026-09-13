@@ -125,15 +125,6 @@ describe('MonnifyWebhookController', () => {
     };
   }
 
-  async function waitForEmailSend(expectedCount: number): Promise<void> {
-    for (let attempt = 0; attempt < 50; attempt++) {
-      if (emailClient.send.mock.calls.length >= expectedCount) {
-        return;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 20));
-    }
-  }
-
   it('records a collection and emails the driver once', async () => {
     const { driver, accountReference } =
       await createDriverWithReservedAccount();
@@ -148,7 +139,6 @@ describe('MonnifyWebhookController', () => {
     );
 
     await webhookController.handleWebhook(payload);
-    await waitForEmailSend(1);
 
     const collections = await prismaService.paymentCollection.findMany();
     expect(collections).toHaveLength(1);
@@ -172,9 +162,7 @@ describe('MonnifyWebhookController', () => {
     );
 
     await webhookController.handleWebhook(payload);
-    await waitForEmailSend(1);
     await webhookController.handleWebhook(payload);
-    await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(await prismaService.paymentCollection.count()).toBe(1);
     expect(emailClient.send).toHaveBeenCalledTimes(1);
@@ -237,7 +225,6 @@ describe('MonnifyWebhookController', () => {
     );
 
     await productionController.handleWebhook(payload, signature);
-    await waitForEmailSend(1);
 
     expect(await prismaService.paymentCollection.count()).toBe(1);
     expect(emailClient.send).toHaveBeenCalledTimes(1);
