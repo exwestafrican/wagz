@@ -10,6 +10,7 @@ import { resetDb } from '@/test-helpers/rest-db';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { accountReferenceForUser } from '@/fahari/payments/monnify/monnify.constants';
+import { MONIEPOINT_BANK_CODE } from '@/fahari/payments/monnify/monnify-bank-config';
 import {
   MonnifyApiError,
   ReserveAccountResponseBody,
@@ -115,6 +116,8 @@ describe('ReservedAccountService', () => {
         bvn: DRIVER_BVN,
         nin: DRIVER_NIN,
         contractCode: 'contract_code',
+        getAllAvailableBanks: false,
+        preferredBanks: [MONIEPOINT_BANK_CODE],
       }),
     );
   });

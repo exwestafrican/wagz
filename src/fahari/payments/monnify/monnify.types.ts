@@ -7,7 +7,8 @@ export interface ReserveAccountRequest {
   customerName: string;
   bvn: string;
   nin: string;
-  getAllAvailableBanks?: boolean;
+  getAllAvailableBanks: boolean;
+  preferredBanks: string[];
 }
 
 export interface MonnifyBankAccount {
