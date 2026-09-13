@@ -27,16 +27,6 @@ export class ReservedAccountResponseDto {
 export function toReservedAccountResponse(
   reservedAccount: ReservedAccount,
 ): ReservedAccountResponseDto {
-  if (
-    !reservedAccount.accountNumber ||
-    !reservedAccount.bankCode ||
-    !reservedAccount.bankName
-  ) {
-    throw new Error(
-      `Reserved account ${reservedAccount.id} is missing bank details`,
-    );
-  }
-
   return {
     id: reservedAccount.id,
     userId: reservedAccount.userId,

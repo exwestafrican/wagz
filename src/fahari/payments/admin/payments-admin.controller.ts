@@ -4,6 +4,7 @@ import {
   Controller,
   HttpCode,
   HttpStatus,
+  Logger,
   NotFoundException,
   Post,
   UseGuards,
@@ -25,6 +26,8 @@ import { MonnifyApiError } from '@/fahari/payments/monnify/monnify.types';
 @Controller('fahari/admin/users')
 @ApiTags('fahari-payments')
 export class PaymentsAdminController {
+  private readonly logger = new Logger(PaymentsAdminController.name);
+
   constructor(
     private readonly reservedAccountService: ReservedAccountService,
     private readonly fahariPermissionService: FahariPermissionService,
@@ -51,6 +54,10 @@ export class PaymentsAdminController {
     status: HttpStatus.FORBIDDEN,
     description: 'Caller is not a Fahari super admin',
   })
+  @ApiResponse({
+    status: HttpStatus.BAD_GATEWAY,
+    description: 'Monnify could not provision the reserved account',
+  })
   @ApiBadRequestResponse()
   async provisionReservedAccount(
     @User() requestUser: RequestUser,
@@ -58,12 +65,15 @@ export class PaymentsAdminController {
   ): Promise<ReservedAccountResponseDto> {
     try {
       const reservedAccount =
-        await this.fahariPermissionService.runIfSuperAdmin(requestUser, () =>
-          this.reservedAccountService.provisionForUser({
-            userId: dto.userId,
-            bvn: dto.bvn,
-            nin: dto.nin,
-          }),
+        await this.fahariPermissionService.runIfSuperAdmin(
+          requestUser,
+          (requester) =>
+            this.reservedAccountService.provisionForUser({
+              requestedBy: requester.id,
+              ownerId: dto.userId,
+              bvn: dto.bvn,
+              nin: dto.nin,
+            }),
         );
       return toReservedAccountResponse(reservedAccount);
     } catch (error) {
@@ -71,6 +81,9 @@ export class PaymentsAdminController {
         throw error;
       }
       if (error instanceof MonnifyApiError) {
+        this.logger.error(
+          `Unable to provision reserved account for user: ${dto.userId}; responseCode=${error.responseCode}; responseMessage=${error.responseMessage}`,
+        );
         throw new BadGatewayException('Unable to provision reserved account');
       }
       throw error;

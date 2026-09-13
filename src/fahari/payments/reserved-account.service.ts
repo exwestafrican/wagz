@@ -10,11 +10,14 @@ import {
 } from '@/fahari/payments/monnify/monnify.types';
 import {
   ReservedAccount,
+  ReservedAccountRequestLog,
+  ReservedAccountRequestStatus,
   ReservedAccountStatus,
 } from '@/generated/prisma/client';
 
 export interface ProvisionReservedAccountInput {
-  userId: number;
+  requestedBy: number;
+  ownerId: number;
   bvn: string;
   nin: string;
 }
@@ -36,32 +39,31 @@ export class ReservedAccountService {
   ): Promise<ReservedAccount> {
     const existingActive = await this.prismaService.reservedAccount.findFirst({
       where: {
-        userId: input.userId,
+        userId: input.ownerId,
         status: ReservedAccountStatus.ACTIVE,
-        accountNumber: { not: null },
       },
     });
-    if (existingActive?.accountNumber) {
+    if (existingActive) {
       return existingActive;
     }
 
-    const driver = await this.prismaService.user.findUnique({
-      where: { id: input.userId },
+    const owner = await this.prismaService.user.findUnique({
+      where: { id: input.ownerId },
     });
-    if (!driver) {
-      throw new NotFoundException(`User ${input.userId} not found`);
+    if (!owner) {
+      throw new NotFoundException(`User ${input.ownerId} not found`);
     }
 
-    const customerName = `${driver.firstname} ${driver.lastname}`.trim();
-    const customerEmail = driver.email;
-    const pendingAccount = await this.createPendingReservedAccount(
-      driver.id,
-      customerEmail,
+    const customerName = `${owner.firstname} ${owner.lastname}`.trim();
+    const customerEmail = owner.email;
+    const requestLog = await this.createPendingRequestLog(
+      input.requestedBy,
+      input.ownerId,
     );
 
     try {
       const monnifyAccount = await this.monnifyClient.reserveAccount({
-        accountReference: pendingAccount.accountReference,
+        accountReference: requestLog.accountReference,
         accountName: customerName,
         customerName,
         customerEmail,
@@ -72,24 +74,32 @@ export class ReservedAccountService {
         ...defaultMonnifyBankConfig(),
       });
 
-      return this.persistActiveAccount(pendingAccount.id, monnifyAccount);
+      return this.completeSuccessfulProvision(requestLog, monnifyAccount);
     } catch (error) {
       if (
         error instanceof MonnifyApiError &&
         this.isDuplicateAccountError(error)
       ) {
         const existingOnMonnify = await this.monnifyClient.getReservedAccount(
-          pendingAccount.accountReference,
+          requestLog.accountReference,
         );
-        return this.persistActiveAccount(pendingAccount.id, existingOnMonnify);
+        return this.completeSuccessfulProvision(requestLog, existingOnMonnify);
       }
 
-      await this.prismaService.reservedAccount.update({
-        where: { id: pendingAccount.id },
-        data: { status: ReservedAccountStatus.FAILED },
+      await this.prismaService.reservedAccountRequestLog.update({
+        where: { id: requestLog.id },
+        data: {
+          status: ReservedAccountRequestStatus.FAILED,
+          failureMessage:
+            error instanceof MonnifyApiError
+              ? (error.responseMessage ?? error.message)
+              : error instanceof Error
+                ? error.message
+                : 'Unknown error',
+        },
       });
       this.logger.error(
-        `Failed to provision reserved account for user: ${driver.id}`,
+        `Failed to provision reserved account for user: ${owner.id}`,
       );
       throw error;
     }
@@ -103,10 +113,10 @@ export class ReservedAccountService {
     });
   }
 
-  private async createPendingReservedAccount(
-    userId: number,
-    customerEmail: string,
-  ): Promise<ReservedAccount> {
+  private async createPendingRequestLog(
+    requestedBy: number,
+    ownerId: number,
+  ): Promise<ReservedAccountRequestLog> {
     for (
       let attempt = 0;
       attempt < ACCOUNT_REFERENCE_CREATE_ATTEMPTS;
@@ -114,12 +124,12 @@ export class ReservedAccountService {
     ) {
       const accountReference = this.accountManager.generateAccountReference();
       try {
-        return await this.prismaService.reservedAccount.create({
+        return await this.prismaService.reservedAccountRequestLog.create({
           data: {
-            userId,
+            requestedBy,
+            ownerId,
             accountReference,
-            customerEmail,
-            status: ReservedAccountStatus.PENDING,
+            status: ReservedAccountRequestStatus.PENDING,
           },
         });
       } catch (error) {
@@ -138,8 +148,8 @@ export class ReservedAccountService {
     );
   }
 
-  private async persistActiveAccount(
-    reservedAccountId: string,
+  private async completeSuccessfulProvision(
+    requestLog: ReservedAccountRequestLog,
     monnifyAccount: ReserveAccountResponseBody,
   ): Promise<ReservedAccount> {
     const primaryBankAccount = monnifyAccount.accounts[0];
@@ -149,17 +159,25 @@ export class ReservedAccountService {
       );
     }
 
-    return this.prismaService.reservedAccount.update({
-      where: { id: reservedAccountId },
-      data: {
-        accountReference: monnifyAccount.accountReference,
-        accountNumber: primaryBankAccount.accountNumber,
-        bankCode: primaryBankAccount.bankCode,
-        bankName: primaryBankAccount.bankName,
-        customerEmail: monnifyAccount.customerEmail,
-        status: ReservedAccountStatus.ACTIVE,
-      },
-    });
+    const [, reservedAccount] = await this.prismaService.$transaction([
+      this.prismaService.reservedAccountRequestLog.update({
+        where: { id: requestLog.id },
+        data: { status: ReservedAccountRequestStatus.SUCCESS },
+      }),
+      this.prismaService.reservedAccount.create({
+        data: {
+          userId: requestLog.ownerId,
+          accountReference: monnifyAccount.accountReference,
+          accountNumber: primaryBankAccount.accountNumber,
+          bankCode: primaryBankAccount.bankCode,
+          bankName: primaryBankAccount.bankName,
+          customerEmail: monnifyAccount.customerEmail,
+          status: ReservedAccountStatus.ACTIVE,
+        },
+      }),
+    ]);
+
+    return reservedAccount;
   }
 
   private isDuplicateAccountError(error: MonnifyApiError): boolean {
