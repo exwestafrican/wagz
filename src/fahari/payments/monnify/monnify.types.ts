@@ -55,16 +55,17 @@ export interface MonnifyReservedAccountCollectionEventData {
     type: string;
   };
   transactionReference: string;
-  paymentReference?: string;
-  paidOn?: string;
+  paymentReference: string;
+  paidOn: string;
   amountPaid: number;
-  totalPayable?: number;
-  currency?: string;
-  paymentStatus?: string;
+  totalPayable: number;
+  currency: string;
+  paymentStatus: string;
   paymentSourceInformation: MonnifyReservedAccountPaymentSource[];
-  customer?: {
-    name?: string;
-    email?: string;
+  /** Reserved-account holder (driver), not the payer. Payer is paymentSourceInformation. */
+  customer: {
+    name: string;
+    email: string;
   };
 }
 

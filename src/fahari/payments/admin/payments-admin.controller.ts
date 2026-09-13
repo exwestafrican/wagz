@@ -5,8 +5,6 @@ import {
   HttpCode,
   HttpStatus,
   NotFoundException,
-  Param,
-  ParseIntPipe,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -32,7 +30,7 @@ export class PaymentsAdminController {
     private readonly fahariPermissionService: FahariPermissionService,
   ) {}
 
-  @Post(':userId/reserved-account')
+  @Post('reserved-account')
   @HttpCode(HttpStatus.OK)
   @UseGuards(SupabaseAuthGuard)
   @ApiOperation({
@@ -56,14 +54,13 @@ export class PaymentsAdminController {
   @ApiBadRequestResponse()
   async provisionReservedAccount(
     @User() requestUser: RequestUser,
-    @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: ProvisionReservedAccountDto,
   ): Promise<ReservedAccountResponseDto> {
     try {
       const reservedAccount =
         await this.fahariPermissionService.runIfSuperAdmin(requestUser, () =>
           this.reservedAccountService.provisionForUser({
-            userId,
+            userId: dto.userId,
             bvn: dto.bvn,
             nin: dto.nin,
           }),

@@ -72,7 +72,7 @@ export class PaymentCollectionService {
           userId: reservedAccount?.userId,
           amountPaid: new Prisma.Decimal(eventData.amountPaid),
           paidOn: parseMonnifyPaidOn(eventData.paidOn),
-          currency: eventData.currency ?? 'NGN',
+          currency: eventData.currency,
           senderAccountNumber: paymentSource?.accountNumber ?? null,
           senderAccountName: paymentSource?.accountName ?? null,
         },
@@ -124,10 +124,7 @@ function primaryReservedAccountPaymentSource(
   };
 }
 
-function parseMonnifyPaidOn(paidOn?: string): Date | null {
-  if (!paidOn) {
-    return null;
-  }
+function parseMonnifyPaidOn(paidOn: string): Date | null {
   const normalized = paidOn.includes('T') ? paidOn : paidOn.replace(' ', 'T');
   const paidOnDate = new Date(normalized);
   if (Number.isNaN(paidOnDate.getTime())) {
