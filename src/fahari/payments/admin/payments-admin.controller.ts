@@ -68,7 +68,7 @@ export class PaymentsAdminController {
         await this.fahariPermissionService.runIfSuperAdmin(
           requestUser,
           (requester) =>
-            this.reservedAccountService.provisionForUser({
+            this.reservedAccountService.provision({
               requestedBy: requester.id,
               ownerId: dto.userId,
               bvn: dto.bvn,

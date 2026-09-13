@@ -9,7 +9,6 @@ import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
 import { Mail, EmailClient } from '@/messaging/email/email-client';
 import { AccountManager } from '@/fahari/payments/account-manager';
-import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
 import { PaymentNotificationService } from '@/fahari/payments/payment-notification.service';
 import { MonnifyWebhookController } from '@/fahari/payments/monnify-webhook.controller';
@@ -65,14 +64,10 @@ describe('MonnifyWebhookController', () => {
       secretKey: clientSecret,
     } as unknown as MonnifyClient;
 
-    const reservedAccountService = new ReservedAccountService(
-      prismaService,
-      monnifyClient,
-      new AccountManager(prismaService),
-    );
+    const accountManager = new AccountManager(prismaService);
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,
-      reservedAccountService,
+      accountManager,
     );
     const paymentNotificationService = new PaymentNotificationService(
       prismaService,
@@ -245,14 +240,10 @@ describe('MonnifyWebhookController', () => {
     const monnifyClient = {
       secretKey: clientSecret,
     } as unknown as MonnifyClient;
-    const reservedAccountService = new ReservedAccountService(
-      prismaService,
-      monnifyClient,
-      new AccountManager(prismaService),
-    );
+    const accountManager = new AccountManager(prismaService);
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,
-      reservedAccountService,
+      accountManager,
     );
     const paymentNotificationService = new PaymentNotificationService(
       prismaService,
@@ -303,14 +294,10 @@ describe('MonnifyWebhookController', () => {
     const monnifyClient = {
       secretKey: clientSecret,
     } as unknown as MonnifyClient;
-    const reservedAccountService = new ReservedAccountService(
-      prismaService,
-      monnifyClient,
-      new AccountManager(prismaService),
-    );
+    const accountManager = new AccountManager(prismaService);
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,
-      reservedAccountService,
+      accountManager,
     );
     const paymentNotificationService = new PaymentNotificationService(
       prismaService,
