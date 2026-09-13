@@ -6,7 +6,7 @@ CREATE TYPE "ReservedAccountRequestStatus" AS ENUM ('PENDING', 'SUCCESS', 'FAILE
 
 -- CreateTable
 CREATE TABLE "reserved_account" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "userId" INTEGER NOT NULL,
     "accountPrefix" VARCHAR(10) NOT NULL,
     "accountCode" INTEGER NOT NULL,
@@ -24,8 +24,8 @@ CREATE TABLE "reserved_account" (
 
 -- CreateTable
 CREATE TABLE "reserved_account_request_log" (
-    "id" TEXT NOT NULL,
-    "accountPrefix" VARCHAR(10) NOT NULL DEFAULT 'FAH',
+    "id" SERIAL NOT NULL,
+    "accountPrefix" VARCHAR(10) NOT NULL,
     "accountCode" SERIAL NOT NULL,
     "requestedBy" INTEGER NOT NULL,
     "ownerId" INTEGER NOT NULL,
@@ -39,7 +39,7 @@ CREATE TABLE "reserved_account_request_log" (
 
 -- CreateTable
 CREATE TABLE "payment_collection" (
-    "id" TEXT NOT NULL,
+    "id" SERIAL NOT NULL,
     "transactionReference" VARCHAR(100) NOT NULL,
     "accountReference" VARCHAR(100) NOT NULL,
     "userId" INTEGER NOT NULL,

@@ -12,7 +12,7 @@ enum ReservedAccountRequestStatus {
 }
 
 model ReservedAccount {
-  id               String                @id @default(cuid())
+  id               Int                   @id @default(autoincrement())
   userId           Int
   accountPrefix    String                @db.VarChar(10)
   accountCode      Int                   @unique
@@ -32,8 +32,8 @@ model ReservedAccount {
 }
 
 model ReservedAccountRequestLog {
-  id             String                       @id @default(cuid())
-  accountPrefix  String                       @default("FAH") @db.VarChar(10)
+  id             Int                          @id @default(autoincrement())
+  accountPrefix  String                       @db.VarChar(10)
   accountCode    Int                          @unique @default(autoincrement())
   requestedBy    Int
   ownerId        Int
@@ -51,7 +51,7 @@ model ReservedAccountRequestLog {
 }
 
 model PaymentCollection {
-  id                   String    @id @default(cuid())
+  id                   Int       @id @default(autoincrement())
   transactionReference String    @unique @db.VarChar(100)
   accountReference     String    @db.VarChar(100)
   userId               Int
