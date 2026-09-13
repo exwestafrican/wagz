@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '@/prisma/prisma.service';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { accountReferenceForUser } from '@/fahari/payments/monnify/monnify.constants';
+import { defaultMonnifyBankConfig } from '@/fahari/payments/monnify/monnify-bank-config';
 import {
   MonnifyApiError,
   ReserveAccountResponseBody,
@@ -77,7 +78,7 @@ export class ReservedAccountService {
         contractCode: this.monnifyClient.contractCode(),
         bvn: input.bvn,
         nin: input.nin,
-        getAllAvailableBanks: false,
+        ...defaultMonnifyBankConfig(),
       });
 
       return this.persistActiveAccount(pendingAccount.id, monnifyAccount);
