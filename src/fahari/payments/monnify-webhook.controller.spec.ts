@@ -17,9 +17,9 @@ import { computeMonnifySignature } from '@/fahari/payments/monnify/monnify-signa
 import { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.types';
 import { ReservedAccountStatus } from '@/generated/prisma/client';
 import { render } from '@react-email/render';
-import { NoopMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/noop-monnify-webhook-auth';
-import { ProductionMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/production-monnify-webhook-auth';
-import { PaymentCollectionWebhookHandler } from '@/fahari/payments/monnify/webhook/payment-collection-webhook-handler';
+import { NoopMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/auth/noop';
+import { ProductionMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/auth/production';
+import { PaymentCollectionWebhookHandler } from '@/fahari/payments/monnify/webhook/event-handler/payment-collection.handler';
 import { MonnifyWebhookRouter } from '@/fahari/payments/monnify/webhook/monnify-webhook-router';
 
 class RecordingEmailClient implements EmailClient {

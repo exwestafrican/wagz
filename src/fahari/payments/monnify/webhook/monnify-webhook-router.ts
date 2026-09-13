@@ -3,7 +3,7 @@ import type { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.ty
 import {
   MONNIFY_WEBHOOK_HANDLERS,
   type MonnifyWebhookHandler,
-} from '@/fahari/payments/monnify/webhook/monnify-webhook-handler';
+} from '@/fahari/payments/monnify/webhook/event-handler/webhook-handler';
 
 @Injectable()
 export class MonnifyWebhookRouter {

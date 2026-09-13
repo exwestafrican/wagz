@@ -12,7 +12,7 @@ import type { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.ty
 import {
   MONNIFY_WEBHOOK_AUTH,
   type MonnifyWebhookAuth,
-} from '@/fahari/payments/monnify/webhook/monnify-webhook-auth';
+} from '@/fahari/payments/monnify/webhook/auth/monnify-webhook-auth';
 import { MonnifyWebhookRouter } from '@/fahari/payments/monnify/webhook/monnify-webhook-router';
 
 @Controller('webhooks/monnify')

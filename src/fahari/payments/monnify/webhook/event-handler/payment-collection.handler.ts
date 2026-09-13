@@ -4,7 +4,7 @@ import {
   MONNIFY_SUCCESSFUL_TRANSACTION,
 } from '@/fahari/payments/monnify/monnify.constants';
 import type { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.types';
-import type { MonnifyWebhookHandler } from '@/fahari/payments/monnify/webhook/monnify-webhook-handler';
+import type { MonnifyWebhookHandler } from '@/fahari/payments/monnify/webhook/event-handler/webhook-handler';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
 import { PaymentNotificationService } from '@/fahari/payments/payment-notification.service';
 

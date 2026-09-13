@@ -10,11 +10,11 @@ import { PaymentCollectionService } from '@/fahari/payments/payment-collection.s
 import { PaymentNotificationService } from '@/fahari/payments/payment-notification.service';
 import { PaymentsAdminController } from '@/fahari/payments/admin/payments-admin.controller';
 import { MonnifyWebhookController } from '@/fahari/payments/monnify-webhook.controller';
-import { MONNIFY_WEBHOOK_AUTH } from '@/fahari/payments/monnify/webhook/monnify-webhook-auth';
-import { ProductionMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/production-monnify-webhook-auth';
-import { NoopMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/noop-monnify-webhook-auth';
-import { MONNIFY_WEBHOOK_HANDLERS } from '@/fahari/payments/monnify/webhook/monnify-webhook-handler';
-import { PaymentCollectionWebhookHandler } from '@/fahari/payments/monnify/webhook/payment-collection-webhook-handler';
+import { MONNIFY_WEBHOOK_AUTH } from '@/fahari/payments/monnify/webhook/auth/monnify-webhook-auth';
+import { ProductionMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/auth/production';
+import { NoopMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/auth/noop';
+import { MONNIFY_WEBHOOK_HANDLERS } from '@/fahari/payments/monnify/webhook/event-handler/webhook-handler';
+import { PaymentCollectionWebhookHandler } from '@/fahari/payments/monnify/webhook/event-handler/payment-collection.handler';
 import { MonnifyWebhookRouter } from '@/fahari/payments/monnify/webhook/monnify-webhook-router';
 
 const MonnifyClientProvider = {

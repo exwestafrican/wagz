@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.types';
-import type { MonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/monnify-webhook-auth';
+import type { MonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/auth/monnify-webhook-auth';
 
 @Injectable()
 export class NoopMonnifyWebhookAuth implements MonnifyWebhookAuth {
