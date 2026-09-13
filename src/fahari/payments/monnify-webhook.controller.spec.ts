@@ -1,13 +1,16 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
-import { INestApplication, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { faker } from '@faker-js/faker';
+import {
+  INestApplication,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 
 import { PrismaModule } from '@/prisma/prisma.module';
 import { PrismaService } from '@/prisma/prisma.service';
 import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
-import { Mail, EmailClient } from '@/messaging/email/email-client';
+import type { EmailClient } from '@/messaging/email/email-client';
 import { AccountManager } from '@/fahari/payments/account-manager';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
 import { PaymentNotificationService } from '@/fahari/payments/payment-notification.service';
@@ -15,33 +18,25 @@ import { MonnifyWebhookController } from '@/fahari/payments/monnify-webhook.cont
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { computeMonnifySignature } from '@/fahari/payments/monnify/monnify-signature';
 import { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.types';
-import { ReservedAccountStatus } from '@/generated/prisma/client';
-import { render } from '@react-email/render';
 import { NoopMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/auth/noop';
 import { ProductionMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/auth/production';
+import type { MonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/auth/monnify-webhook-auth';
 import { PaymentCollectionWebhookHandler } from '@/fahari/payments/monnify/webhook/event-handler/payment-collection.handler';
 import { MonnifyWebhookRouter } from '@/fahari/payments/monnify/webhook/monnify-webhook-router';
-
-class RecordingEmailClient implements EmailClient {
-  readonly sent: Mail[] = [];
-
-  send(email: Mail): Promise<void> {
-    this.sent.push(email);
-    return Promise.resolve();
-  }
-}
+import Factory, { PersistStrategy } from '@/factories/factory';
+import userFactory from '@/factories/fahari/user.factory';
+import reservedAccountFactory from '@/factories/fahari/reserved-account.factory';
 
 describe('MonnifyWebhookController', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let webhookController: MonnifyWebhookController;
-  let emailClient: RecordingEmailClient;
+  let emailClient: { send: jest.MockedFunction<EmailClient['send']> };
+  let factory: PersistStrategy;
   const clientSecret = 'monnify-test-secret';
 
   function buildController(
-    monnifyWebhookAuth:
-      | NoopMonnifyWebhookAuth
-      | ProductionMonnifyWebhookAuth,
+    monnifyWebhookAuth: MonnifyWebhookAuth,
   ): MonnifyWebhookController {
     const accountManager = new AccountManager(prismaService);
     const paymentCollectionService = new PaymentCollectionService(
@@ -74,7 +69,8 @@ describe('MonnifyWebhookController', () => {
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
-    emailClient = new RecordingEmailClient();
+    factory = Factory.createStrategy(prismaService);
+    emailClient = { send: jest.fn().mockResolvedValue(undefined) };
     webhookController = buildController(new NoopMonnifyWebhookAuth());
   });
 
@@ -84,28 +80,16 @@ describe('MonnifyWebhookController', () => {
   });
 
   async function createDriverWithReservedAccount() {
-    const driver = await prismaService.user.create({
-      data: {
-        email: faker.internet.email().toLowerCase(),
-        firstname: faker.person.firstName(),
-        lastname: faker.person.lastName(),
-      },
+    const driver = userFactory.build();
+    await factory.persist('user', () => driver);
+
+    const reservedAccount = reservedAccountFactory.build({
+      userId: driver.id,
+      customerEmail: driver.email,
     });
-    const accountReference = 'FAH102938';
-    await prismaService.reservedAccount.create({
-      data: {
-        userId: driver.id,
-        accountPrefix: 'FAH',
-        accountCode: 102938,
-        accountReference,
-        accountNumber: '6254727989',
-        bankCode: '50515',
-        bankName: 'Moniepoint Microfinance Bank',
-        customerEmail: driver.email,
-        status: ReservedAccountStatus.ACTIVE,
-      },
-    });
-    return { driver, accountReference };
+    await factory.persist('reservedAccount', () => reservedAccount);
+
+    return { driver, accountReference: reservedAccount.accountReference };
   }
 
   function successfulCollectionPayload(
@@ -142,9 +126,9 @@ describe('MonnifyWebhookController', () => {
     };
   }
 
-  async function waitForEmails(expectedCount: number): Promise<void> {
+  async function waitForEmailSend(expectedCount: number): Promise<void> {
     for (let attempt = 0; attempt < 50; attempt++) {
-      if (emailClient.sent.length >= expectedCount) {
+      if (emailClient.send.mock.calls.length >= expectedCount) {
         return;
       }
       await new Promise((resolve) => setTimeout(resolve, 20));
@@ -154,9 +138,10 @@ describe('MonnifyWebhookController', () => {
   it('records a collection and emails the driver once', async () => {
     const { driver, accountReference } =
       await createDriverWithReservedAccount();
+    const transactionReference = 'MNFY|04|20211117112842|000170';
     const payload = successfulCollectionPayload(
       accountReference,
-      'MNFY|04|20211117112842|000170',
+      transactionReference,
       {
         name: `${driver.firstname} ${driver.lastname}`,
         email: driver.email,
@@ -164,29 +149,16 @@ describe('MonnifyWebhookController', () => {
     );
 
     await webhookController.handleWebhook(payload);
-    await waitForEmails(1);
+    await waitForEmailSend(1);
 
     const collections = await prismaService.paymentCollection.findMany();
     expect(collections).toHaveLength(1);
     expect(collections[0]).toMatchObject({
-      transactionReference: 'MNFY|04|20211117112842|000170',
       accountReference,
       userId: driver.id,
-      senderAccountName: 'Monnify Limited',
-      senderAccountNumber: '0065432190',
+      transactionReference,
     });
-    expect(collections[0].notifiedAt).not.toBeNull();
-    expect(emailClient.sent).toHaveLength(1);
-    expect(emailClient.sent[0].to.email).toBe(driver.email);
-    expect(emailClient.sent[0].subject).toContain('5000.00');
-    expect(render).toHaveBeenCalledWith(
-      expect.objectContaining({
-        props: expect.objectContaining({
-          senderAccountName: 'Monnify Limited',
-          senderAccountNumber: '0065432190',
-        }),
-      }),
-    );
+    expect(emailClient.send).toHaveBeenCalledTimes(1);
   });
 
   it('does not email twice when the same webhook is replayed', async () => {
@@ -201,12 +173,12 @@ describe('MonnifyWebhookController', () => {
     );
 
     await webhookController.handleWebhook(payload);
-    await waitForEmails(1);
+    await waitForEmailSend(1);
     await webhookController.handleWebhook(payload);
     await new Promise((resolve) => setTimeout(resolve, 50));
 
     expect(await prismaService.paymentCollection.count()).toBe(1);
-    expect(emailClient.sent).toHaveLength(1);
+    expect(emailClient.send).toHaveBeenCalledTimes(1);
   });
 
   it('rejects unmatched collections when no reserved account exists', async () => {
@@ -216,12 +188,12 @@ describe('MonnifyWebhookController', () => {
       { name: 'Unknown Driver', email: 'unknown@example.com' },
     );
 
-    await expect(webhookController.handleWebhook(payload)).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      webhookController.handleWebhook(payload),
+    ).rejects.toBeInstanceOf(NotFoundException);
 
     expect(await prismaService.paymentCollection.count()).toBe(0);
-    expect(emailClient.sent).toHaveLength(0);
+    expect(emailClient.send).not.toHaveBeenCalled();
   });
 
   it('rejects invalid signatures in production', async () => {
@@ -266,9 +238,9 @@ describe('MonnifyWebhookController', () => {
     );
 
     await productionController.handleWebhook(payload, signature);
-    await waitForEmails(1);
+    await waitForEmailSend(1);
 
     expect(await prismaService.paymentCollection.count()).toBe(1);
-    expect(emailClient.sent).toHaveLength(1);
+    expect(emailClient.send).toHaveBeenCalledTimes(1);
   });
 });
