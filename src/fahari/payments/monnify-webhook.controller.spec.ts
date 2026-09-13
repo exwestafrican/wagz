@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ConfigModule } from '@nestjs/config';
 import { INestApplication, UnauthorizedException } from '@nestjs/common';
 import { faker } from '@faker-js/faker';
 
@@ -17,7 +17,10 @@ import { computeMonnifySignature } from '@/fahari/payments/monnify/monnify-signa
 import { MonnifyWebhookPayload } from '@/fahari/payments/monnify/monnify.types';
 import { ReservedAccountStatus } from '@/generated/prisma/client';
 import { render } from '@react-email/render';
-import { ENVIROMENT } from '@/common/const';
+import { NoopMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/noop-monnify-webhook-auth';
+import { ProductionMonnifyWebhookAuth } from '@/fahari/payments/monnify/webhook/production-monnify-webhook-auth';
+import { PaymentCollectionWebhookHandler } from '@/fahari/payments/monnify/webhook/payment-collection-webhook-handler';
+import { MonnifyWebhookRouter } from '@/fahari/payments/monnify/webhook/monnify-webhook-router';
 
 class RecordingEmailClient implements EmailClient {
   readonly sent: Mail[] = [];
@@ -35,35 +38,11 @@ describe('MonnifyWebhookController', () => {
   let emailClient: RecordingEmailClient;
   const clientSecret = 'monnify-test-secret';
 
-  beforeEach(async () => {
-    const module = await Test.createTestingModule({
-      imports: [ConfigModule.forRoot(), PrismaModule],
-      providers: [],
-    }).compile();
-
-    app = await createTestApp(module);
-    prismaService = app.get(PrismaService);
-    emailClient = new RecordingEmailClient();
-
-    const configService = {
-      get: (key: string) => {
-        if (key === 'NODE_ENV') {
-          return ENVIROMENT.DEVELOPMENT;
-        }
-        return undefined;
-      },
-      getOrThrow: (key: string) => {
-        if (key === 'MONNIFY_SECRET_KEY') {
-          return clientSecret;
-        }
-        throw new Error(`Missing config ${key}`);
-      },
-    } as unknown as ConfigService;
-
-    const monnifyClient = {
-      secretKey: clientSecret,
-    } as unknown as MonnifyClient;
-
+  function buildController(
+    monnifyWebhookAuth:
+      | NoopMonnifyWebhookAuth
+      | ProductionMonnifyWebhookAuth,
+  ): MonnifyWebhookController {
     const accountManager = new AccountManager(prismaService);
     const paymentCollectionService = new PaymentCollectionService(
       prismaService,
@@ -74,13 +53,29 @@ describe('MonnifyWebhookController', () => {
       paymentCollectionService,
       emailClient,
     );
-
-    webhookController = new MonnifyWebhookController(
-      configService,
-      monnifyClient,
+    const paymentCollectionWebhookHandler = new PaymentCollectionWebhookHandler(
       paymentCollectionService,
       paymentNotificationService,
     );
+    const monnifyWebhookRouter = new MonnifyWebhookRouter([
+      paymentCollectionWebhookHandler,
+    ]);
+    return new MonnifyWebhookController(
+      monnifyWebhookAuth,
+      monnifyWebhookRouter,
+    );
+  }
+
+  beforeEach(async () => {
+    const module = await Test.createTestingModule({
+      imports: [ConfigModule.forRoot(), PrismaModule],
+      providers: [],
+    }).compile();
+
+    app = await createTestApp(module);
+    prismaService = app.get(PrismaService);
+    emailClient = new RecordingEmailClient();
+    webhookController = buildController(new NoopMonnifyWebhookAuth());
   });
 
   afterEach(async () => {
@@ -229,32 +224,11 @@ describe('MonnifyWebhookController', () => {
   });
 
   it('rejects invalid signatures in production', async () => {
-    const productionConfig = {
-      get: (key: string) => {
-        if (key === 'NODE_ENV') {
-          return ENVIROMENT.PRODUCTION;
-        }
-        return undefined;
-      },
-    } as unknown as ConfigService;
     const monnifyClient = {
       secretKey: clientSecret,
     } as unknown as MonnifyClient;
-    const accountManager = new AccountManager(prismaService);
-    const paymentCollectionService = new PaymentCollectionService(
-      prismaService,
-      accountManager,
-    );
-    const paymentNotificationService = new PaymentNotificationService(
-      prismaService,
-      paymentCollectionService,
-      emailClient,
-    );
-    const productionController = new MonnifyWebhookController(
-      productionConfig,
-      monnifyClient,
-      paymentCollectionService,
-      paymentNotificationService,
+    const productionController = buildController(
+      new ProductionMonnifyWebhookAuth(monnifyClient),
     );
 
     await expect(
@@ -283,32 +257,11 @@ describe('MonnifyWebhookController', () => {
       JSON.stringify(payload),
     );
 
-    const productionConfig = {
-      get: (key: string) => {
-        if (key === 'NODE_ENV') {
-          return ENVIROMENT.PRODUCTION;
-        }
-        return undefined;
-      },
-    } as unknown as ConfigService;
     const monnifyClient = {
       secretKey: clientSecret,
     } as unknown as MonnifyClient;
-    const accountManager = new AccountManager(prismaService);
-    const paymentCollectionService = new PaymentCollectionService(
-      prismaService,
-      accountManager,
-    );
-    const paymentNotificationService = new PaymentNotificationService(
-      prismaService,
-      paymentCollectionService,
-      emailClient,
-    );
-    const productionController = new MonnifyWebhookController(
-      productionConfig,
-      monnifyClient,
-      paymentCollectionService,
-      paymentNotificationService,
+    const productionController = buildController(
+      new ProductionMonnifyWebhookAuth(monnifyClient),
     );
 
     await productionController.handleWebhook(payload, signature);
