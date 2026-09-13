@@ -32,21 +32,13 @@ export class MonnifyClient {
       },
     );
 
-    const envelope =
-      (await response.json()) as MonnifyApiEnvelope<ReserveAccountResponseBody>;
-
-    if (!response.ok || !envelope.requestSuccessful) {
-      this.logger.warn(
-        `Monnify reserve account failed with responseCode=${envelope.responseCode}`,
-      );
-      throw new MonnifyApiError(
-        'Failed to reserve Monnify account',
-        envelope.responseCode,
-        envelope.responseMessage,
-      );
-    }
-
-    return envelope.responseBody;
+    return this.runIfOk(
+      response,
+      'Failed to reserve Monnify account',
+      (envelope) =>
+        (envelope as MonnifyApiEnvelope<ReserveAccountResponseBody>)
+          .responseBody,
+    );
   }
 
   async getReservedAccount(
@@ -65,21 +57,13 @@ export class MonnifyClient {
       },
     );
 
-    const envelope =
-      (await response.json()) as MonnifyApiEnvelope<ReserveAccountResponseBody>;
-
-    if (!response.ok || !envelope.requestSuccessful) {
-      this.logger.warn(
-        `Monnify get reserved account failed with responseCode=${envelope.responseCode}`,
-      );
-      throw new MonnifyApiError(
-        'Failed to get Monnify reserved account',
-        envelope.responseCode,
-        envelope.responseMessage,
-      );
-    }
-
-    return envelope.responseBody;
+    return this.runIfOk(
+      response,
+      'Failed to get Monnify reserved account',
+      (envelope) =>
+        (envelope as MonnifyApiEnvelope<ReserveAccountResponseBody>)
+          .responseBody,
+    );
   }
 
   // TODO: install a cache (e.g. cache-manager / @nestjs/cache-manager) and
@@ -97,19 +81,35 @@ export class MonnifyClient {
       },
     });
 
-    const envelope = (await response.json()) as MonnifyApiEnvelope<{
-      accessToken: string;
-      expiresIn: number;
-    }>;
+    return this.runIfOk(
+      response,
+      'Failed to authenticate with Monnify',
+      (envelope) =>
+        (
+          envelope as MonnifyApiEnvelope<{
+            accessToken: string;
+            expiresIn: number;
+          }>
+        ).responseBody.accessToken,
+    );
+  }
 
+  private async runIfOk<T>(
+    response: Response,
+    failureMessage: string,
+    mapBody: (envelope: MonnifyApiEnvelope<unknown>) => T,
+  ): Promise<T> {
+    const envelope = (await response.json()) as MonnifyApiEnvelope<unknown>;
     if (!response.ok || !envelope.requestSuccessful) {
+      this.logger.warn(
+        `${failureMessage} responseCode=${envelope.responseCode}`,
+      );
       throw new MonnifyApiError(
-        'Failed to authenticate with Monnify',
+        failureMessage,
         envelope.responseCode,
         envelope.responseMessage,
       );
     }
-
-    return envelope.responseBody.accessToken;
+    return mapBody(envelope);
   }
 }
