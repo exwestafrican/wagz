@@ -48,6 +48,18 @@ const MonnifyWebhookHandlersProvider = {
   ) => [paymentCollectionWebhookHandler],
 };
 
+const MonnifyClientProvider = {
+  provide: MonnifyClient,
+  inject: [ConfigService],
+  useFactory: (configService: ConfigService) =>
+    new MonnifyClient(
+      configService.getOrThrow<string>('MONNIFY_BASE_URL'),
+      configService.getOrThrow<string>('MONNIFY_API_KEY'),
+      configService.getOrThrow<string>('MONNIFY_SECRET_KEY'),
+      configService.getOrThrow<string>('MONNIFY_CONTRACT_CODE'),
+    ),
+};
+
 @Module({
   imports: [PrismaModule, FahariPermissionModule],
   providers: [
