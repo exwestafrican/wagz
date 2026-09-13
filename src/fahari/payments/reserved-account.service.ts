@@ -1,11 +1,8 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
+import { AccountManager } from '@/fahari/payments/account-manager';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
-import { accountReferenceForUser } from '@/fahari/payments/monnify/monnify.constants';
 import { defaultMonnifyBankConfig } from '@/fahari/payments/monnify/monnify-bank-config';
 import {
   MonnifyApiError,
@@ -22,6 +19,8 @@ export interface ProvisionReservedAccountInput {
   nin: string;
 }
 
+const ACCOUNT_REFERENCE_CREATE_ATTEMPTS = 5;
+
 @Injectable()
 export class ReservedAccountService {
   private readonly logger = new Logger(ReservedAccountService.name);
@@ -29,20 +28,21 @@ export class ReservedAccountService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly monnifyClient: MonnifyClient,
+    private readonly accountManager: AccountManager,
   ) {}
 
   async provisionForUser(
     input: ProvisionReservedAccountInput,
   ): Promise<ReservedAccount> {
-    const existing = await this.prismaService.reservedAccount.findUnique({
-      where: { userId: input.userId },
+    const existingActive = await this.prismaService.reservedAccount.findFirst({
+      where: {
+        userId: input.userId,
+        status: ReservedAccountStatus.ACTIVE,
+        accountNumber: { not: null },
+      },
     });
-    if (
-      existing &&
-      existing.status === ReservedAccountStatus.ACTIVE &&
-      existing.accountNumber
-    ) {
-      return existing;
+    if (existingActive?.accountNumber) {
+      return existingActive;
     }
 
     const driver = await this.prismaService.user.findUnique({
@@ -52,25 +52,16 @@ export class ReservedAccountService {
       throw new NotFoundException(`User ${input.userId} not found`);
     }
 
-    const accountReference =
-      existing?.accountReference ?? accountReferenceForUser(driver.id);
     const customerName = `${driver.firstname} ${driver.lastname}`.trim();
     const customerEmail = driver.email;
-
-    const pendingAccount =
-      existing ??
-      (await this.prismaService.reservedAccount.create({
-        data: {
-          userId: driver.id,
-          accountReference,
-          customerEmail,
-          status: ReservedAccountStatus.PENDING,
-        },
-      }));
+    const pendingAccount = await this.createPendingReservedAccount(
+      driver.id,
+      customerEmail,
+    );
 
     try {
       const monnifyAccount = await this.monnifyClient.reserveAccount({
-        accountReference,
+        accountReference: pendingAccount.accountReference,
         accountName: customerName,
         customerName,
         customerEmail,
@@ -87,8 +78,9 @@ export class ReservedAccountService {
         error instanceof MonnifyApiError &&
         this.isDuplicateAccountError(error)
       ) {
-        const existingOnMonnify =
-          await this.monnifyClient.getReservedAccount(accountReference);
+        const existingOnMonnify = await this.monnifyClient.getReservedAccount(
+          pendingAccount.accountReference,
+        );
         return this.persistActiveAccount(pendingAccount.id, existingOnMonnify);
       }
 
@@ -109,6 +101,41 @@ export class ReservedAccountService {
     return this.prismaService.reservedAccount.findUnique({
       where: { accountReference },
     });
+  }
+
+  private async createPendingReservedAccount(
+    userId: number,
+    customerEmail: string,
+  ): Promise<ReservedAccount> {
+    for (
+      let attempt = 0;
+      attempt < ACCOUNT_REFERENCE_CREATE_ATTEMPTS;
+      attempt++
+    ) {
+      const accountReference = this.accountManager.generateAccountReference();
+      try {
+        return await this.prismaService.reservedAccount.create({
+          data: {
+            userId,
+            accountReference,
+            customerEmail,
+            status: ReservedAccountStatus.PENDING,
+          },
+        });
+      } catch (error) {
+        if (
+          error instanceof Prisma.PrismaClientKnownRequestError &&
+          error.code === 'P2002'
+        ) {
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new MonnifyApiError(
+      'Unable to allocate a unique reserved account reference',
+    );
   }
 
   private async persistActiveAccount(

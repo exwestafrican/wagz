@@ -7,12 +7,13 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { PrismaService } from '@/prisma/prisma.service';
 import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
+import { AccountManager } from '@/fahari/payments/account-manager';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
-import { accountReferenceForUser } from '@/fahari/payments/monnify/monnify.constants';
 import { MONIEPOINT_BANK_CODE } from '@/fahari/payments/monnify/monnify-bank-config';
 import {
   MonnifyApiError,
+  ReserveAccountRequest,
   ReserveAccountResponseBody,
 } from '@/fahari/payments/monnify/monnify.types';
 import { ReservedAccountStatus } from '@/generated/prisma/client';
@@ -24,6 +25,7 @@ describe('ReservedAccountService', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let reservedAccountService: ReservedAccountService;
+  let accountManager: AccountManager;
   let monnifyClient: {
     reserveAccount: jest.Mock;
     getReservedAccount: jest.Mock;
@@ -38,6 +40,7 @@ describe('ReservedAccountService', () => {
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
+    accountManager = new AccountManager();
     monnifyClient = {
       reserveAccount: jest.fn(),
       getReservedAccount: jest.fn(),
@@ -46,6 +49,7 @@ describe('ReservedAccountService', () => {
     reservedAccountService = new ReservedAccountService(
       prismaService,
       monnifyClient as unknown as MonnifyClient,
+      accountManager,
     );
   });
 
@@ -89,9 +93,9 @@ describe('ReservedAccountService', () => {
 
   it('provisions a reserved account via Monnify and persists the mapping', async () => {
     const driver = await createDriver();
-    const accountReference = accountReferenceForUser(driver.id);
-    monnifyClient.reserveAccount.mockResolvedValueOnce(
-      monnifyResponse(accountReference, driver.email),
+    monnifyClient.reserveAccount.mockImplementation(
+      (request: ReserveAccountRequest) =>
+        Promise.resolve(monnifyResponse(request.accountReference, driver.email)),
     );
 
     const reservedAccount = await reservedAccountService.provisionForUser({
@@ -102,16 +106,16 @@ describe('ReservedAccountService', () => {
 
     expect(reservedAccount).toMatchObject({
       userId: driver.id,
-      accountReference,
       accountNumber: '6254727989',
       bankCode: '50515',
       bankName: 'Moniepoint Microfinance Bank',
       customerEmail: driver.email,
       status: ReservedAccountStatus.ACTIVE,
     });
+    expect(reservedAccount.accountReference).toMatch(/^FAH\d{6}$/);
     expect(monnifyClient.reserveAccount).toHaveBeenCalledWith(
       expect.objectContaining({
-        accountReference,
+        accountReference: reservedAccount.accountReference,
         customerEmail: driver.email,
         bvn: DRIVER_BVN,
         nin: DRIVER_NIN,
@@ -127,7 +131,7 @@ describe('ReservedAccountService', () => {
     await prismaService.reservedAccount.create({
       data: {
         userId: driver.id,
-        accountReference: accountReferenceForUser(driver.id),
+        accountReference: 'FAH111111',
         accountNumber: '1111222233',
         bankCode: '50515',
         bankName: 'Moniepoint Microfinance Bank',
@@ -146,6 +150,35 @@ describe('ReservedAccountService', () => {
     expect(monnifyClient.reserveAccount).not.toHaveBeenCalled();
   });
 
+  it('allows multiple reserved account rows for the same user', async () => {
+    const driver = await createDriver();
+    await prismaService.reservedAccount.create({
+      data: {
+        userId: driver.id,
+        accountReference: 'FAH222222',
+        accountNumber: '1111222233',
+        bankCode: '50515',
+        bankName: 'Moniepoint Microfinance Bank',
+        customerEmail: driver.email,
+        status: ReservedAccountStatus.ACTIVE,
+      },
+    });
+    await prismaService.reservedAccount.create({
+      data: {
+        userId: driver.id,
+        accountReference: 'FAH333333',
+        customerEmail: driver.email,
+        status: ReservedAccountStatus.FAILED,
+      },
+    });
+
+    expect(
+      await prismaService.reservedAccount.count({
+        where: { userId: driver.id },
+      }),
+    ).toBe(2);
+  });
+
   it('throws when the driver does not exist', async () => {
     await expect(
       reservedAccountService.provisionForUser({
@@ -158,16 +191,16 @@ describe('ReservedAccountService', () => {
 
   it('recovers an existing Monnify account when reserve reports a duplicate', async () => {
     const driver = await createDriver();
-    const accountReference = accountReferenceForUser(driver.id);
-    monnifyClient.reserveAccount.mockRejectedValueOnce(
+    monnifyClient.reserveAccount.mockRejectedValue(
       new MonnifyApiError(
         'Failed to reserve Monnify account',
         '99',
         'You can not reserve two accounts with the same reference.',
       ),
     );
-    monnifyClient.getReservedAccount.mockResolvedValueOnce(
-      monnifyResponse(accountReference, driver.email),
+    monnifyClient.getReservedAccount.mockImplementation(
+      (accountReference: string) =>
+        Promise.resolve(monnifyResponse(accountReference, driver.email)),
     );
 
     const reservedAccount = await reservedAccountService.provisionForUser({
@@ -178,8 +211,9 @@ describe('ReservedAccountService', () => {
 
     expect(reservedAccount.status).toBe(ReservedAccountStatus.ACTIVE);
     expect(reservedAccount.accountNumber).toBe('6254727989');
+    expect(reservedAccount.accountReference).toMatch(/^FAH\d{6}$/);
     expect(monnifyClient.getReservedAccount).toHaveBeenCalledWith(
-      accountReference,
+      reservedAccount.accountReference,
     );
   });
 });
