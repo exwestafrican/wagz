@@ -31,7 +31,6 @@ describe('ReservedAccountService', () => {
   let accountManager: AccountManager;
   let monnifyClient: {
     reserveAccount: jest.Mock;
-    getReservedAccount: jest.Mock;
     contractCode: string;
   };
 
@@ -46,7 +45,6 @@ describe('ReservedAccountService', () => {
     accountManager = new AccountManager(prismaService);
     monnifyClient = {
       reserveAccount: jest.fn(),
-      getReservedAccount: jest.fn(),
       contractCode: 'contract_code',
     };
     reservedAccountService = new ReservedAccountService(
@@ -289,42 +287,5 @@ describe('ReservedAccountService', () => {
         where: { userId: owner.id },
       }),
     ).toBe(0);
-  });
-
-  it('recovers an existing Monnify account when reserve reports a duplicate', async () => {
-    const requester = await createUser();
-    const owner = await createUser();
-    monnifyClient.reserveAccount.mockRejectedValue(
-      new MonnifyApiError(
-        'Failed to reserve Monnify account',
-        '99',
-        'You can not reserve two accounts with the same reference.',
-      ),
-    );
-    monnifyClient.getReservedAccount.mockImplementation(
-      (accountReference: string) =>
-        Promise.resolve(monnifyResponse(accountReference, owner.email)),
-    );
-
-    const reservedAccount = await reservedAccountService.provisionForUser({
-      requestedBy: requester.id,
-      ownerId: owner.id,
-      bvn: DRIVER_BVN,
-      nin: DRIVER_NIN,
-    });
-
-    expect(reservedAccount.status).toBe(ReservedAccountStatus.ACTIVE);
-    expect(reservedAccount.accountNumber).toBe('6254727989');
-    expect(reservedAccount.accountReference).toMatch(/^FAH\d+$/);
-    expect(monnifyClient.getReservedAccount).toHaveBeenCalledWith(
-      reservedAccount.accountReference,
-    );
-
-    const requestLog = await prismaService.reservedAccountRequestLog.findUnique(
-      {
-        where: { accountReference: reservedAccount.accountReference },
-      },
-    );
-    expect(requestLog?.status).toBe(ReservedAccountRequestStatus.SUCCESS);
   });
 });

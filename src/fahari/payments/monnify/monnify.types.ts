@@ -84,3 +84,13 @@ export class MonnifyApiError extends Error {
     this.name = 'MonnifyApiError';
   }
 }
+
+export function failureMessageFrom(error: unknown): string {
+  if (error instanceof MonnifyApiError) {
+    return error.responseMessage ?? error.message;
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return 'Unknown error';
+}
