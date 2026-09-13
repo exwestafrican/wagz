@@ -11,5 +11,10 @@ model User {
   bookingAssignments BookingAssignment[] @relation("BookingAssignee")
   assignmentsMade    BookingAssignment[] @relation("BookingAssignedBy")
 
+  reservedAccounts             ReservedAccount[]
+  paymentCollections           PaymentCollection[]
+  reservedAccountRequestsMade  ReservedAccountRequestLog[] @relation("ReservedAccountRequestRequester")
+  reservedAccountRequestsOwned ReservedAccountRequestLog[] @relation("ReservedAccountRequestOwner")
+
   @@map("user")
 }
