@@ -1,4 +1,4 @@
-import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ApiProperty } from '@nestjs/swagger';
 import { ReservedAccount } from '@/generated/prisma/client';
 
 export class ReservedAccountResponseDto {
@@ -11,14 +11,14 @@ export class ReservedAccountResponseDto {
   @ApiProperty()
   accountReference: string;
 
-  @ApiPropertyOptional()
-  accountNumber: string | null;
+  @ApiProperty()
+  accountNumber: string;
 
-  @ApiPropertyOptional()
-  bankCode: string | null;
+  @ApiProperty()
+  bankCode: string;
 
-  @ApiPropertyOptional()
-  bankName: string | null;
+  @ApiProperty()
+  bankName: string;
 
   @ApiProperty()
   status: string;
@@ -27,6 +27,16 @@ export class ReservedAccountResponseDto {
 export function toReservedAccountResponse(
   reservedAccount: ReservedAccount,
 ): ReservedAccountResponseDto {
+  if (
+    !reservedAccount.accountNumber ||
+    !reservedAccount.bankCode ||
+    !reservedAccount.bankName
+  ) {
+    throw new Error(
+      `Reserved account ${reservedAccount.id} is missing bank details`,
+    );
+  }
+
   return {
     id: reservedAccount.id,
     userId: reservedAccount.userId,

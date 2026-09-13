@@ -66,7 +66,7 @@ export class ReservedAccountService {
         customerName,
         customerEmail,
         currencyCode: 'NGN',
-        contractCode: this.monnifyClient.contractCode(),
+        contractCode: this.monnifyClient.contractCode,
         bvn: input.bvn,
         nin: input.nin,
         ...defaultMonnifyBankConfig(),

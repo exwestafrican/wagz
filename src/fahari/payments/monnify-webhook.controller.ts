@@ -70,7 +70,7 @@ export class MonnifyWebhookController {
 
     const stringifiedBody = JSON.stringify(payload);
     const isValid = isValidMonnifySignature(
-      this.monnifyClient.clientSecret(),
+      this.monnifyClient.secretKey,
       stringifiedBody,
       monnifySignature,
     );

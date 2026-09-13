@@ -62,7 +62,7 @@ describe('MonnifyWebhookController', () => {
     } as unknown as ConfigService;
 
     const monnifyClient = {
-      clientSecret: () => clientSecret,
+      secretKey: clientSecret,
     } as unknown as MonnifyClient;
 
     const reservedAccountService = new ReservedAccountService(
@@ -241,7 +241,7 @@ describe('MonnifyWebhookController', () => {
       },
     } as unknown as ConfigService;
     const monnifyClient = {
-      clientSecret: () => clientSecret,
+      secretKey: clientSecret,
     } as unknown as MonnifyClient;
     const reservedAccountService = new ReservedAccountService(
       prismaService,
@@ -299,7 +299,7 @@ describe('MonnifyWebhookController', () => {
       },
     } as unknown as ConfigService;
     const monnifyClient = {
-      clientSecret: () => clientSecret,
+      secretKey: clientSecret,
     } as unknown as MonnifyClient;
     const reservedAccountService = new ReservedAccountService(
       prismaService,

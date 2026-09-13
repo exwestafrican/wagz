@@ -1,5 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Logger } from '@nestjs/common';
 import {
   MonnifyApiEnvelope,
   MonnifyApiError,
@@ -7,18 +6,22 @@ import {
   ReserveAccountResponseBody,
 } from '@/fahari/payments/monnify/monnify.types';
 
-@Injectable()
 export class MonnifyClient {
   private readonly logger = new Logger(MonnifyClient.name);
 
-  constructor(private readonly configService: ConfigService) {}
+  constructor(
+    private readonly baseUrl: string,
+    private readonly apiKey: string,
+    readonly secretKey: string,
+    readonly contractCode: string,
+  ) {}
 
   async reserveAccount(
     request: ReserveAccountRequest,
   ): Promise<ReserveAccountResponseBody> {
     const accessToken = await this.getAccessToken();
     const response = await fetch(
-      `${this.baseUrl()}/api/v2/bank-transfer/reserved-accounts`,
+      `${this.baseUrl}/api/v2/bank-transfer/reserved-accounts`,
       {
         method: 'POST',
         headers: {
@@ -52,7 +55,7 @@ export class MonnifyClient {
     const accessToken = await this.getAccessToken();
     const encodedReference = encodeURIComponent(accountReference);
     const response = await fetch(
-      `${this.baseUrl()}/api/v2/bank-transfer/reserved-accounts/${encodedReference}`,
+      `${this.baseUrl}/api/v2/bank-transfer/reserved-accounts/${encodedReference}`,
       {
         method: 'GET',
         headers: {
@@ -79,27 +82,15 @@ export class MonnifyClient {
     return envelope.responseBody;
   }
 
-  clientSecret(): string {
-    return this.configService.getOrThrow<string>('MONNIFY_SECRET_KEY');
-  }
-
-  contractCode(): string {
-    return this.configService.getOrThrow<string>('MONNIFY_CONTRACT_CODE');
-  }
-
-  private baseUrl(): string {
-    return this.configService.getOrThrow<string>('MONNIFY_BASE_URL');
-  }
-
   // TODO: install a cache (e.g. cache-manager / @nestjs/cache-manager) and
   // cache the Monnify access token until near expiresIn instead of logging in
   // on every request.
   private async getAccessToken(): Promise<string> {
-    const apiKey = this.configService.getOrThrow<string>('MONNIFY_API_KEY');
-    const secretKey = this.clientSecret();
-    const basicAuth = Buffer.from(`${apiKey}:${secretKey}`).toString('base64');
+    const basicAuth = Buffer.from(`${this.apiKey}:${this.secretKey}`).toString(
+      'base64',
+    );
 
-    const response = await fetch(`${this.baseUrl()}/api/v1/auth/login`, {
+    const response = await fetch(`${this.baseUrl}/api/v1/auth/login`, {
       method: 'POST',
       headers: {
         Authorization: `Basic ${basicAuth}`,

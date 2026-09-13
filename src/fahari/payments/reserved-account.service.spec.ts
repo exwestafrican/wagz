@@ -29,7 +29,7 @@ describe('ReservedAccountService', () => {
   let monnifyClient: {
     reserveAccount: jest.Mock;
     getReservedAccount: jest.Mock;
-    contractCode: jest.Mock;
+    contractCode: string;
   };
 
   beforeEach(async () => {
@@ -44,7 +44,7 @@ describe('ReservedAccountService', () => {
     monnifyClient = {
       reserveAccount: jest.fn(),
       getReservedAccount: jest.fn(),
-      contractCode: jest.fn().mockReturnValue('contract_code'),
+      contractCode: 'contract_code',
     };
     reservedAccountService = new ReservedAccountService(
       prismaService,
