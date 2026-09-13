@@ -27,7 +27,6 @@ CREATE TABLE "reserved_account_request_log" (
     "id" TEXT NOT NULL,
     "accountPrefix" VARCHAR(10) NOT NULL DEFAULT 'FAH',
     "accountCode" SERIAL NOT NULL,
-    "accountReference" VARCHAR(100) NOT NULL DEFAULT ("accountPrefix" || "accountCode"::text),
     "requestedBy" INTEGER NOT NULL,
     "ownerId" INTEGER NOT NULL,
     "status" "ReservedAccountRequestStatus" NOT NULL DEFAULT 'PENDING',
@@ -67,9 +66,6 @@ CREATE INDEX "reserved_account_userId_idx" ON "reserved_account"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "reserved_account_request_log_accountCode_key" ON "reserved_account_request_log"("accountCode");
-
--- CreateIndex
-CREATE UNIQUE INDEX "reserved_account_request_log_accountReference_key" ON "reserved_account_request_log"("accountReference");
 
 -- CreateIndex
 CREATE INDEX "reserved_account_request_log_requestedBy_idx" ON "reserved_account_request_log"("requestedBy");
