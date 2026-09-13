@@ -1,4 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { PaymentCollection, Prisma } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { AccountManager } from '@/fahari/payments/account-manager';
@@ -49,30 +54,38 @@ export class PaymentCollectionService {
 
     const reservedAccount =
       await this.accountManager.findByAccountReference(accountReference);
-    this.logIfMissing(
-      reservedAccount,
-      `Unmatched payment collection for accountReference=${accountReference}`,
-    );
+    if (!reservedAccount) {
+      this.logger.error(
+        `Unmatched payment collection for accountReference=${accountReference}`,
+      );
+      throw new NotFoundException(
+        `No reserved account for accountReference=${accountReference}`,
+      );
+    }
 
     const paymentSource = primaryReservedAccountPaymentSource(
       eventData.paymentSourceInformation,
     );
-    this.logIfMissing(
-      paymentSource,
-      `Reserved-account collection missing sender account details for transactionReference=${transactionReference}`,
-    );
+    if (!paymentSource) {
+      this.logger.error(
+        `Reserved-account collection missing sender account details for transactionReference=${transactionReference}`,
+      );
+      throw new BadRequestException(
+        `Missing sender account details for transactionReference=${transactionReference}`,
+      );
+    }
 
     try {
       const collection = await this.prismaService.paymentCollection.create({
         data: {
           transactionReference,
           accountReference,
-          userId: reservedAccount?.userId,
+          userId: reservedAccount.userId,
           amountPaid: new Prisma.Decimal(eventData.amountPaid),
           paidOn: parseMonnifyPaidOn(eventData.paidOn),
           currency: eventData.currency,
-          senderAccountNumber: paymentSource?.accountNumber ?? null,
-          senderAccountName: paymentSource?.accountName ?? null,
+          senderAccountNumber: paymentSource.accountNumber,
+          senderAccountName: paymentSource.accountName,
         },
       });
       return { collection, isNew: true };
@@ -96,12 +109,6 @@ export class PaymentCollectionService {
       where: { id: paymentCollectionId },
       data: { notifiedAt: new Date() },
     });
-  }
-
-  private logIfMissing(value: unknown, message: string): void {
-    if (!value) {
-      this.logger.warn(message);
-    }
   }
 }
 

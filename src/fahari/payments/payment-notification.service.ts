@@ -19,13 +19,6 @@ export class PaymentNotificationService {
   ) {}
 
   async notifyDriverOfPayment(collection: PaymentCollection): Promise<void> {
-    this.logIfMissing(
-      collection.userId,
-      `Skipping payment notification; no user for collection ${collection.id}`,
-    );
-    if (!collection.userId) {
-      return;
-    }
     if (collection.notifiedAt) {
       return;
     }
@@ -47,8 +40,8 @@ export class PaymentNotificationService {
         driverFirstName: driver.firstname,
         amountPaid,
         currency: collection.currency,
-        senderAccountName: collection.senderAccountName ?? 'Not provided',
-        senderAccountNumber: collection.senderAccountNumber ?? 'Not provided',
+        senderAccountName: collection.senderAccountName,
+        senderAccountNumber: collection.senderAccountNumber,
       }),
     );
 
