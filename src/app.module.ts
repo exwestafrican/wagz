@@ -20,6 +20,7 @@ import { AuthModule as FahariAuthModule } from '@/fahari/auth/auth.module';
 import { AdminModule } from '@/envoye/admin/admin.module';
 import { ConversationsModule } from '@/envoye/conversations/conversations.module';
 import { TrackerModule } from '@/fahari/tracker/tracker.module';
+import { PaymentsModule } from '@/fahari/payments/payments.module';
 import { BookingModule } from '@/fahari/booking/booking.module';
 
 @Module({
@@ -45,6 +46,7 @@ import { BookingModule } from '@/fahari/booking/booking.module';
     AdminModule,
     ConversationsModule,
     TrackerModule,
+    PaymentsModule,
     BookingModule,
   ],
   controllers: [AppController],

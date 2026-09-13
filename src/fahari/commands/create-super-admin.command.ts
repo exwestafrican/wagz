@@ -5,6 +5,7 @@ import { generate } from 'generate-password';
 import { PrismaService } from '@/prisma/prisma.service';
 import { existsInDbError } from '@/common/error-type';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
+import { cleanName } from '@/fahari/user/clean-name';
 
 interface Options {
   email: string;
@@ -28,8 +29,8 @@ export class CreateSuperAdminCommand extends CommandRunner {
 
   async run(_inputs: string[], options: Options) {
     const email = options.email.trim().toLowerCase();
-    const firstname = options.firstname;
-    const lastname = options.lastname;
+    const firstname = cleanName(options.firstname);
+    const lastname = cleanName(options.lastname);
 
     await this.createSupabaseUser(email, firstname, lastname);
 
@@ -110,7 +111,7 @@ export class CreateSuperAdminCommand extends CommandRunner {
     required: true,
   })
   parseFirstname(value: string) {
-    return value.trim();
+    return cleanName(value);
   }
 
   @Option({
@@ -119,7 +120,7 @@ export class CreateSuperAdminCommand extends CommandRunner {
     required: true,
   })
   parseLastname(value: string) {
-    return value.trim();
+    return cleanName(value);
   }
 
   @Help('after')
