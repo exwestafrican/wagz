@@ -3,6 +3,7 @@ import { User } from '@/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 import { PrismaService } from '@/prisma/prisma.service';
 import { cleanName } from '@/fahari/user/clean-name';
+import { ProvisionReservedAccountDto } from '@/fahari/payments/dto/provision-reserved-account.dto';
 
 class UserFactory extends Factory<User> {
   superAdmin() {
@@ -31,6 +32,21 @@ export async function persistUser(prismaService: PrismaService, user: User) {
       lastname: cleanName(user.lastname),
     },
   });
+  await prismaService.$executeRawUnsafe(
+    `SELECT setval(pg_get_serial_sequence('"user"', 'id'), (SELECT MAX(id) FROM "user"))`,
+  );
+}
+
+export function toProvisionReservedAccountDto(
+  user: Pick<User, 'firstname' | 'lastname' | 'email'>,
+): ProvisionReservedAccountDto {
+  return {
+    firstName: user.firstname,
+    lastName: user.lastname,
+    email: user.email,
+    bvn: '21212121212',
+    nin: '12034875601',
+  };
 }
 
 export default userFactory;

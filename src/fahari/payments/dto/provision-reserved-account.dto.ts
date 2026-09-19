@@ -1,13 +1,32 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsNotEmpty, IsString, Length } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { IsEmail, IsNotEmpty, IsString, Length } from 'class-validator';
 
 export class ProvisionReservedAccountDto {
   @ApiProperty({
-    description: 'Fahari user id of the driver',
-    example: 42,
+    description: 'Driver first name',
+    example: 'Ada',
   })
-  @IsInt()
-  userId: number;
+  @IsString()
+  @IsNotEmpty()
+  firstName: string;
+
+  @ApiProperty({
+    description: 'Driver last name',
+    example: 'Okafor',
+  })
+  @IsString()
+  @IsNotEmpty()
+  lastName: string;
+
+  @ApiProperty({
+    description: 'Driver email',
+    example: 'ada@example.com',
+  })
+  @Transform(({ value }: { value: string }) => value.trim().toLowerCase())
+  @IsEmail({}, { message: 'Invalid email address' })
+  @IsNotEmpty()
+  email: string;
 
   @ApiProperty({
     description: 'Driver BVN (11 digits)',

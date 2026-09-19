@@ -7,17 +7,26 @@ import { failureMessageFrom } from '@/fahari/payments/monnify/monnify.types';
 import {
   ReservedAccountRequestLog,
   ReservedAccountRequestStatus,
+  User,
 } from '@/generated/prisma/client';
 import { ReservedAccount } from '@/fahari/payments/domain/reserved-account';
 import { ACCOUNT_REFERENCE_PREFIX } from '@/fahari/payments/monnify/monnify.constants';
 import { fullName } from '@/fahari/user/full-name';
-import { notInDbError } from '@/common/error-type';
+import { cleanName } from '@/fahari/user/clean-name';
+import { existsInDbError, notInDbError } from '@/common/error-type';
+import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 import { WelcomeNotificationService } from '@/fahari/notification/email/welcome-notification.service';
 
 export type BankDetails = {
   bvn: string;
   nin: string;
 };
+
+export type NewDriver = {
+  firstName: string;
+  lastName: string;
+  email: string;
+} & BankDetails;
 
 @Injectable()
 export class ReservedAccountService {
@@ -29,6 +38,17 @@ export class ReservedAccountService {
     private readonly accountManager: AccountManager,
     private readonly welcomeNotificationService: WelcomeNotificationService,
   ) {}
+
+  async provisionForNewDriver(
+    requestedBy: number,
+    newDriver: NewDriver,
+  ): Promise<ReservedAccount> {
+    const createdDriver = await this.createDriverUser(newDriver);
+    return this.provision(requestedBy, createdDriver.id, {
+      bvn: newDriver.bvn,
+      nin: newDriver.nin,
+    });
+  }
 
   async provision(
     requestedBy: number,
@@ -83,6 +103,24 @@ export class ReservedAccountService {
       this.logger.error(
         `Failed to provision reserved account for user: ${owner.id}`,
       );
+      throw error;
+    }
+  }
+
+  private async createDriverUser(newDriver: NewDriver): Promise<User> {
+    try {
+      return await this.prismaService.user.create({
+        data: {
+          email: newDriver.email.trim().toLowerCase(),
+          firstname: cleanName(newDriver.firstName),
+          lastname: cleanName(newDriver.lastName),
+          isSuperAdmin: false,
+        },
+      });
+    } catch (error) {
+      if (existsInDbError(error)) {
+        throw new ItemAlreadyExistsInDb('User already exists');
+      }
       throw error;
     }
   }

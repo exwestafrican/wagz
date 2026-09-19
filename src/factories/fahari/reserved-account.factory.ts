@@ -6,6 +6,8 @@ import {
 } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ACCOUNT_REFERENCE_PREFIX } from '@/fahari/payments/monnify/monnify.constants';
+import { ReserveAccountResponseBody } from '@/fahari/payments/monnify/monnify.types';
+import { MONIEPOINT_BANK_CODE } from '@/fahari/payments/monnify/monnify-bank-config';
 
 class ReservedAccountFactory extends Factory<ReservedAccount> {
   monnifyAccount(overrides: Partial<ReservedAccount> = {}) {
@@ -45,5 +47,24 @@ export async function persistReservedAccount(
 ) {
   await prismaService.reservedAccount.create({ data: reservedAccount });
 }
+
+export const monnifyReserveAccountResponseFactory =
+  Factory.define<ReserveAccountResponseBody>(() => ({
+    contractCode: 'contract_code',
+    accountReference: 'FAH10000',
+    accountName: 'Driver Account',
+    currencyCode: 'NGN',
+    customerEmail: faker.internet.email().toLowerCase(),
+    customerName: 'Driver Name',
+    status: 'ACTIVE',
+    accounts: [
+      {
+        bankCode: MONIEPOINT_BANK_CODE,
+        bankName: 'Moniepoint Microfinance Bank',
+        accountNumber: '6254727989',
+        accountName: 'Driver Account',
+      },
+    ],
+  }));
 
 export default reservedAccountFactory;
