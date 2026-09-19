@@ -1,0 +1,67 @@
+enum BookingState {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+enum BookingReason {
+  NOT_CONFIRMED
+  CANCELLED
+}
+
+enum BookingType {
+  FLEET
+  CLIENT
+}
+
+model Booking {
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  startDateTime DateTime
+  endDateTime   DateTime?
+  state         BookingState   @default(PENDING)
+  reason        BookingReason?
+  type          BookingType
+  note          String?        @db.Text
+  confirmedAt   DateTime?
+  cancelledAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  assignments        BookingAssignment[]
+  clientPickupDetail ClientPickupDetail?
+
+  @@index([userId])
+  @@map("booking")
+}
+
+model ClientPickupDetail {
+  id             Int     @id @default(autoincrement())
+  bookingId      Int     @unique
+  firstName      String  @db.VarChar(100)
+  lastName       String? @db.VarChar(100)
+  pickupLocation String  @db.VarChar(255)
+  locationUrl    String  @db.VarChar(600)
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("client_pickup_detail")
+}
+
+model BookingAssignment {
+  id           Int      @id @default(autoincrement())
+  bookingId    Int
+  userId       Int
+  assignedById Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  booking    Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  user       User    @relation("BookingAssignee", fields: [userId], references: [id], onDelete: Cascade)
+  assignedBy User    @relation("BookingAssignedBy", fields: [assignedById], references: [id], onDelete: Cascade)
+
+  @@index([bookingId])
+  @@index([assignedById])
+  @@map("booking_assignment")
+}

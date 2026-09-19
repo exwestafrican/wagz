@@ -7,5 +7,14 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  bookings           Booking[]
+  bookingAssignments BookingAssignment[] @relation("BookingAssignee")
+  assignmentsMade    BookingAssignment[] @relation("BookingAssignedBy")
+
+  reservedAccounts             ReservedAccount[]
+  paymentCollections           PaymentCollection[]
+  reservedAccountRequestsMade  ReservedAccountRequestLog[] @relation("ReservedAccountRequestRequester")
+  reservedAccountRequestsOwned ReservedAccountRequestLog[] @relation("ReservedAccountRequestOwner")
+
   @@map("user")
 }
