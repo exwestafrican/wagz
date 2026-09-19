@@ -3,11 +3,13 @@ import { faker } from '@faker-js/faker';
 import {
   ReservedAccount,
   ReservedAccountStatus,
+  User,
 } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ACCOUNT_REFERENCE_PREFIX } from '@/fahari/payments/monnify/monnify.constants';
 import { ReserveAccountResponseBody } from '@/fahari/payments/monnify/monnify.types';
 import { MONIEPOINT_BANK_CODE } from '@/fahari/payments/monnify/monnify-bank-config';
+import { ProvisionReservedAccountDto } from '@/fahari/payments/dto/provision-reserved-account.dto';
 
 class ReservedAccountFactory extends Factory<ReservedAccount> {
   monnifyAccount(overrides: Partial<ReservedAccount> = {}) {
@@ -66,5 +68,17 @@ export const monnifyReserveAccountResponseFactory =
       },
     ],
   }));
+
+export function toProvisionReservedAccountDto(
+  user: User,
+): ProvisionReservedAccountDto {
+  return {
+    firstName: user.firstname,
+    lastName: user.lastname,
+    email: user.email,
+    bvn: '21212121212',
+    nin: '12034875601',
+  };
+}
 
 export default reservedAccountFactory;

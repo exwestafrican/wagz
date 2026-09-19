@@ -22,10 +22,11 @@ import {
   ReservedAccountStatus,
 } from '@/generated/prisma/client';
 import Factory, { PersistStrategy } from '@/factories/factory';
-import userFactory, {
+import userFactory from '@/factories/fahari/user.factory';
+import {
+  monnifyReserveAccountResponseFactory,
   toProvisionReservedAccountDto,
-} from '@/factories/fahari/user.factory';
-import { monnifyReserveAccountResponseFactory } from '@/factories/fahari/reserved-account.factory';
+} from '@/factories/fahari/reserved-account.factory';
 
 const DRIVER_BVN = '21212121212';
 const DRIVER_NIN = '12034875601';
