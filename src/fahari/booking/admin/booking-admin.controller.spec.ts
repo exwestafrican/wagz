@@ -132,9 +132,7 @@ describe('BookingAdminController', () => {
       await expect(
         adminController.createFleetBooking(
           RequestUser.of(tumise.email),
-          toCreateFleetBookingDto(
-            bookingFactory.fleet({ userId: 999_999 }),
-          ),
+          toCreateFleetBookingDto(bookingFactory.fleet({ userId: 999_999 })),
         ),
       ).rejects.toThrow(NotFoundException);
 

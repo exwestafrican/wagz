@@ -54,8 +54,8 @@ describe('CreateSuperAdminCommand', () => {
     });
     expect(createdUser).toMatchObject({
       email,
-      firstname,
-      lastname,
+      firstname: firstname.trim().toLowerCase(),
+      lastname: lastname.trim().toLowerCase(),
       isSuperAdmin: true,
     });
   });
@@ -70,12 +70,17 @@ describe('CreateSuperAdminCommand', () => {
     });
 
     expect(mockSupabaseClient.auth.admin.createUser).toHaveBeenCalledWith(
-      expect.objectContaining({ email: mixedCaseEmail.toLowerCase() }),
+      expect.objectContaining({
+        email: mixedCaseEmail.toLowerCase(),
+        user_metadata: { firstname: 'tumise', lastname: 'adekoya' },
+      }),
     );
     const createdUser = await prismaService.user.findUniqueOrThrow({
       where: { email: mixedCaseEmail.toLowerCase() },
     });
     expect(createdUser.email).toBe(mixedCaseEmail.toLowerCase());
+    expect(createdUser.firstname).toBe('tumise');
+    expect(createdUser.lastname).toBe('adekoya');
   });
 
   it('still creates the database user when the supabase account already exists', async () => {
@@ -97,8 +102,8 @@ describe('CreateSuperAdminCommand', () => {
       await prismaService.user.findUniqueOrThrow({ where: { email } }),
     ).toMatchObject({
       email,
-      firstname,
-      lastname,
+      firstname: firstname.trim().toLowerCase(),
+      lastname: lastname.trim().toLowerCase(),
       isSuperAdmin: true,
     });
   });
