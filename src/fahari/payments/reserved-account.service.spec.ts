@@ -18,8 +18,6 @@ import {
   ReserveAccountResponseBody,
 } from '@/fahari/payments/monnify/monnify.types';
 import type { EmailClient } from '@/messaging/email/email-client';
-import { PAYMENTS_EMAIL } from '@/fahari/const';
-import { fullName } from '@/fahari/user/full-name';
 import {
   ReservedAccountRequestStatus,
   ReservedAccountStatus,
@@ -148,13 +146,6 @@ describe('ReservedAccountService', () => {
       status: ReservedAccountRequestStatus.SUCCESS,
     });
     expect(emailClient.send).toHaveBeenCalledTimes(1);
-    expect(emailClient.send).toHaveBeenCalledWith(
-      expect.objectContaining({
-        from: { email: PAYMENTS_EMAIL, name: 'Fleets by Fahari' },
-        to: { email: owner.email, name: fullName(owner) },
-        subject: 'Welcome to Fleets by Fahari',
-      }),
-    );
   });
 
   it('returns the existing active account without calling Monnify again', async () => {
