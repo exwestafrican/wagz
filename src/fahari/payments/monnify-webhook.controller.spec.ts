@@ -13,7 +13,7 @@ import { resetDb } from '@/test-helpers/rest-db';
 import type { EmailClient } from '@/messaging/email/email-client';
 import { AccountManager } from '@/fahari/payments/account-manager';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
-import { PaymentNotificationService } from '@/fahari/payments/payment-notification.service';
+import { PaymentNotificationService } from '@/fahari/notification/email/payment-notification.service';
 import { MonnifyWebhookController } from '@/fahari/payments/monnify-webhook.controller';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { computeMonnifySignature } from '@/fahari/payments/monnify/monnify-signature';
@@ -37,7 +37,7 @@ describe('MonnifyWebhookController', () => {
 
   function buildController(
     monnifyWebhookAuth: MonnifyWebhookAuth,
-    mockEmailClient: { send: jest.MockedFunction<EmailClient['send']> }
+    mockEmailClient: { send: jest.MockedFunction<EmailClient['send']> },
   ): MonnifyWebhookController {
     const accountManager = new AccountManager(prismaService);
     const paymentCollectionService = new PaymentCollectionService(
@@ -46,7 +46,6 @@ describe('MonnifyWebhookController', () => {
     );
     const paymentNotificationService = new PaymentNotificationService(
       prismaService,
-      paymentCollectionService,
       mockEmailClient,
     );
     const paymentCollectionWebhookHandler = new PaymentCollectionWebhookHandler(

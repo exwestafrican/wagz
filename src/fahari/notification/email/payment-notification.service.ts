@@ -4,10 +4,9 @@ import React from 'react';
 import { PrismaService } from '@/prisma/prisma.service';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { PaymentReceivedTemplate } from '@/emails/templates/fahari/payment-received-template';
-import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
 import type { PaymentCollection } from '@/generated/prisma/client';
 import { fullName } from '@/fahari/user/full-name';
-import { FAHARI_PAYMENTS_EMAIL } from '@/fahari/const';
+import { PAYMENTS_EMAIL } from '@/fahari/const';
 
 @Injectable()
 export class PaymentNotificationService {
@@ -15,7 +14,6 @@ export class PaymentNotificationService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly paymentCollectionService: PaymentCollectionService,
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
   ) {}
 
@@ -37,7 +35,7 @@ export class PaymentNotificationService {
       );
 
       await this.emailClient.send({
-        from: { email: FAHARI_PAYMENTS_EMAIL, name: 'Fahari Payments' },
+        from: { email: PAYMENTS_EMAIL, name: 'Fahari Payments' },
         to: {
           email: driver.email,
           name: fullName(driver),
@@ -46,7 +44,10 @@ export class PaymentNotificationService {
         html: emailHtml,
       });
 
-      await this.paymentCollectionService.markNotified(collection.id);
+      await this.prismaService.paymentCollection.update({
+        where: { id: collection.id },
+        data: { notifiedAt: new Date() },
+      });
       this.logger.log(
         `Payment received email sent for user: ${driver.id} collection: ${collection.id}`,
       );

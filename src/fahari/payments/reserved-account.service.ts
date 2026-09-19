@@ -12,6 +12,7 @@ import { ReservedAccount } from '@/fahari/payments/domain/reserved-account';
 import { ACCOUNT_REFERENCE_PREFIX } from '@/fahari/payments/monnify/monnify.constants';
 import { fullName } from '@/fahari/user/full-name';
 import { notInDbError } from '@/common/error-type';
+import { WelcomeNotificationService } from '@/fahari/notification/email/welcome-notification.service';
 
 export type BankDetails = {
   bvn: string;
@@ -26,6 +27,7 @@ export class ReservedAccountService {
     private readonly prismaService: PrismaService,
     private readonly monnifyClient: MonnifyClient,
     private readonly accountManager: AccountManager,
+    private readonly welcomeNotificationService: WelcomeNotificationService,
   ) {}
 
   async provision(
@@ -58,7 +60,18 @@ export class ReservedAccountService {
         ...defaultMonnifyBankConfig(),
       });
 
-      return this.accountManager.provisionAccount(requestLog, monnifyAccount);
+      const reservedAccount = await this.accountManager.provisionAccount(
+        requestLog,
+        monnifyAccount,
+      );
+      await this.welcomeNotificationService
+        .notify(owner, reservedAccount)
+        .catch((error: unknown) => {
+          this.logger.error(
+            `Failed sending welcome email for user: ${owner.id}: ${error instanceof Error ? error.message : 'unknown error'}`,
+          );
+        });
+      return reservedAccount;
     } catch (error) {
       await this.prismaService.reservedAccountRequestLog.update({
         where: { id: requestLog.id },
