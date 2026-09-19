@@ -17,6 +17,18 @@ import { MONNIFY_WEBHOOK_HANDLERS } from '@/fahari/payments/monnify/webhook/even
 import { PaymentCollectionWebhookHandler } from '@/fahari/payments/monnify/webhook/event-handler/payment-collection.handler';
 import { MonnifyWebhookRouter } from '@/fahari/payments/monnify/webhook/monnify-webhook-router';
 
+const MonnifyClientProvider = {
+  provide: MonnifyClient,
+  inject: [ConfigService],
+  useFactory: (configService: ConfigService) =>
+    new MonnifyClient(
+      configService.getOrThrow<string>('MONNIFY_BASE_URL'),
+      configService.getOrThrow<string>('MONNIFY_API_KEY'),
+      configService.getOrThrow<string>('MONNIFY_SECRET_KEY'),
+      configService.getOrThrow<string>('MONNIFY_CONTRACT_CODE'),
+    ),
+};
+
 const MonnifyWebhookAuthProvider = {
   provide: MONNIFY_WEBHOOK_AUTH,
   inject: [ConfigService, MonnifyClient],
@@ -34,18 +46,6 @@ const MonnifyWebhookHandlersProvider = {
   useFactory: (
     paymentCollectionWebhookHandler: PaymentCollectionWebhookHandler,
   ) => [paymentCollectionWebhookHandler],
-};
-
-const MonnifyClientProvider = {
-  provide: MonnifyClient,
-  inject: [ConfigService],
-  useFactory: (configService: ConfigService) =>
-    new MonnifyClient(
-      configService.getOrThrow<string>('MONNIFY_BASE_URL'),
-      configService.getOrThrow<string>('MONNIFY_API_KEY'),
-      configService.getOrThrow<string>('MONNIFY_SECRET_KEY'),
-      configService.getOrThrow<string>('MONNIFY_CONTRACT_CODE'),
-    ),
 };
 
 @Module({
