@@ -1,11 +1,11 @@
 import {
   BadGatewayException,
   Body,
+  ConflictException,
   Controller,
   HttpCode,
   HttpStatus,
   Logger,
-  NotFoundException,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -22,6 +22,7 @@ import {
 } from '@/fahari/payments/dto/reserved-account-response.dto';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { MonnifyApiError } from '@/fahari/payments/monnify/monnify.types';
+import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 
 @Controller('fahari/admin/users')
 @ApiTags('fahari-payments')
@@ -34,21 +35,20 @@ export class PaymentsAdminController {
   ) {}
 
   @Post('reserved-account')
-  @HttpCode(HttpStatus.OK)
+  @HttpCode(HttpStatus.CREATED)
   @UseGuards(SupabaseAuthGuard)
   @ApiOperation({
-    summary: 'Provision a Monnify reserved account for a driver',
+    summary: 'Create a driver and provision a Monnify reserved account',
   })
   @ApiBody({ type: ProvisionReservedAccountDto })
   @ApiResponse({
-    status: HttpStatus.OK,
-    description:
-      'Reserved account provisioned or existing active account returned',
+    status: HttpStatus.CREATED,
+    description: 'Driver created and reserved account provisioned',
     type: ReservedAccountResponseDto,
   })
   @ApiResponse({
-    status: HttpStatus.NOT_FOUND,
-    description: 'Driver user not found',
+    status: HttpStatus.CONFLICT,
+    description: 'A user with this email already exists',
   })
   @ApiResponse({
     status: HttpStatus.FORBIDDEN,
@@ -68,19 +68,22 @@ export class PaymentsAdminController {
         await this.fahariPermissionService.runIfSuperAdmin(
           requestUser,
           (requester) =>
-            this.reservedAccountService.provision(requester.id, dto.userId, {
+            this.reservedAccountService.provisionForNewDriver(requester.id, {
+              firstName: dto.firstName,
+              lastName: dto.lastName,
+              email: dto.email,
               bvn: dto.bvn,
               nin: dto.nin,
             }),
         );
       return toReservedAccountResponse(reservedAccount);
     } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw error;
+      if (error instanceof ItemAlreadyExistsInDb) {
+        throw new ConflictException(error.message);
       }
       if (error instanceof MonnifyApiError) {
         this.logger.error(
-          `Unable to provision reserved account for user: ${dto.userId}; responseCode=${error.responseCode}; responseMessage=${error.responseMessage}`,
+          `Unable to provision reserved account; responseCode=${error.responseCode}; responseMessage=${error.responseMessage}`,
         );
         throw new BadGatewayException('Unable to provision reserved account');
       }

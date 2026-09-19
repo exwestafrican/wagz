@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ConfigModule } from '@nestjs/config';
 import { INestApplication, NotFoundException } from '@nestjs/common';
-import { faker } from '@faker-js/faker';
+import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
 
 import { PrismaModule } from '@/prisma/prisma.module';
 import { PrismaService } from '@/prisma/prisma.service';
@@ -15,13 +15,18 @@ import { MONIEPOINT_BANK_CODE } from '@/fahari/payments/monnify/monnify-bank-con
 import {
   MonnifyApiError,
   ReserveAccountRequest,
-  ReserveAccountResponseBody,
 } from '@/fahari/payments/monnify/monnify.types';
 import type { EmailClient } from '@/messaging/email/email-client';
 import {
   ReservedAccountRequestStatus,
   ReservedAccountStatus,
 } from '@/generated/prisma/client';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import userFactory from '@/factories/fahari/user.factory';
+import {
+  monnifyReserveAccountResponseFactory,
+  toProvisionReservedAccountDto,
+} from '@/factories/fahari/reserved-account.factory';
 
 const DRIVER_BVN = '21212121212';
 const DRIVER_NIN = '12034875601';
@@ -29,6 +34,7 @@ const DRIVER_NIN = '12034875601';
 describe('ReservedAccountService', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
+  let factory: PersistStrategy;
   let reservedAccountService: ReservedAccountService;
   let accountManager: AccountManager;
   let emailClient: { send: jest.MockedFunction<EmailClient['send']> };
@@ -45,6 +51,7 @@ describe('ReservedAccountService', () => {
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
+    factory = Factory.createStrategy(prismaService);
     accountManager = new AccountManager(prismaService);
     emailClient = { send: jest.fn().mockResolvedValue(undefined) };
     monnifyClient = {
@@ -64,45 +71,17 @@ describe('ReservedAccountService', () => {
     await app.close();
   });
 
-  async function createUser() {
-    return prismaService.user.create({
-      data: {
-        email: faker.internet.email().toLowerCase(),
-        firstname: faker.person.firstName(),
-        lastname: faker.person.lastName(),
-      },
-    });
-  }
-
-  function monnifyResponse(
-    accountReference: string,
-    customerEmail: string,
-  ): ReserveAccountResponseBody {
-    return {
-      contractCode: 'contract_code',
-      accountReference,
-      accountName: 'Driver Account',
-      currencyCode: 'NGN',
-      customerEmail,
-      customerName: 'Driver Name',
-      status: 'ACTIVE',
-      accounts: [
-        {
-          bankCode: '50515',
-          bankName: 'Moniepoint Microfinance Bank',
-          accountNumber: '6254727989',
-          accountName: 'Driver Account',
-        },
-      ],
-    };
-  }
-
   it('provisions a reserved account via Monnify and persists the mapping', async () => {
-    const requester = await createUser();
-    const owner = await createUser();
+    const requester = await factory.persist('user', () => userFactory.build());
+    const owner = await factory.persist('user', () => userFactory.build());
     monnifyClient.reserveAccount.mockImplementation(
       (request: ReserveAccountRequest) =>
-        Promise.resolve(monnifyResponse(request.accountReference, owner.email)),
+        Promise.resolve(
+          monnifyReserveAccountResponseFactory.build({
+            accountReference: request.accountReference,
+            customerEmail: owner.email,
+          }),
+        ),
     );
 
     const reservedAccount = await reservedAccountService.provision(
@@ -149,8 +128,8 @@ describe('ReservedAccountService', () => {
   });
 
   it('returns the existing active account without calling Monnify again', async () => {
-    const requester = await createUser();
-    const owner = await createUser();
+    const requester = await factory.persist('user', () => userFactory.build());
+    const owner = await factory.persist('user', () => userFactory.build());
     await prismaService.reservedAccount.create({
       data: {
         userId: owner.id,
@@ -178,7 +157,7 @@ describe('ReservedAccountService', () => {
   });
 
   it('allows multiple reserved account rows for the same user', async () => {
-    const owner = await createUser();
+    const owner = await factory.persist('user', () => userFactory.build());
     await prismaService.reservedAccount.create({
       data: {
         userId: owner.id,
@@ -214,7 +193,7 @@ describe('ReservedAccountService', () => {
   });
 
   it('throws when the owner does not exist', async () => {
-    const requester = await createUser();
+    const requester = await factory.persist('user', () => userFactory.build());
     await expect(
       reservedAccountService.provision(requester.id, 999_999, {
         bvn: DRIVER_BVN,
@@ -224,8 +203,8 @@ describe('ReservedAccountService', () => {
   });
 
   it('marks the request log failed when Monnify provision fails', async () => {
-    const requester = await createUser();
-    const owner = await createUser();
+    const requester = await factory.persist('user', () => userFactory.build());
+    const owner = await factory.persist('user', () => userFactory.build());
     monnifyClient.reserveAccount.mockRejectedValue(
       new MonnifyApiError(
         'Failed to reserve Monnify account',
@@ -259,12 +238,17 @@ describe('ReservedAccountService', () => {
   });
 
   it('still provisions when the welcome email fails to send', async () => {
-    const requester = await createUser();
-    const owner = await createUser();
+    const requester = await factory.persist('user', () => userFactory.build());
+    const owner = await factory.persist('user', () => userFactory.build());
     emailClient.send.mockRejectedValue(new Error('smtp down'));
     monnifyClient.reserveAccount.mockImplementation(
       (request: ReserveAccountRequest) =>
-        Promise.resolve(monnifyResponse(request.accountReference, owner.email)),
+        Promise.resolve(
+          monnifyReserveAccountResponseFactory.build({
+            accountReference: request.accountReference,
+            customerEmail: owner.email,
+          }),
+        ),
     );
 
     const reservedAccount = await reservedAccountService.provision(
@@ -275,5 +259,81 @@ describe('ReservedAccountService', () => {
 
     expect(reservedAccount.accountNumber).toBe('6254727989');
     expect(reservedAccount.status).toBe(ReservedAccountStatus.ACTIVE);
+  });
+
+  describe('provisionForNewDriver', () => {
+    it('creates the driver then provisions a reserved account', async () => {
+      const requester = await factory.persist('user', () =>
+        userFactory.build(),
+      );
+      const ada = userFactory.build({
+        firstname: ' Ada ',
+        lastname: ' Okafor ',
+        email: 'Ada.Okafor@Example.COM',
+      });
+      monnifyClient.reserveAccount.mockImplementation(
+        (request: ReserveAccountRequest) =>
+          Promise.resolve(
+            monnifyReserveAccountResponseFactory.build({
+              accountReference: request.accountReference,
+              customerEmail: request.customerEmail,
+            }),
+          ),
+      );
+
+      const reservedAccount =
+        await reservedAccountService.provisionForNewDriver(
+          requester.id,
+          toProvisionReservedAccountDto(ada),
+        );
+
+      const createdDriver = await prismaService.user.findUniqueOrThrow({
+        where: { email: 'ada.okafor@example.com' },
+      });
+      expect(createdDriver).toMatchObject({
+        firstname: 'ada',
+        lastname: 'okafor',
+        isSuperAdmin: false,
+      });
+      expect(reservedAccount).toMatchObject({
+        userId: createdDriver.id,
+        accountNumber: '6254727989',
+        customerEmail: createdDriver.email,
+        status: ReservedAccountStatus.ACTIVE,
+      });
+      expect(monnifyClient.reserveAccount).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customerEmail: createdDriver.email,
+          customerName: 'ada okafor',
+          accountName: 'ada okafor',
+          bvn: DRIVER_BVN,
+          nin: DRIVER_NIN,
+        }),
+      );
+    });
+
+    it('throws ItemAlreadyExistsInDb when a user with the email already exists', async () => {
+      const requester = await factory.persist('user', () =>
+        userFactory.build(),
+      );
+      const existingDriver = await factory.persist('user', () =>
+        userFactory.build(),
+      );
+
+      await expect(
+        reservedAccountService.provisionForNewDriver(
+          requester.id,
+          toProvisionReservedAccountDto(existingDriver),
+        ),
+      ).rejects.toBeInstanceOf(ItemAlreadyExistsInDb);
+
+      expect(monnifyClient.reserveAccount).not.toHaveBeenCalled();
+      expect(
+        await prismaService.user.count({
+          where: { email: existingDriver.email },
+        }),
+      ).toBe(1);
+      expect(await prismaService.reservedAccount.count()).toBe(0);
+    });
   });
 });
