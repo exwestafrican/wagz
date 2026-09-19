@@ -32,13 +32,10 @@ export async function persistUser(prismaService: PrismaService, user: User) {
       lastname: cleanName(user.lastname),
     },
   });
-  await prismaService.$executeRawUnsafe(
-    `SELECT setval(pg_get_serial_sequence('"user"', 'id'), (SELECT MAX(id) FROM "user"))`,
-  );
 }
 
 export function toProvisionReservedAccountDto(
-  user: Pick<User, 'firstname' | 'lastname' | 'email'>,
+  user: User,
 ): ProvisionReservedAccountDto {
   return {
     firstName: user.firstname,
