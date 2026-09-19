@@ -6,6 +6,7 @@ import { FahariNotificationModule } from '@/fahari/notification/notification.mod
 import { ENVIROMENT } from '@/common/const';
 import { AccountManager } from '@/fahari/payments/account-manager';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
+import { DevMonnifyClient } from '@/fahari/payments/monnify/dev-monnify.client';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
 import { PaymentsAdminController } from '@/fahari/payments/admin/payments-admin.controller';
@@ -39,13 +40,17 @@ const MonnifyWebhookHandlersProvider = {
 const MonnifyClientProvider = {
   provide: MonnifyClient,
   inject: [ConfigService],
-  useFactory: (configService: ConfigService) =>
-    new MonnifyClient(
-      configService.getOrThrow<string>('MONNIFY_BASE_URL'),
-      configService.getOrThrow<string>('MONNIFY_API_KEY'),
-      configService.getOrThrow<string>('MONNIFY_SECRET_KEY'),
-      configService.getOrThrow<string>('MONNIFY_CONTRACT_CODE'),
-    ),
+  useFactory: (configService: ConfigService) => {
+    if (configService.get<string>('NODE_ENV') === ENVIROMENT.PRODUCTION) {
+      return new MonnifyClient(
+        configService.getOrThrow<string>('MONNIFY_BASE_URL'),
+        configService.getOrThrow<string>('MONNIFY_API_KEY'),
+        configService.getOrThrow<string>('MONNIFY_SECRET_KEY'),
+        configService.getOrThrow<string>('MONNIFY_CONTRACT_CODE'),
+      );
+    }
+    return new DevMonnifyClient();
+  },
 };
 
 @Module({
