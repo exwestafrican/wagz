@@ -95,4 +95,109 @@ describe('AccountManager', () => {
       accountManager.getReservedAccountOrThrow(owner.id),
     ).rejects.toBeInstanceOf(NotFoundException);
   });
+
+  describe('listAccounts', () => {
+    it('includes a driver with their active reserved account', async () => {
+      const ada = await prismaService.user.create({
+        data: {
+          email: faker.internet.email().toLowerCase(),
+          firstname: 'Ada',
+          lastname: 'Okafor',
+        },
+      });
+      const reservedAccount = await prismaService.reservedAccount.create({
+        data: {
+          userId: ada.id,
+          accountPrefix: 'FAH',
+          accountCode: 10000,
+          accountReference: 'FAH10000',
+          accountNumber: '6254727989',
+          bankCode: '50515',
+          bankName: 'Moniepoint Microfinance Bank',
+          customerEmail: ada.email,
+          status: ReservedAccountStatus.ACTIVE,
+        },
+      });
+
+      const accounts = await accountManager.listAccounts();
+
+      expect(accounts).toEqual([
+        {
+          userId: ada.id,
+          firstName: 'Ada',
+          lastName: 'Okafor',
+          email: ada.email,
+          reservedAccountId: reservedAccount.id,
+          accountNumber: '6254727989',
+        },
+      ]);
+    });
+
+    it('returns null account fields when the driver has no active reserved account', async () => {
+      const kemi = await prismaService.user.create({
+        data: {
+          email: faker.internet.email().toLowerCase(),
+          firstname: 'Kemi',
+          lastname: 'Adeyemi',
+        },
+      });
+      await prismaService.reservedAccount.create({
+        data: {
+          userId: kemi.id,
+          accountPrefix: 'FAH',
+          accountCode: 20000,
+          accountReference: 'FAH20000',
+          accountNumber: '1111222233',
+          bankCode: '50515',
+          bankName: 'Moniepoint Microfinance Bank',
+          customerEmail: kemi.email,
+          status: ReservedAccountStatus.DEACTIVATED,
+        },
+      });
+
+      const accounts = await accountManager.listAccounts();
+
+      expect(accounts).toEqual([
+        {
+          userId: kemi.id,
+          firstName: 'Kemi',
+          lastName: 'Adeyemi',
+          email: kemi.email,
+          reservedAccountId: null,
+          accountNumber: null,
+        },
+      ]);
+    });
+
+    it('omits super admins', async () => {
+      await prismaService.user.create({
+        data: {
+          email: faker.internet.email().toLowerCase(),
+          firstname: 'Tumise',
+          lastname: 'Admin',
+          isSuperAdmin: true,
+        },
+      });
+      const ada = await prismaService.user.create({
+        data: {
+          email: faker.internet.email().toLowerCase(),
+          firstname: 'Ada',
+          lastname: 'Okafor',
+        },
+      });
+
+      const accounts = await accountManager.listAccounts();
+
+      expect(accounts).toEqual([
+        {
+          userId: ada.id,
+          firstName: 'Ada',
+          lastName: 'Okafor',
+          email: ada.email,
+          reservedAccountId: null,
+          accountNumber: null,
+        },
+      ]);
+    });
+  });
 });

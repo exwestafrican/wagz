@@ -10,6 +10,7 @@ import {
   User,
 } from '@/generated/prisma/client';
 import { ReservedAccount } from '@/fahari/payments/domain/reserved-account';
+import { DriverAccount } from '@/fahari/payments/domain/driver-account';
 import { ACCOUNT_REFERENCE_PREFIX } from '@/fahari/payments/monnify/monnify.constants';
 import { fullName } from '@/fahari/user/full-name';
 import { cleanName } from '@/fahari/user/clean-name';
@@ -48,6 +49,10 @@ export class ReservedAccountService {
       bvn: newDriver.bvn,
       nin: newDriver.nin,
     });
+  }
+
+  async listAccounts(): Promise<DriverAccount[]> {
+    return this.accountManager.listAccounts();
   }
 
   async provision(

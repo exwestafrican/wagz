@@ -234,4 +234,60 @@ describe('PaymentsAdminController', () => {
       expect(await prismaService.reservedAccount.count()).toBe(0);
     });
   });
+
+  describe('listAccounts', () => {
+    it('returns drivers and their active reserved accounts for a super admin', async () => {
+      const tumise = await factory.persist('user', () =>
+        userFactory.superAdmin(),
+      );
+      const ada = await factory.persist('user', () =>
+        userFactory.build({ firstname: 'ada', lastname: 'okafor' }),
+      );
+      const kemi = await factory.persist('user', () =>
+        userFactory.build({ firstname: 'kemi', lastname: 'adeyemi' }),
+      );
+      const adaReservedAccount = await factory.persist('reservedAccount', () =>
+        reservedAccountFactory.monnifyAccount({
+          userId: ada.id,
+          accountNumber: '6254727989',
+          customerEmail: ada.email,
+          status: ReservedAccountStatus.ACTIVE,
+        }),
+      );
+
+      const accounts = await adminController.listAccounts(
+        RequestUser.of(tumise.email),
+      );
+
+      expect(accounts).toEqual(
+        expect.arrayContaining([
+          {
+            userId: ada.id,
+            firstName: ada.firstname,
+            lastName: ada.lastname,
+            email: ada.email,
+            reservedAccountId: adaReservedAccount.id,
+            accountNumber: '6254727989',
+          },
+          {
+            userId: kemi.id,
+            firstName: kemi.firstname,
+            lastName: kemi.lastname,
+            email: kemi.email,
+            reservedAccountId: null,
+            accountNumber: null,
+          },
+        ]),
+      );
+      expect(accounts).toHaveLength(2);
+    });
+
+    it('throws NotFoundException when the caller is not a super admin', async () => {
+      const kemi = await factory.persist('user', () => userFactory.build());
+
+      await expect(
+        adminController.listAccounts(RequestUser.of(kemi.email)),
+      ).rejects.toThrow(NotFoundException);
+    });
+  });
 });
