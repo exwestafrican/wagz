@@ -3,10 +3,11 @@ import { render } from '@react-email/render';
 import React from 'react';
 import { PrismaService } from '@/prisma/prisma.service';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
-import { PaymentReceivedTemplate } from '@/fahari/emails/payment-received-template';
+import { PaymentReceivedTemplate } from '@/emails/templates/fahari/payment-received-template';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
 import type { PaymentCollection } from '@/generated/prisma/client';
 import { fullName } from '@/fahari/user/full-name';
+import { FAHARI_PAYMENTS_EMAIL } from '@/fahari/const';
 
 @Injectable()
 export class PaymentNotificationService {
@@ -36,7 +37,7 @@ export class PaymentNotificationService {
       );
 
       await this.emailClient.send({
-        from: { email: 'payments@fahari.co', name: 'Fahari Payments' },
+        from: { email: FAHARI_PAYMENTS_EMAIL, name: 'Fahari Payments' },
         to: {
           email: driver.email,
           name: fullName(driver),

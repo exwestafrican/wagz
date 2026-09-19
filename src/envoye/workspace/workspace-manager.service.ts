@@ -22,7 +22,7 @@ import { InvalidState } from '@/common/exceptions/invalid-state';
 import { Role } from '@/permission/domain/role';
 import { sentenceCase, Time } from '@/common/utils';
 import { render } from '@react-email/render';
-import { WorkspaceInviteTemplate } from '@/envoye/emails/templates/workspace-invite-template';
+import { WorkspaceInviteTemplate } from '@/emails/templates/envoye/workspace-invite-template';
 import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { RoleService } from '@/permission/role/role.service';

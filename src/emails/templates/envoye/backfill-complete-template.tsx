@@ -8,7 +8,7 @@ import {
   Preview,
 } from '@react-email/components';
 import React from 'react';
-import { BackfillRunStatus } from '../../backfill/backfill-run-status';
+import { BackfillRunStatus } from '@/envoye/backfill/backfill-run-status';
 
 export interface BackfillCompleteTemplateProps {
   jobId: string;

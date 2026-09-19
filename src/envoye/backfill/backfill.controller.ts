@@ -28,7 +28,7 @@ import {
 import { PermissionService } from '@/permission/permission.service';
 import { PrismaService } from '@/prisma/prisma.service';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
-import { BackfillCompleteTemplate } from '@/envoye/emails/templates/backfill-complete-template';
+import { BackfillCompleteTemplate } from '@/emails/templates/envoye/backfill-complete-template';
 import { User } from '@/auth/decorator/user.decorator';
 import RequestUser from '@/auth/domain/request-user';
 import { PERMISSIONS } from '@/permission/types';

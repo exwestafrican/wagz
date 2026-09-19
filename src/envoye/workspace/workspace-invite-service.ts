@@ -9,7 +9,7 @@ import EnvoyeMessenger from '@/envoye/conversations/messangers/envoye';
 import cleanWorkspaceName from './utils/CleanWorkspaceName';
 import { LinkService } from '@/common/link-service';
 import React from 'react';
-import { InviteAcceptedNotificationTemplate } from '@/envoye/emails/templates/invite-accepted-notification-template';
+import { InviteAcceptedNotificationTemplate } from '@/emails/templates/envoye/invite-accepted-notification-template';
 import { render } from '@react-email/render';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { fullName } from '@/envoye/teammates/utils/full-name';
