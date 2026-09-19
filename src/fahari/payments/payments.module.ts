@@ -8,6 +8,7 @@ import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
 import { PaymentNotificationService } from '@/fahari/payments/payment-notification.service';
+import { WelcomeNotificationService } from '@/fahari/payments/welcome-notification.service';
 import { PaymentsAdminController } from '@/fahari/payments/admin/payments-admin.controller';
 import { MonnifyWebhookController } from '@/fahari/payments/monnify-webhook.controller';
 import { MONNIFY_WEBHOOK_AUTH } from '@/fahari/payments/monnify/webhook/auth/monnify-webhook-auth';
@@ -68,6 +69,7 @@ const MonnifyClientProvider = {
     ReservedAccountService,
     PaymentCollectionService,
     PaymentNotificationService,
+    WelcomeNotificationService,
     PaymentCollectionWebhookHandler,
     MonnifyWebhookHandlersProvider,
     MonnifyWebhookRouter,

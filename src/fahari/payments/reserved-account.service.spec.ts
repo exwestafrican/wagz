@@ -9,6 +9,7 @@ import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
 import { AccountManager } from '@/fahari/payments/account-manager';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
+import { WelcomeNotificationService } from '@/fahari/payments/welcome-notification.service';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { MONIEPOINT_BANK_CODE } from '@/fahari/payments/monnify/monnify-bank-config';
 import {
@@ -16,6 +17,9 @@ import {
   ReserveAccountRequest,
   ReserveAccountResponseBody,
 } from '@/fahari/payments/monnify/monnify.types';
+import type { EmailClient } from '@/messaging/email/email-client';
+import { FAHARI_PAYMENTS_EMAIL } from '@/fahari/const';
+import { fullName } from '@/fahari/user/full-name';
 import {
   ReservedAccountRequestStatus,
   ReservedAccountStatus,
@@ -29,6 +33,7 @@ describe('ReservedAccountService', () => {
   let prismaService: PrismaService;
   let reservedAccountService: ReservedAccountService;
   let accountManager: AccountManager;
+  let emailClient: { send: jest.MockedFunction<EmailClient['send']> };
   let monnifyClient: {
     reserveAccount: jest.Mock;
     contractCode: string;
@@ -43,6 +48,7 @@ describe('ReservedAccountService', () => {
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
     accountManager = new AccountManager(prismaService);
+    emailClient = { send: jest.fn().mockResolvedValue(undefined) };
     monnifyClient = {
       reserveAccount: jest.fn(),
       contractCode: 'contract_code',
@@ -51,6 +57,7 @@ describe('ReservedAccountService', () => {
       prismaService,
       monnifyClient as unknown as MonnifyClient,
       accountManager,
+      new WelcomeNotificationService(emailClient),
     );
   });
 
@@ -140,6 +147,14 @@ describe('ReservedAccountService', () => {
       accountCode: Number(reservedAccount.accountReference.slice(3)),
       status: ReservedAccountRequestStatus.SUCCESS,
     });
+    expect(emailClient.send).toHaveBeenCalledTimes(1);
+    expect(emailClient.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        from: { email: FAHARI_PAYMENTS_EMAIL, name: 'Fleets by Fahari' },
+        to: { email: owner.email, name: fullName(owner) },
+        subject: 'Welcome to Fleets by Fahari',
+      }),
+    );
   });
 
   it('returns the existing active account without calling Monnify again', async () => {
@@ -168,6 +183,7 @@ describe('ReservedAccountService', () => {
     expect(reservedAccount.accountNumber).toBe('1111222233');
     expect(reservedAccount.accountReference).toBe('FAH11111');
     expect(monnifyClient.reserveAccount).not.toHaveBeenCalled();
+    expect(emailClient.send).not.toHaveBeenCalled();
   });
 
   it('allows multiple reserved account rows for the same user', async () => {
@@ -249,5 +265,24 @@ describe('ReservedAccountService', () => {
         where: { userId: owner.id },
       }),
     ).toBe(0);
+  });
+
+  it('still provisions when the welcome email fails to send', async () => {
+    const requester = await createUser();
+    const owner = await createUser();
+    emailClient.send.mockRejectedValue(new Error('smtp down'));
+    monnifyClient.reserveAccount.mockImplementation(
+      (request: ReserveAccountRequest) =>
+        Promise.resolve(monnifyResponse(request.accountReference, owner.email)),
+    );
+
+    const reservedAccount = await reservedAccountService.provision(
+      requester.id,
+      owner.id,
+      { bvn: DRIVER_BVN, nin: DRIVER_NIN },
+    );
+
+    expect(reservedAccount.accountNumber).toBe('6254727989');
+    expect(reservedAccount.status).toBe(ReservedAccountStatus.ACTIVE);
   });
 });
