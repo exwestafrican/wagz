@@ -28,7 +28,7 @@ export class PaymentCollectionWebhookHandler implements MonnifyWebhookHandler {
     const collection =
       await this.paymentCollectionService.ingestSuccessfulCollection(payload);
 
-    void this.paymentNotificationService
+    await this.paymentNotificationService
       .notifyOrSkip(collection)
       .catch((error: unknown) => {
         //TODO send alert or add metric for this please.

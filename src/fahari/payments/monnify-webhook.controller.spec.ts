@@ -37,6 +37,7 @@ describe('MonnifyWebhookController', () => {
 
   function buildController(
     monnifyWebhookAuth: MonnifyWebhookAuth,
+    mockEmailClient: { send: jest.MockedFunction<EmailClient['send']> }
   ): MonnifyWebhookController {
     const accountManager = new AccountManager(prismaService);
     const paymentCollectionService = new PaymentCollectionService(
@@ -46,7 +47,7 @@ describe('MonnifyWebhookController', () => {
     const paymentNotificationService = new PaymentNotificationService(
       prismaService,
       paymentCollectionService,
-      emailClient,
+      mockEmailClient,
     );
     const paymentCollectionWebhookHandler = new PaymentCollectionWebhookHandler(
       paymentCollectionService,
@@ -71,7 +72,10 @@ describe('MonnifyWebhookController', () => {
     prismaService = app.get(PrismaService);
     factory = Factory.createStrategy(prismaService);
     emailClient = { send: jest.fn().mockResolvedValue(undefined) };
-    webhookController = buildController(new NoopMonnifyWebhookAuth());
+    webhookController = buildController(
+      new NoopMonnifyWebhookAuth(),
+      emailClient,
+    );
   });
 
   afterEach(async () => {
@@ -190,6 +194,7 @@ describe('MonnifyWebhookController', () => {
     } as unknown as MonnifyClient;
     const productionController = buildController(
       new ProductionMonnifyWebhookAuth(monnifyClient),
+      emailClient,
     );
 
     await expect(
@@ -224,6 +229,7 @@ describe('MonnifyWebhookController', () => {
     } as unknown as MonnifyClient;
     const productionController = buildController(
       new ProductionMonnifyWebhookAuth(monnifyClient),
+      emailClient,
     );
 
     await productionController.handleWebhook(payload, signature);
