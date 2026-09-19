@@ -2,13 +2,12 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaModule } from '@/prisma/prisma.module';
 import { FahariPermissionModule } from '@/fahari/permission/permission.module';
+import { FahariNotificationModule } from '@/fahari/notification/notification.module';
 import { ENVIROMENT } from '@/common/const';
 import { AccountManager } from '@/fahari/payments/account-manager';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
 import { PaymentCollectionService } from '@/fahari/payments/payment-collection.service';
-import { PaymentNotificationService } from '@/fahari/payments/payment-notification.service';
-import { WelcomeNotificationService } from '@/fahari/payments/welcome-notification.service';
 import { PaymentsAdminController } from '@/fahari/payments/admin/payments-admin.controller';
 import { MonnifyWebhookController } from '@/fahari/payments/monnify-webhook.controller';
 import { MONNIFY_WEBHOOK_AUTH } from '@/fahari/payments/monnify/webhook/auth/monnify-webhook-auth';
@@ -62,14 +61,12 @@ const MonnifyClientProvider = {
 };
 
 @Module({
-  imports: [PrismaModule, FahariPermissionModule],
+  imports: [PrismaModule, FahariPermissionModule, FahariNotificationModule],
   providers: [
     AccountManager,
     MonnifyClientProvider,
     ReservedAccountService,
     PaymentCollectionService,
-    PaymentNotificationService,
-    WelcomeNotificationService,
     PaymentCollectionWebhookHandler,
     MonnifyWebhookHandlersProvider,
     MonnifyWebhookRouter,

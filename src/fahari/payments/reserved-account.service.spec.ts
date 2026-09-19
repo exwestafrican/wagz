@@ -9,7 +9,7 @@ import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
 import { AccountManager } from '@/fahari/payments/account-manager';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
-import { WelcomeNotificationService } from '@/fahari/payments/welcome-notification.service';
+import { WelcomeNotificationService } from '@/fahari/notification/email/welcome-notification.service';
 import { MonnifyClient } from '@/fahari/payments/monnify/monnify.client';
 import { MONIEPOINT_BANK_CODE } from '@/fahari/payments/monnify/monnify-bank-config';
 import {

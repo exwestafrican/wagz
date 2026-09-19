@@ -12,7 +12,7 @@ import { ReservedAccount } from '@/fahari/payments/domain/reserved-account';
 import { ACCOUNT_REFERENCE_PREFIX } from '@/fahari/payments/monnify/monnify.constants';
 import { fullName } from '@/fahari/user/full-name';
 import { notInDbError } from '@/common/error-type';
-import { WelcomeNotificationService } from '@/fahari/payments/welcome-notification.service';
+import { WelcomeNotificationService } from '@/fahari/notification/email/welcome-notification.service';
 
 export type BankDetails = {
   bvn: string;
