@@ -37,7 +37,7 @@ describe('MonnifyWebhookController', () => {
 
   function buildController(
     monnifyWebhookAuth: MonnifyWebhookAuth,
-    mockEmailClient: { send: jest.MockedFunction<EmailClient['send']> }
+    mockEmailClient: { send: jest.MockedFunction<EmailClient['send']> },
   ): MonnifyWebhookController {
     const accountManager = new AccountManager(prismaService);
     const paymentCollectionService = new PaymentCollectionService(

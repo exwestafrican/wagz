@@ -16,10 +16,7 @@ export class WelcomeNotificationService {
     @Inject(EMAIL_CLIENT) private readonly emailClient: EmailClient,
   ) {}
 
-  async notify(
-    owner: Pick<User, 'id' | 'email' | 'firstname' | 'lastname'>,
-    reservedAccount: ReservedAccount,
-  ): Promise<void> {
+  async notify(owner: User, reservedAccount: ReservedAccount): Promise<void> {
     const accountName = fullName(owner);
     const emailHtml = await render(
       React.createElement(WelcomeTeammateTemplate, {
