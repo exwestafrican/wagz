@@ -3,7 +3,7 @@ import { PrismaService } from '@/prisma/prisma.service';
 import { notInDbError } from '@/common/error-type';
 import { Teammate } from '@/generated/prisma/client';
 import { render } from '@react-email/render';
-import NewMessageNotificationTemplate from '@/envoye/emails/templates/new-message-notification.template';
+import NewMessageNotificationTemplate from '@/emails/templates/envoye/new-message-notification.template';
 import React from 'react';
 import { fullName } from '@/envoye/teammates/utils/full-name';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';

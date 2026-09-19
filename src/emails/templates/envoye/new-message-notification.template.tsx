@@ -10,8 +10,8 @@ import {
   Text,
 } from '@react-email/components';
 
-import { collageTailwindConfig } from '@/envoye/emails/templates/theme';
-import { EnvoyeFonts } from '@/envoye/emails/fonts/basic';
+import { collageTailwindConfig } from '@/emails/templates/envoye/theme';
+import { EnvoyeFonts } from '@/emails/fonts/basic';
 
 interface NewMessageTemplateProps {
   workspaceName: string;
