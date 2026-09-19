@@ -4,7 +4,7 @@ import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { WelcomeTeammateTemplate } from '@/emails/templates/fahari/welcome-teammate-template';
 import { ReservedAccount } from '@/fahari/payments/domain/reserved-account';
-import { FAHARI_PAYMENTS_EMAIL } from '@/fahari/const';
+import { ONBOARDING_EMAIL } from '@/fahari/const';
 import { fullName } from '@/fahari/user/full-name';
 import { User } from '@/generated/prisma/client';
 
@@ -27,7 +27,7 @@ export class WelcomeNotificationService {
     );
 
     await this.emailClient.send({
-      from: { email: FAHARI_PAYMENTS_EMAIL, name: 'Fleets by Fahari' },
+      from: { email: ONBOARDING_EMAIL, name: 'Fleets by Fahari' },
       to: {
         email: owner.email,
         name: accountName,

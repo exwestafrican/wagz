@@ -18,7 +18,7 @@ import {
   ReserveAccountResponseBody,
 } from '@/fahari/payments/monnify/monnify.types';
 import type { EmailClient } from '@/messaging/email/email-client';
-import { FAHARI_PAYMENTS_EMAIL } from '@/fahari/const';
+import { PAYMENTS_EMAIL } from '@/fahari/const';
 import { fullName } from '@/fahari/user/full-name';
 import {
   ReservedAccountRequestStatus,
@@ -150,7 +150,7 @@ describe('ReservedAccountService', () => {
     expect(emailClient.send).toHaveBeenCalledTimes(1);
     expect(emailClient.send).toHaveBeenCalledWith(
       expect.objectContaining({
-        from: { email: FAHARI_PAYMENTS_EMAIL, name: 'Fleets by Fahari' },
+        from: { email: PAYMENTS_EMAIL, name: 'Fleets by Fahari' },
         to: { email: owner.email, name: fullName(owner) },
         subject: 'Welcome to Fleets by Fahari',
       }),
