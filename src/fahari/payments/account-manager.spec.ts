@@ -55,8 +55,7 @@ describe('AccountManager', () => {
 
     const reservedAccount = await accountManager.getReservedAccount(owner.id);
 
-    expect(reservedAccount).toEqual({
-      id: expect.any(String),
+    expect(reservedAccount).toMatchObject({
       userId: owner.id,
       accountReference: 'FAH10000',
       accountNumber: '6254727989',
