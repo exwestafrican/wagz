@@ -46,7 +46,8 @@ export class ReservedAccountService {
 
     try {
       const monnifyAccount = await this.monnifyClient.reserveAccount({
-        accountReference: requestLog.accountReference,
+        accountReference:
+          this.accountManager.toAccountReferenceFromRequestLog(requestLog),
         accountName: customerName,
         customerName,
         customerEmail,

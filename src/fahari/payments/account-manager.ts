@@ -97,11 +97,15 @@ export class AccountManager {
     return this.toDomain(persisted);
   }
 
-  private toAccountReference(
-    accountPrefix: string,
-    accountCode: number,
-  ): string {
+  toAccountReference(accountPrefix: string, accountCode: number): string {
     return `${accountPrefix}${accountCode}`;
+  }
+
+  toAccountReferenceFromRequestLog(requestLog: ReservedAccountRequestLog) {
+    return this.toAccountReference(
+      requestLog.accountPrefix,
+      requestLog.accountCode,
+    );
   }
 
   private toDomain(persisted: PersistedReservedAccount): ReservedAccount {

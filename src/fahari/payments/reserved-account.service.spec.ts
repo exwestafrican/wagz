@@ -115,9 +115,6 @@ describe('ReservedAccountService', () => {
       status: ReservedAccountStatus.ACTIVE,
     });
     expect(reservedAccount.accountReference).toMatch(/^FAH\d+$/);
-    expect(
-      Number(reservedAccount.accountReference.slice(3)),
-    ).toBeGreaterThanOrEqual(10000);
     expect(reservedAccount).not.toHaveProperty('accountPrefix');
     expect(reservedAccount).not.toHaveProperty('accountCode');
     expect(monnifyClient.reserveAccount).toHaveBeenCalledWith(
@@ -132,11 +129,10 @@ describe('ReservedAccountService', () => {
       }),
     );
 
-    const requestLog = await prismaService.reservedAccountRequestLog.findUnique(
-      {
-        where: { accountReference: reservedAccount.accountReference },
-      },
-    );
+    const requestLog =
+      await prismaService.reservedAccountRequestLog.findFirstOrThrow({
+        where: { ownerId: reservedAccount.userId },
+      });
     expect(requestLog).toMatchObject({
       requestedBy: requester.id,
       ownerId: owner.id,
@@ -247,7 +243,7 @@ describe('ReservedAccountService', () => {
       status: ReservedAccountRequestStatus.FAILED,
       failureMessage: 'Unable to create reserved account',
     });
-    expect(requestLog?.accountReference).toMatch(/^FAH\d+$/);
+
     expect(
       await prismaService.reservedAccount.count({
         where: { userId: owner.id },

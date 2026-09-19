@@ -23,7 +23,7 @@ const reservedAccountFactory = ReservedAccountFactory.define(
     const accountCode =
       params.accountCode ?? faker.number.int({ min: 10_000, max: 999_999 });
     return {
-      id: faker.string.uuid(),
+      id: sequence,
       userId: sequence,
       accountPrefix,
       accountCode,

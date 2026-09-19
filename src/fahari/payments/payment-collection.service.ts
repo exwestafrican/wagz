@@ -70,7 +70,7 @@ export class PaymentCollectionService {
     }
   }
 
-  async markNotified(paymentCollectionId: string): Promise<void> {
+  async markNotified(paymentCollectionId: number): Promise<void> {
     await this.prismaService.paymentCollection.update({
       where: { id: paymentCollectionId },
       data: { notifiedAt: new Date() },

@@ -3,7 +3,7 @@ import { ReservedAccount } from '@/fahari/payments/domain/reserved-account';
 
 export class ReservedAccountResponseDto {
   @ApiProperty()
-  id: string;
+  id: number;
 
   @ApiProperty()
   userId: number;

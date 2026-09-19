@@ -1,5 +1,5 @@
 export type ReservedAccount = {
-  id: string;
+  id: number;
   userId: number;
   accountReference: string;
   accountNumber: string;
