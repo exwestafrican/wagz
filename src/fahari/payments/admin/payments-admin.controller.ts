@@ -16,6 +16,7 @@ import RequestUser from '@/auth/domain/request-user';
 import { FahariPermissionService } from '@/fahari/permission/permission.service';
 import { ReservedAccountService } from '@/fahari/payments/reserved-account.service';
 import { ProvisionReservedAccountDto } from '@/fahari/payments/dto/provision-reserved-account.dto';
+import { ProvisionReservedAccountForUserDto } from '@/fahari/payments/dto/provision-reserved-account-for-user.dto';
 import {
   ReservedAccountResponseDto,
   toReservedAccountResponse,
@@ -81,6 +82,57 @@ export class PaymentsAdminController {
       if (error instanceof ItemAlreadyExistsInDb) {
         throw new ConflictException(error.message);
       }
+      if (error instanceof MonnifyApiError) {
+        this.logger.error(
+          `Unable to provision reserved account; responseCode=${error.responseCode}; responseMessage=${error.responseMessage}`,
+        );
+        throw new BadGatewayException('Unable to provision reserved account');
+      }
+      throw error;
+    }
+  }
+
+  @Post('provision-reserved-account')
+  @HttpCode(HttpStatus.CREATED)
+  @UseGuards(SupabaseAuthGuard)
+  @ApiOperation({
+    summary: 'Provision a Monnify reserved account for an existing user',
+  })
+  @ApiBody({ type: ProvisionReservedAccountForUserDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Reserved account provisioned',
+    type: ReservedAccountResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User does not exist',
+  })
+  @ApiResponse({
+    status: HttpStatus.FORBIDDEN,
+    description: 'Caller is not a Fahari super admin',
+  })
+  @ApiResponse({
+    status: HttpStatus.BAD_GATEWAY,
+    description: 'Monnify could not provision the reserved account',
+  })
+  @ApiBadRequestResponse()
+  async provisionReservedAccountForUser(
+    @User() requestUser: RequestUser,
+    @Body() dto: ProvisionReservedAccountForUserDto,
+  ): Promise<ReservedAccountResponseDto> {
+    try {
+      const reservedAccount =
+        await this.fahariPermissionService.runIfSuperAdmin(
+          requestUser,
+          (requester) =>
+            this.reservedAccountService.provision(requester.id, dto.userId, {
+              bvn: dto.bvn,
+              nin: dto.nin,
+            }),
+        );
+      return toReservedAccountResponse(reservedAccount);
+    } catch (error) {
       if (error instanceof MonnifyApiError) {
         this.logger.error(
           `Unable to provision reserved account; responseCode=${error.responseCode}; responseMessage=${error.responseMessage}`,

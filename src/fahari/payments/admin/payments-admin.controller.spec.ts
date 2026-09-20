@@ -4,6 +4,7 @@ import {
   ConflictException,
   ForbiddenException,
   INestApplication,
+  NotFoundException,
 } from '@nestjs/common';
 
 import { PrismaModule } from '@/prisma/prisma.module';
@@ -21,9 +22,10 @@ import { ReserveAccountRequest } from '@/fahari/payments/monnify/monnify.types';
 import { ReservedAccountStatus } from '@/generated/prisma/client';
 import Factory, { PersistStrategy } from '@/factories/factory';
 import userFactory from '@/factories/fahari/user.factory';
-import {
+import reservedAccountFactory, {
   monnifyReserveAccountResponseFactory,
   toProvisionReservedAccountDto,
+  toProvisionReservedAccountForUserDto,
 } from '@/factories/fahari/reserved-account.factory';
 
 describe('PaymentsAdminController', () => {
@@ -135,5 +137,101 @@ describe('PaymentsAdminController', () => {
 
     expect(monnifyClient.reserveAccount).not.toHaveBeenCalled();
     expect(await prismaService.reservedAccount.count()).toBe(0);
+  });
+
+  describe('provisionReservedAccountForUser', () => {
+    it('provisions a reserved account for an existing user', async () => {
+      const tumise = await factory.persist('user', () =>
+        userFactory.superAdmin(),
+      );
+      const ada = await factory.persist('user', () => userFactory.build());
+      monnifyClient.reserveAccount.mockImplementation(
+        (request: ReserveAccountRequest) =>
+          Promise.resolve(
+            monnifyReserveAccountResponseFactory.build({
+              accountReference: request.accountReference,
+              customerEmail: request.customerEmail,
+            }),
+          ),
+      );
+
+      const reservedAccount =
+        await adminController.provisionReservedAccountForUser(
+          RequestUser.of(tumise.email),
+          toProvisionReservedAccountForUserDto(ada),
+        );
+
+      expect(reservedAccount).toMatchObject({
+        userId: ada.id,
+        accountNumber: '6254727989',
+        status: ReservedAccountStatus.ACTIVE,
+      });
+      expect(monnifyClient.reserveAccount).toHaveBeenCalled();
+    });
+
+    it('returns the existing active account without calling Monnify', async () => {
+      const tumise = await factory.persist('user', () =>
+        userFactory.superAdmin(),
+      );
+      const ada = await factory.persist('user', () => userFactory.build());
+      const existingReservedAccount = await factory.persist(
+        'reservedAccount',
+        () =>
+          reservedAccountFactory.monnifyAccount({
+            userId: ada.id,
+            accountNumber: '1111222233',
+            customerEmail: ada.email,
+            status: ReservedAccountStatus.ACTIVE,
+          }),
+      );
+
+      const reservedAccount =
+        await adminController.provisionReservedAccountForUser(
+          RequestUser.of(tumise.email),
+          toProvisionReservedAccountForUserDto(ada),
+        );
+
+      expect(reservedAccount).toMatchObject({
+        userId: ada.id,
+        accountNumber: existingReservedAccount.accountNumber,
+        accountReference: existingReservedAccount.accountReference,
+        status: ReservedAccountStatus.ACTIVE,
+      });
+      expect(monnifyClient.reserveAccount).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when the user does not exist', async () => {
+      const tumise = await factory.persist('user', () =>
+        userFactory.superAdmin(),
+      );
+
+      await expect(
+        adminController.provisionReservedAccountForUser(
+          RequestUser.of(tumise.email),
+          {
+            userId: 999_999,
+            bvn: '21212121212',
+            nin: '12034875601',
+          },
+        ),
+      ).rejects.toThrow(NotFoundException);
+
+      expect(monnifyClient.reserveAccount).not.toHaveBeenCalled();
+    });
+
+    it('throws ForbiddenException when the caller is not a super admin', async () => {
+      const kemi = await factory.persist('user', () => userFactory.build());
+      const ada = await factory.persist('user', () => userFactory.build());
+
+      await expect(
+        adminController.provisionReservedAccountForUser(
+          RequestUser.of(kemi.email),
+          toProvisionReservedAccountForUserDto(ada),
+        ),
+      ).rejects.toThrow(ForbiddenException);
+
+      expect(monnifyClient.reserveAccount).not.toHaveBeenCalled();
+      expect(await prismaService.reservedAccount.count()).toBe(0);
+    });
   });
 });
