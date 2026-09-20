@@ -3,9 +3,11 @@ import {
   Body,
   ConflictException,
   Controller,
+  Get,
   HttpCode,
   HttpStatus,
   Logger,
+  NotFoundException,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -21,6 +23,10 @@ import {
   ReservedAccountResponseDto,
   toReservedAccountResponse,
 } from '@/fahari/payments/dto/reserved-account-response.dto';
+import {
+  DriverAccountResponseDto,
+  toDriverAccountResponse,
+} from '@/fahari/payments/dto/driver-account-response.dto';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { MonnifyApiError } from '@/fahari/payments/monnify/monnify.types';
 import ItemAlreadyExistsInDb from '@/common/exceptions/conflict';
@@ -34,6 +40,29 @@ export class PaymentsAdminController {
     private readonly reservedAccountService: ReservedAccountService,
     private readonly fahariPermissionService: FahariPermissionService,
   ) {}
+
+  @Get()
+  @ApiOperation({ summary: 'List accounts' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Accounts returned',
+    type: [DriverAccountResponseDto],
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'Caller is not a Fahari super admin',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async listAccounts(
+    @User() requestUser: RequestUser,
+  ): Promise<DriverAccountResponseDto[]> {
+    const accounts = await this.fahariPermissionService.runIfSuperAdmin(
+      requestUser,
+      () => this.reservedAccountService.listAccounts(),
+      NotFoundException,
+    );
+    return accounts.map(toDriverAccountResponse);
+  }
 
   @Post('reserved-account')
   @HttpCode(HttpStatus.CREATED)

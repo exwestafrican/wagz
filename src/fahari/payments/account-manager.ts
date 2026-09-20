@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { ReservedAccount } from '@/fahari/payments/domain/reserved-account';
+import { DriverAccount } from '@/fahari/payments/domain/driver-account';
 import { first, isEmpty } from '@/common/utils';
 import {
   MonnifyApiError,
@@ -50,6 +51,30 @@ export class AccountManager {
       return null;
     }
     return this.toDomain(persisted);
+  }
+
+  async listAccounts(): Promise<DriverAccount[]> {
+    const drivers = await this.prismaService.user.findMany({
+      where: { isSuperAdmin: false },
+      include: {
+        reservedAccounts: {
+          where: { status: ReservedAccountStatus.ACTIVE },
+        },
+      },
+      orderBy: { id: 'asc' },
+    });
+
+    return drivers.map((driver) => {
+      const activeReservedAccount = first(driver.reservedAccounts);
+      return {
+        userId: driver.id,
+        firstName: driver.firstname,
+        lastName: driver.lastname,
+        email: driver.email,
+        reservedAccountId: activeReservedAccount?.id ?? null,
+        accountNumber: activeReservedAccount?.accountNumber ?? null,
+      };
+    });
   }
 
   async provisionAccount(
