@@ -1,10 +1,27 @@
-import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  NotFoundException,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '@/fahari/auth/auth.service';
 import { MagicLinkAuthDto } from '@/fahari/auth/dto/magic-link-auth';
 import { OtpVerificationDto } from '@/fahari/auth/dto/otp-verification.dto';
 import { OtpVerificationResponseDto } from '@/fahari/auth/dto/otp-verification-response.dto';
+import {
+  toUserProfileResponse,
+  UserProfileResponseDto,
+} from '@/fahari/auth/dto/user-profile-response.dto';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
+import { SupabaseAuthGuard } from '@/auth/guard/supabase.guard';
+import { User } from '@/auth/decorator/user.decorator';
+import RequestUser from '@/auth/domain/request-user';
+import NotFoundInDb from '@/common/exceptions/not-found';
 
 @Controller('fahari/auth')
 @ApiTags('fahari-auth')
@@ -50,5 +67,37 @@ export class AuthController {
     return {
       accessToken: response.accessToken,
     };
+  }
+
+  @Get('me')
+  @ApiOperation({ summary: 'Get the currently logged in user profile' })
+  @ApiResponse({
+    status: HttpStatus.OK,
+    description: 'Current user profile',
+    type: UserProfileResponseDto,
+  })
+  @ApiResponse({
+    status: HttpStatus.UNAUTHORIZED,
+    description: 'User is unauthorized to make this request',
+  })
+  @ApiResponse({
+    status: HttpStatus.NOT_FOUND,
+    description: 'User not found',
+  })
+  @UseGuards(SupabaseAuthGuard)
+  async getLoggedInUserProfile(
+    @User() requestUser: RequestUser,
+  ): Promise<UserProfileResponseDto> {
+    try {
+      const user = await this.authService.getLoggedInUserProfile(
+        requestUser.email,
+      );
+      return toUserProfileResponse(user);
+    } catch (error) {
+      if (error instanceof NotFoundInDb) {
+        throw new NotFoundException(error.message);
+      }
+      throw error;
+    }
   }
 }

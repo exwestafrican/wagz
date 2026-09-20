@@ -7,7 +7,10 @@ import request from 'supertest';
 
 import { PrismaModule } from '@/prisma/prisma.module';
 import { PrismaService } from '@/prisma/prisma.service';
-import { createTestApp } from '@/test-helpers/test-app';
+import {
+  createTestApp,
+  TestControllerModuleWithAuthUser,
+} from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
 import { mockConfigService } from '@/test-helpers/mocks';
 import getHttpServer from '@/test-helpers/get-http-server';
@@ -18,10 +21,15 @@ import { AuthController } from '@/fahari/auth/auth.controller';
 import { AuthService } from '@/fahari/auth/auth.service';
 import { AuthEndpoints } from '@/fahari/auth/consts';
 import { OtpVerificationResponseDto } from '@/fahari/auth/dto/otp-verification-response.dto';
+import { UserProfileResponseDto } from '@/fahari/auth/dto/user-profile-response.dto';
 import {
   createMockSupabaseClient,
   MockSupabaseClient,
 } from '@/test-helpers/supabase.mock';
+import { JWT_VERIFIER } from '@/jwt-verifier/consts';
+import RequestUser from '@/auth/domain/request-user';
+import Factory, { PersistStrategy } from '@/factories/factory';
+import userFactory from '@/factories/fahari/user.factory';
 
 describe('AuthController', () => {
   let app: INestApplication;
@@ -44,6 +52,15 @@ describe('AuthController', () => {
               prisma,
             ),
           inject: [PrismaService],
+        },
+        {
+          provide: JWT_VERIFIER,
+          useValue: {
+            verifyAndDecode: jest.fn().mockResolvedValue({
+              isValid: false,
+              payload: { email: '' },
+            }),
+          },
         },
       ],
     }).compile();
@@ -203,5 +220,78 @@ describe('AuthController', () => {
         .set('Accept', 'application/json')
         .expect(HttpStatus.SERVICE_UNAVAILABLE);
     });
+  });
+});
+
+describe('AuthController GET /fahari/auth/me', () => {
+  const requestUser = RequestUser.of('kemi@usewaggz.com');
+  let app: INestApplication;
+  let prismaService: PrismaService;
+  let factory: PersistStrategy;
+
+  beforeEach(async () => {
+    const module = await TestControllerModuleWithAuthUser({
+      controllers: [AuthController],
+      providers: [
+        {
+          provide: AuthService,
+          useFactory: (prisma: PrismaService) =>
+            new AuthService(
+              createMockSupabaseClient() as unknown as SupabaseClient,
+              new LinkService(mockConfigService),
+              new FahariPermissionService(prisma),
+              prisma,
+            ),
+          inject: [PrismaService],
+        },
+      ],
+    }).with(requestUser);
+    app = await createTestApp(module);
+    prismaService = app.get(PrismaService);
+    factory = Factory.createStrategy(prismaService);
+  });
+
+  afterEach(async () => {
+    await resetDb(prismaService);
+    await app.close();
+  });
+
+  it('returns 200 with the logged in user profile and empty permissions', async () => {
+    const kemi = await factory.persist('user', () =>
+      userFactory.build({
+        email: requestUser.email,
+        firstname: 'kemi',
+        lastname: 'adeyemi',
+      }),
+    );
+
+    const response = await request(getHttpServer(app))
+      .get(AuthEndpoints.ME)
+      .set('Accept', 'application/json')
+      .set('Authorization', 'Bearer test-token')
+      .expect(HttpStatus.OK);
+
+    const body = response.body as UserProfileResponseDto;
+    expect(body).toEqual({
+      firstName: kemi.firstname,
+      lastName: kemi.lastname,
+      email: kemi.email,
+      permissions: [],
+    });
+  });
+
+  it('returns 401 when there is no auth token', async () => {
+    await request(getHttpServer(app))
+      .get(AuthEndpoints.ME)
+      .set('Accept', 'application/json')
+      .expect(HttpStatus.UNAUTHORIZED);
+  });
+
+  it('returns 404 when the token email has no user row', async () => {
+    await request(getHttpServer(app))
+      .get(AuthEndpoints.ME)
+      .set('Accept', 'application/json')
+      .set('Authorization', 'Bearer test-token')
+      .expect(HttpStatus.NOT_FOUND);
   });
 });
