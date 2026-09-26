@@ -78,7 +78,7 @@ export class BookingService {
           create: {
             firstName: createClientPickupBookingDto.firstName,
             lastName: createClientPickupBookingDto.lastName,
-            email: '',
+            email: createClientPickupBookingDto.email,
             pickupLocation: createClientPickupBookingDto.pickupLocation,
             locationUrl: createClientPickupBookingDto.locationUrl,
           },

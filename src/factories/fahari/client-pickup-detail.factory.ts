@@ -34,6 +34,7 @@ export function toCreateClientPickupBookingDto(
     startDateTime: booking.startDateTime,
     firstName: clientPickupDetail.firstName,
     lastName: clientPickupDetail.lastName ?? undefined,
+    email: clientPickupDetail.email,
     pickupLocation: clientPickupDetail.pickupLocation,
     locationUrl: clientPickupDetail.locationUrl,
     note: booking.note ?? undefined,
