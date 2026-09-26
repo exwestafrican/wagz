@@ -11,6 +11,8 @@ import { FahariPermissionService } from '@/fahari/permission/permission.service'
 import RequestUser from '@/auth/domain/request-user';
 import OtpVerification from '@/fahari/auth/domain/otp-verification';
 import { PrismaService } from '@/prisma/prisma.service';
+import NotFoundInDb from '@/common/exceptions/not-found';
+import { User } from '@/generated/prisma/client';
 
 @Injectable()
 export class AuthService {
@@ -77,5 +79,15 @@ export class AuthService {
         accessToken: access_token,
       };
     }
+  }
+
+  async getLoggedInUserProfile(email: string): Promise<User> {
+    const user = await this.prismaService.user.findUnique({
+      where: { email },
+    });
+    if (!user) {
+      throw new NotFoundInDb('user not found');
+    }
+    return user;
   }
 }
