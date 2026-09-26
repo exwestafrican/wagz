@@ -2,12 +2,14 @@ import { Factory } from 'fishery';
 import { Booking, ClientPickupDetail } from '@/generated/prisma/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { CreateClientPickupBookingDto } from '@/fahari/booking/dto/create-client-pickup-booking.dto';
+import { faker } from '@faker-js/faker';
 
 const clientPickupDetailFactory = Factory.define<ClientPickupDetail>(
   ({ sequence }) => {
     return {
       id: sequence,
       bookingId: sequence,
+      email: faker.internet.email(),
       firstName: 'Amara',
       lastName: 'Okafor',
       pickupLocation: 'JKIA Terminal 1, Nairobi',

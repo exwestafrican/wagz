@@ -41,6 +41,7 @@ model ClientPickupDetail {
   bookingId      Int     @unique
   firstName      String  @db.VarChar(100)
   lastName       String? @db.VarChar(100)
+  email          String  @db.VarChar(100)
   pickupLocation String  @db.VarChar(255)
   locationUrl    String  @db.VarChar(600)
 
