@@ -2,12 +2,14 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsDate,
+  IsEmail,
   IsInt,
   IsNotEmpty,
   IsOptional,
   IsString,
   MaxLength,
 } from 'class-validator';
+import { IsNotDisposableEmail } from '@/common/validators/is-not-disposable-email.decorator';
 
 export class CreateClientPickupBookingDto {
   @ApiProperty({
@@ -55,6 +57,14 @@ export class CreateClientPickupBookingDto {
   @IsNotEmpty()
   @MaxLength(255)
   pickupLocation: string;
+
+  @ApiProperty({
+    description: 'Client email',
+    example: 't@fahari.co',
+  })
+  @IsEmail()
+  @IsNotDisposableEmail()
+  email: string;
 
   @ApiProperty({
     description: 'Map URL for the pickup location',
