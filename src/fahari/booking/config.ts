@@ -52,8 +52,8 @@ const experiences: Experience[] = [
       maxAdvanceBookingDays: 40,
     },
     schedule: {
-      startTime: '3:00pm',
-      endTime: '11:00am',
+      startTime: '15:00',
+      endTime: '11:00',
     },
     meetingPoint: {
       name: 'ara iye reception',
