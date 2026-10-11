@@ -3,10 +3,11 @@ import { BookingService } from '@/fahari/booking/booking.service';
 import { BookingAdminController } from '@/fahari/booking/admin/booking-admin.controller';
 import { FahariPermissionModule } from '@/fahari/permission/permission.module';
 import { BookingController } from '@/fahari/booking/booking.controller';
+import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
 
 @Module({
   imports: [FahariPermissionModule],
-  providers: [BookingService],
+  providers: [BookingService, ResortLineItemPricer],
   controllers: [BookingAdminController, BookingController],
   exports: [BookingService],
 })
