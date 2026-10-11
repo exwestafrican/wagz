@@ -8,6 +8,10 @@ type BookingPolicy = {
   maxAdvanceBookingDays: number;
 };
 
+type MeetingPoint = {
+  name: string;
+};
+
 export type ListingRide = {
   provider: string;
   oneWayTrip: number;
@@ -28,6 +32,7 @@ export type Experience = {
   category: string;
   bookingPolicy: BookingPolicy;
   schedule: Schedule;
+  meetingPoint: MeetingPoint;
   onlyRideBooking: boolean;
   additionalServices: AdditionalServices;
 };
@@ -49,6 +54,9 @@ const experiences: Experience[] = [
     schedule: {
       startTime: '3:00pm',
       endTime: '11:00am',
+    },
+    meetingPoint: {
+      name: 'ara iye reception',
     },
     additionalServices: {
       rides: [
