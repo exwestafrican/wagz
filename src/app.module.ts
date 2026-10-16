@@ -22,6 +22,7 @@ import { ConversationsModule } from '@/envoye/conversations/conversations.module
 import { TrackerModule } from '@/fahari/tracker/tracker.module';
 import { PaymentsModule } from '@/fahari/payments/payments.module';
 import { BookingModule } from '@/fahari/booking/booking.module';
+import { UserModule as FahariUserModule } from '@/fahari/user/user.module';
 
 @Module({
   imports: [
@@ -48,6 +49,7 @@ import { BookingModule } from '@/fahari/booking/booking.module';
     TrackerModule,
     PaymentsModule,
     BookingModule,
+    FahariUserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
