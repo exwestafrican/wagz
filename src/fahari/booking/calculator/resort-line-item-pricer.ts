@@ -32,8 +32,7 @@ export class ResortLineItemPricer {
     numberOfNights: number,
   ) {
     const basePrice = experience.billing.accommodation.basePrice;
-    if (numberOfNights == 0) return 0;
-    if (numberOfNights === 1) {
+    if (numberOfNights === 0) {
       return basePrice;
     }
 
@@ -51,9 +50,6 @@ export class ResortLineItemPricer {
     const policy = this.getPolicyOrThrow(experience, numberOfGuests);
 
     if (numberOfNights == 0) return policy.sameDayReturnPrice;
-    if (numberOfNights === 1) {
-      return policy.sameDayReturnPrice;
-    }
     return policy.multipleDaysReturnPrice;
   }
 
