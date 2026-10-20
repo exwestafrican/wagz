@@ -13,7 +13,7 @@ export class CalculateBillingQueryDto {
 
   @ApiProperty({ description: 'Number of nights to bill', example: 2 })
   @IsInt()
-  @Min(1)
+  @Min(0)
   numberOfNights: number;
 
   @ApiProperty({

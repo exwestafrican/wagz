@@ -32,6 +32,7 @@ export class ResortLineItemPricer {
     numberOfNights: number,
   ) {
     const basePrice = experience.billing.accommodation.basePrice;
+    if (numberOfNights == 0) return 0;
     if (numberOfNights === 1) {
       return basePrice;
     }
@@ -48,6 +49,8 @@ export class ResortLineItemPricer {
     numberOfGuests: number,
   ) {
     const policy = this.getPolicyOrThrow(experience, numberOfGuests);
+
+    if (numberOfNights == 0) return policy.sameDayReturnPrice;
     if (numberOfNights === 1) {
       return policy.sameDayReturnPrice;
     }
@@ -61,6 +64,6 @@ export class ResortLineItemPricer {
     if (provider) {
       return provider;
     }
-    throw new NotFoundException('cannot get policy for experience');
+    throw new NotFoundException('cannot find vehicle provider with capacity');
   }
 }
