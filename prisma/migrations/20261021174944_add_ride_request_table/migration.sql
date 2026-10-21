@@ -15,7 +15,7 @@ CREATE TABLE "ride_request" (
     "countryCallingCode" VARCHAR(8) NOT NULL,
     "nationalNumber" VARCHAR(20) NOT NULL,
     "currency" VARCHAR(3) NOT NULL DEFAULT 'NGN',
-    "amount" INTEGER NOT NULL,
+    "minorAmount" INTEGER NOT NULL,
     "state" "RideRequestState" NOT NULL DEFAULT 'PENDING',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
