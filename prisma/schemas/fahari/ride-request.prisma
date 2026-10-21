@@ -1,0 +1,26 @@
+enum RideRequestState {
+  PENDING
+  CONFIRMED
+  CANCELLED
+}
+
+model RideRequest {
+  id                 Int              @id @default(autoincrement())
+  experienceCode     String           @db.VarChar(50)
+  numberOfPassengers Int
+  pickupLocation     String           @db.VarChar(255)
+  pickupDateTime     DateTime
+  departureDateTime  DateTime
+  firstName          String           @db.VarChar(100)
+  lastName           String           @db.VarChar(100)
+  email              String           @db.VarChar(255)
+  countryCallingCode String           @db.VarChar(8)
+  nationalNumber     String           @db.VarChar(20)
+  currency           String           @default("NGN") @db.VarChar(3)
+  minorAmount        Int
+  state              RideRequestState @default(PENDING)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@map("ride_request")
+}
