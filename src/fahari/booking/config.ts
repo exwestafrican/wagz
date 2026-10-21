@@ -56,7 +56,7 @@ const experiences: Experience[] = [
     pricePerNight: 150000,
     currency: 'NGN',
     category: 'resort',
-    onlyRideBooking: false,
+    onlyRideBooking: true,
     bookingPolicy: {
       maximumNights: 1,
       minAdvanceBookingDays: 5,

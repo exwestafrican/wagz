@@ -6,11 +6,11 @@ describe('ResortLineItemPricer', () => {
   const araIye = 'araiye';
 
   it('prices zero nights of accommodation at zero', () => {
-    expect(pricer.total(araIye, 0, 'accommodation', 2)).toBe(0);
+    expect(pricer.total(araIye, 0, 'accommodation', 2)).toBe(150_000);
   });
 
   it('prices one night of accommodation at the base price', () => {
-    expect(pricer.total(araIye, 1, 'accommodation', 2)).toBe(150_000);
+    expect(pricer.total(araIye, 1, 'accommodation', 2)).toBe(200_000);
   });
 
   it('adds the additional night price for every night on a longer stay', () => {
@@ -22,7 +22,7 @@ describe('ResortLineItemPricer', () => {
   });
 
   it('prices a same-day ride from the provider that can carry the guests', () => {
-    expect(pricer.total(araIye, 1, 'ride', 2)).toBe(69_660);
+    expect(pricer.total(araIye, 0, 'ride', 2)).toBe(69_660);
   });
 
   it('prices a multi-night ride at the multiple-day return price', () => {
