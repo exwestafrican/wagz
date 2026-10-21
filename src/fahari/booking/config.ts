@@ -37,6 +37,7 @@ export type Experience = {
   name: string;
   tagLine: string;
   code: string;
+  address: string;
   pricePerNight: string;
   currency: string;
   category: string;
@@ -54,6 +55,7 @@ const experiences: Experience[] = [
     name: 'ara iye',
     tagLine: 'Reconnection with nature, culture, and silliness.',
     code: 'araiye',
+    address: 'owode ogun state',
     pricePerNight: formatNaira(150_000),
     currency: 'NGN',
     category: 'resort',
