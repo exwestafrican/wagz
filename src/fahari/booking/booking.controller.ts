@@ -1,12 +1,15 @@
 import {
+  Body,
   Controller,
   Get,
   HttpCode,
   HttpStatus,
   Logger,
   NotFoundException,
+  Post,
   Query,
 } from '@nestjs/common';
+import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { getExperience } from '@/fahari/booking/config';
 import {
   type ExperienceResponseDto,
@@ -14,13 +17,19 @@ import {
 } from '@/fahari/booking/dto/experience.dto';
 import { CalculateBillingQueryDto } from '@/fahari/booking/dto/calculate-billing-query.dto';
 import GetListingQueryDto from '@/fahari/booking/dto/get-listing.dto';
+import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
+import { RideRequestResponseDto } from '@/fahari/booking/dto/ride-request-response.dto';
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
+import { RideRequestService } from '@/fahari/booking/ride-request.service';
 
 @Controller('booking')
 export class BookingController {
   logger = new Logger(BookingController.name);
 
-  constructor(private resortLineItemPricer: ResortLineItemPricer) {}
+  constructor(
+    private resortLineItemPricer: ResortLineItemPricer,
+    private readonly rideRequestService: RideRequestService,
+  ) {}
 
   @Get()
   @HttpCode(HttpStatus.OK)
@@ -45,5 +54,20 @@ export class BookingController {
         query.numberOfGuests,
       ),
     };
+  }
+
+  @Post('ride-requests')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: 'Create a ride request' })
+  @ApiBody({ type: CreateRideRequestDto })
+  @ApiResponse({
+    status: HttpStatus.CREATED,
+    description: 'Ride request created',
+    type: RideRequestResponseDto,
+  })
+  createRideRequest(
+    @Body() createRideRequestDto: CreateRideRequestDto,
+  ): Promise<RideRequestResponseDto> {
+    return this.rideRequestService.create(createRideRequestDto);
   }
 }

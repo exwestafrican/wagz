@@ -11,7 +11,7 @@ import SignupDetails from '../domain/signup.details';
 import { IsNotDisposableEmail } from '@/common/validators/is-not-disposable-email.decorator';
 import { PhoneNumberDto } from '@/envoye/auth/dto/phone-number.dto';
 import { Transform, Type } from 'class-transformer';
-import { IsValidPhoneNumberConstraint } from '@/envoye/auth/validators/phone-number';
+import { IsValidPhoneNumberConstraint } from '@/common/validators/is-valid-phone-number';
 import { IsValidIANATimezoneConstraint } from '../validators/timezone-iana';
 
 export class SignupEmailDto {
