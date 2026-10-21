@@ -66,18 +66,53 @@ describe('BookingController', () => {
     await app.close();
   });
 
+  describe('getListing', () => {
+    it('returns prices in naira', () => {
+      expect(bookingController.getListing({ code: 'araiye' })).toMatchObject({
+        pricePerNight: '150000.00',
+        currency: 'NGN',
+        billing: {
+          accommodation: {
+            basePrice: '150000.00',
+            additionalNightPrice: '50000.00',
+          },
+        },
+        rideProviders: [
+          {
+            sameDayReturnPrice: '69660.00',
+            multipleDaysReturnPrice: '88245.00',
+          },
+        ],
+      });
+    });
+  });
+
+  describe('calculateBilling', () => {
+    it('returns the quote in naira', () => {
+      expect(
+        bookingController.calculateBilling({
+          resortCode: 'araiye',
+          numberOfNights: 2,
+          lineItem: 'ride',
+          numberOfGuests: 3,
+        }),
+      ).toEqual({ amount: '88245.00' });
+    });
+  });
+
   describe('createRideRequest', () => {
-    it('stores a pending ride request with the quote in minor units', async () => {
+    it('stores a pending ride request in kobo and returns the quote in naira', async () => {
       const rideRequest =
         await bookingController.createRideRequest(araIyeRoundTrip());
 
       expect(rideRequest).toMatchObject({
         state: RideRequestState.PENDING,
-        minorAmount: 8_824_500,
+        amount: '88245.00',
         currency: 'NGN',
         experienceCode: 'araiye',
         numberOfPassengers: 1,
       });
+      expect(rideRequest).not.toHaveProperty('minorAmount');
       expect(rideRequest).not.toHaveProperty('email');
       expect(rideRequest).not.toHaveProperty('phoneNumber');
 

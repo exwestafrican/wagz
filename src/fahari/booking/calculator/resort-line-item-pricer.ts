@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Experience, getExperienceOrThrow } from '@/fahari/booking/config';
+import { toKobo } from '@/fahari/booking/money';
 
 export const LINE_ITEMS = ['accommodation', 'ride'] as const;
 export type LineItem = (typeof LINE_ITEMS)[number];
@@ -11,7 +12,7 @@ export class ResortLineItemPricer {
     numberOfNights: number,
     lineItem: LineItem,
     numberOfGuests: number,
-  ) {
+  ): number {
     const experience = getExperienceOrThrow(resortCode); //TODO: make this get resort experience
     switch (lineItem) {
       case 'accommodation':
@@ -31,15 +32,15 @@ export class ResortLineItemPricer {
     experience: Experience,
     numberOfNights: number,
   ) {
-    const basePrice = experience.billing.accommodation.basePrice;
+    const basePrice = toKobo(experience.billing.accommodation.basePrice);
     if (numberOfNights === 0) {
       return basePrice;
     }
 
-    return (
-      basePrice +
-      numberOfNights * experience.billing.accommodation.additionalNightPrice
-    );
+    const additionalNights =
+      numberOfNights *
+      toKobo(experience.billing.accommodation.additionalNightPrice);
+    return basePrice + additionalNights;
   }
 
   private calculateVehicleBooking(
@@ -48,9 +49,11 @@ export class ResortLineItemPricer {
     numberOfGuests: number,
   ) {
     const policy = this.getPolicyOrThrow(experience, numberOfGuests);
-
-    if (numberOfNights == 0) return policy.sameDayReturnPrice;
-    return policy.multipleDaysReturnPrice;
+    const returnPrice =
+      numberOfNights == 0
+        ? policy.sameDayReturnPrice
+        : policy.multipleDaysReturnPrice;
+    return toKobo(returnPrice);
   }
 
   private getPolicyOrThrow(experience: Experience, numberOfGuests: number) {

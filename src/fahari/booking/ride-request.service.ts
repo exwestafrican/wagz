@@ -14,7 +14,6 @@ import {
   RideRequestResponseDto,
   toRideRequestResponse,
 } from '@/fahari/booking/dto/ride-request-response.dto';
-import { toMinorUnits } from '@/fahari/booking/minor-units';
 
 @Injectable()
 export class RideRequestService {
@@ -43,6 +42,11 @@ export class RideRequestService {
       createRideRequestDto.pickupDateTime,
     );
 
+    const quotedAmount = this.quote(
+      experience.code,
+      numberOfNights,
+      createRideRequestDto.numberOfPassengers,
+    );
     const rideRequest = await this.prismaService.rideRequest.create({
       data: {
         experienceCode: experience.code,
@@ -56,14 +60,7 @@ export class RideRequestService {
         countryCallingCode: createRideRequestDto.phoneNumber.countryCallingCode,
         nationalNumber: createRideRequestDto.phoneNumber.nationalNumber,
         currency: experience.currency,
-        minorAmount: toMinorUnits(
-          this.quotedMajorAmount(
-            experience.code,
-            numberOfNights,
-            createRideRequestDto.numberOfPassengers,
-          ),
-          experience.currency,
-        ),
+        minorAmount: quotedAmount,
         state: RideRequestState.PENDING,
       },
     });
@@ -73,7 +70,7 @@ export class RideRequestService {
     return toRideRequestResponse(rideRequest);
   }
 
-  private quotedMajorAmount(
+  private quote(
     experienceCode: string,
     numberOfNights: number,
     numberOfPassengers: number,

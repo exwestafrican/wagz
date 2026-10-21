@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RideRequest } from '@/generated/prisma/client';
 import { RideRequestState } from '@/generated/prisma/enums';
+import { formatMinorAmount } from '@/fahari/booking/money';
 
 export class RideRequestResponseDto {
   @ApiProperty({ description: 'Ride request id' })
@@ -10,10 +11,10 @@ export class RideRequestResponseDto {
   state: RideRequestState;
 
   @ApiProperty({
-    description: 'Quoted price in minor units. Kobo for NGN, cents for USD.',
-    example: 8_824_500,
+    description: 'Quoted price in naira, with kobo as two decimal places.',
+    example: '88245.00',
   })
-  minorAmount: number;
+  amount: string;
 
   @ApiProperty({ description: 'Currency code', example: 'NGN' })
   currency: string;
@@ -37,7 +38,7 @@ export function toRideRequestResponse(
   return {
     id: rideRequest.id,
     state: rideRequest.state,
-    minorAmount: rideRequest.minorAmount,
+    amount: formatMinorAmount(rideRequest.minorAmount),
     currency: rideRequest.currency,
     experienceCode: rideRequest.experienceCode,
     numberOfPassengers: rideRequest.numberOfPassengers,

@@ -20,6 +20,7 @@ import GetListingQueryDto from '@/fahari/booking/dto/get-listing.dto';
 import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
 import { RideRequestResponseDto } from '@/fahari/booking/dto/ride-request-response.dto';
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
+import { formatMinorAmount } from '@/fahari/booking/money';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 
 @Controller('booking')
@@ -44,14 +45,16 @@ export class BookingController {
   @Get('calculate')
   @HttpCode(HttpStatus.OK)
   calculateBilling(@Query() query: CalculateBillingQueryDto): {
-    amount: number;
+    amount: string;
   } {
     return {
-      amount: this.resortLineItemPricer.total(
-        query.resortCode,
-        query.numberOfNights,
-        query.lineItem,
-        query.numberOfGuests,
+      amount: formatMinorAmount(
+        this.resortLineItemPricer.total(
+          query.resortCode,
+          query.numberOfNights,
+          query.lineItem,
+          query.numberOfGuests,
+        ),
       ),
     };
   }
