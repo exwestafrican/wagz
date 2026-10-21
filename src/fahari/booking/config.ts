@@ -7,6 +7,7 @@ type Schedule = {
 
 type BookingPolicy = {
   maximumNights: number;
+  minAdvanceBookingDays: number;
   maxAdvanceBookingDays: number;
 };
 
@@ -55,9 +56,10 @@ const experiences: Experience[] = [
     pricePerNight: 150000,
     currency: 'NGN',
     category: 'resort',
-    onlyRideBooking: false,
+    onlyRideBooking: true,
     bookingPolicy: {
-      maximumNights: 2,
+      maximumNights: 1,
+      minAdvanceBookingDays: 5,
       maxAdvanceBookingDays: 40,
     },
     schedule: {
