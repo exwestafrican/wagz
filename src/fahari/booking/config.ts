@@ -1,4 +1,5 @@
 import { NotFoundException } from '@nestjs/common';
+import { formatNaira } from '@/fahari/booking/money';
 
 type Schedule = {
   startTime: string;
@@ -17,8 +18,8 @@ type MeetingPoint = {
 
 type DurationBasedPricing = {
   durationUnit: 'nights' | 'days' | 'hours';
-  basePrice: number;
-  additionalNightPrice: number;
+  basePrice: string;
+  additionalNightPrice: string;
 };
 
 type ResortBilling = {
@@ -28,15 +29,16 @@ type ResortBilling = {
 export type ProviderPolicy = {
   provider: string;
   maximumCapacity: number;
-  sameDayReturnPrice: number;
-  multipleDaysReturnPrice: number;
+  sameDayReturnPrice: string;
+  multipleDaysReturnPrice: string;
 };
 
 export type Experience = {
   name: string;
   tagLine: string;
   code: string;
-  pricePerNight: number;
+  address: string;
+  pricePerNight: string;
   currency: string;
   category: string;
   bookingPolicy: BookingPolicy;
@@ -53,7 +55,8 @@ const experiences: Experience[] = [
     name: 'ara iye',
     tagLine: 'Reconnection with nature, culture, and silliness.',
     code: 'araiye',
-    pricePerNight: 150000,
+    address: 'owode ogun state',
+    pricePerNight: formatNaira(150_000),
     currency: 'NGN',
     category: 'resort',
     onlyRideBooking: true,
@@ -69,8 +72,8 @@ const experiences: Experience[] = [
     billing: {
       accommodation: {
         durationUnit: 'nights',
-        basePrice: 150_000,
-        additionalNightPrice: 50_000,
+        basePrice: formatNaira(150_000),
+        additionalNightPrice: formatNaira(50_000),
       },
     },
     meetingPoint: {
@@ -80,8 +83,8 @@ const experiences: Experience[] = [
       {
         provider: 'fahari',
         maximumCapacity: 3,
-        sameDayReturnPrice: 69_660,
-        multipleDaysReturnPrice: 88_245,
+        sameDayReturnPrice: formatNaira(69_660),
+        multipleDaysReturnPrice: formatNaira(88_245),
       },
     ],
   },
