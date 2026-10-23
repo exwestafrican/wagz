@@ -24,7 +24,6 @@ export class RideRequestPhoneNumberDto {
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(8)
-  @Validate(({ value }: { value: string }) => value.startsWith('+'))
   countryCallingCode: string;
 
   @ApiProperty({
