@@ -17,6 +17,9 @@ import { BookingController } from '@/fahari/booking/booking.controller';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
 import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
+import { RideRequestNotificationService } from '@/fahari/notification/email/ride-request-notification.service';
+import type { EmailClient } from '@/messaging/email/email-client';
+import { BOOKINGS_EMAIL } from '@/fahari/const';
 
 function araIyeRoundTrip(
   overrides: Partial<CreateRideRequestDto> = {},
@@ -42,6 +45,7 @@ describe('BookingController', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let bookingController: BookingController;
+  let emailClient: { send: jest.MockedFunction<EmailClient['send']> };
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -52,13 +56,23 @@ describe('BookingController', () => {
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
     const resortLineItemPricer = new ResortLineItemPricer();
+    emailClient = { send: jest.fn() };
     bookingController = new BookingController(
       resortLineItemPricer,
-      new RideRequestService(prismaService, resortLineItemPricer),
+      new RideRequestService(
+        prismaService,
+        resortLineItemPricer,
+        new RideRequestNotificationService(emailClient),
+      ),
     );
   });
 
+  beforeEach(() => {
+    emailClient.send.mockResolvedValue(undefined);
+  });
+
   afterEach(async () => {
+    emailClient.send.mockReset();
     await resetDb(prismaService);
   });
 
@@ -127,6 +141,37 @@ describe('BookingController', () => {
         nationalNumber: '8031234567',
       });
       expect(await prismaService.booking.count()).toBe(0);
+
+      expect(emailClient.send).toHaveBeenCalledTimes(1);
+      expect(emailClient.send).toHaveBeenCalledWith(
+        expect.objectContaining({
+          from: { email: BOOKINGS_EMAIL, name: 'Fahari Bookings' },
+          to: { email: 'humans@fahari.io', name: 'ara iye' },
+          subject: 'New ride request: ara iye',
+        }),
+      );
+      expect(emailClient.send.mock.calls[0][0].to.email).not.toBe(
+        'guest@example.com',
+      );
+    });
+
+    it('still creates the ride request when the notification email fails', async () => {
+      emailClient.send.mockRejectedValue(new Error('smtp down'));
+
+      const rideRequest =
+        await bookingController.createRideRequest(araIyeRoundTrip());
+
+      expect(rideRequest).toMatchObject({
+        state: RideRequestState.PENDING,
+        experienceCode: 'araiye',
+      });
+      expect(
+        await prismaService.rideRequest.findFirst({
+          where: { id: rideRequest.id },
+        }),
+      ).toMatchObject({
+        state: RideRequestState.PENDING,
+      });
     });
 
     it('throws NotFoundException when the experience does not exist', async () => {

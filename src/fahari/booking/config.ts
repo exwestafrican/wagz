@@ -39,6 +39,7 @@ export type Experience = {
   code: string;
   address: string;
   pricePerNight: string;
+  notificationEmail: string;
   currency: string;
   category: string;
   bookingPolicy: BookingPolicy;
@@ -57,6 +58,7 @@ const experiences: Experience[] = [
     code: 'araiye',
     address: 'owode ogun state',
     pricePerNight: formatNaira(150_000),
+    notificationEmail: 'humans@fahari.io',
     currency: 'NGN',
     category: 'resort',
     onlyRideBooking: true,
