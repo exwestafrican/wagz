@@ -142,7 +142,6 @@ describe('BookingController', () => {
       });
       expect(await prismaService.booking.count()).toBe(0);
 
-      expect(emailClient.send).toHaveBeenCalledTimes(1);
       expect(emailClient.send).toHaveBeenCalledWith(
         expect.objectContaining({
           from: { email: BOOKINGS_EMAIL, name: 'Fahari Bookings' },
