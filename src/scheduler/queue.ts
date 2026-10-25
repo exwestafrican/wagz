@@ -6,6 +6,7 @@ import { addSeconds } from 'date-fns';
 @Injectable()
 export default class Queue {
   logger = new Logger(Queue.name);
+  static JOB_DELAY_SECONDS = 30;
 
   constructor(private readonly prismaService: PrismaService) {}
   async add(taskName: string, params: InputJsonSerializable) {
@@ -13,7 +14,7 @@ export default class Queue {
       data: {
         taskName: taskName,
         params: params.toInputJson(),
-        scheduledAt: addSeconds(Date.now(), 30),
+        scheduledAt: addSeconds(Date.now(), Queue.JOB_DELAY_SECONDS),
       },
     });
     this.logger.log(
