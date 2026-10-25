@@ -89,9 +89,6 @@ export default class TaskManager implements OnModuleDestroy {
     });
   }
 
-  //TODO: test that when job fails we updata state back to pending
-  // test that when job successds we update state back to completed
-
   async run() {
     while (!this.abortController.signal.aborted) {
       const jobs = await this.claimPendingJobs();
