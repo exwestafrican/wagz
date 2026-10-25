@@ -12,14 +12,13 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { PrismaService } from '@/prisma/prisma.service';
 import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
-import { RideRequestState } from '@/generated/prisma/enums';
+import { QueuedJobStatus, RideRequestState } from '@/generated/prisma/enums';
 import { BookingController } from '@/fahari/booking/booking.controller';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
 import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
-import type { EmailClient } from '@/messaging/email/email-client';
-import { BOOKINGS_EMAIL } from '@/fahari/const';
 import Queue from '@/scheduler/queue';
+import TaskQueue from '@/scheduler/tasks';
 
 function araIyeRoundTrip(
   overrides: Partial<CreateRideRequestDto> = {},
@@ -45,7 +44,6 @@ describe('BookingController', () => {
   let app: INestApplication;
   let prismaService: PrismaService;
   let bookingController: BookingController;
-  let emailClient: { send: jest.MockedFunction<EmailClient['send']> };
 
   beforeAll(async () => {
     const module = await Test.createTestingModule({
@@ -56,7 +54,6 @@ describe('BookingController', () => {
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
     const resortLineItemPricer = new ResortLineItemPricer();
-    emailClient = { send: jest.fn() };
     bookingController = new BookingController(
       resortLineItemPricer,
       new RideRequestService(
@@ -67,12 +64,7 @@ describe('BookingController', () => {
     );
   });
 
-  beforeEach(() => {
-    emailClient.send.mockResolvedValue(undefined);
-  });
-
   afterEach(async () => {
-    emailClient.send.mockReset();
     await resetDb(prismaService);
   });
 
@@ -142,34 +134,16 @@ describe('BookingController', () => {
       });
       expect(await prismaService.booking.count()).toBe(0);
 
-      expect(emailClient.send).toHaveBeenCalledWith(
-        expect.objectContaining({
-          from: { email: BOOKINGS_EMAIL, name: 'Fahari Bookings' },
-          to: { email: 'humans@fahari.io', name: 'ara iye' },
-          subject: 'New ride request: ara iye',
-        }),
-      );
-      expect(emailClient.send.mock.calls[0][0].to.email).not.toBe(
-        'guest@example.com',
-      );
-    });
-
-    it('still creates the ride request when the notification email fails', async () => {
-      emailClient.send.mockRejectedValue(new Error('smtp down'));
-
-      const rideRequest =
-        await bookingController.createRideRequest(araIyeRoundTrip());
-
-      expect(rideRequest).toMatchObject({
-        state: RideRequestState.PENDING,
-        experienceCode: 'araiye',
+      const queuedRideRequestJob = await prismaService.queuedJob.findFirst({
+        where: { taskName: TaskQueue.NEW_RIDE_REQUEST },
       });
-      expect(
-        await prismaService.rideRequest.findFirst({
-          where: { id: rideRequest.id },
-        }),
-      ).toMatchObject({
-        state: RideRequestState.PENDING,
+      expect(queuedRideRequestJob).toMatchObject({
+        taskName: TaskQueue.NEW_RIDE_REQUEST,
+        status: QueuedJobStatus.PENDING,
+        params: {
+          rideRequestId: rideRequest.id,
+          experienceCode: 'araiye',
+        },
       });
     });
 
