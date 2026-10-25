@@ -17,7 +17,6 @@ import { BookingController } from '@/fahari/booking/booking.controller';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
 import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
-import { RideRequestNotificationService } from '@/fahari/notification/email/ride-request-notification.service';
 import type { EmailClient } from '@/messaging/email/email-client';
 import { BOOKINGS_EMAIL } from '@/fahari/const';
 import Queue from '@/scheduler/queue';
