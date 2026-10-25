@@ -20,6 +20,7 @@ import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.d
 import { RideRequestNotificationService } from '@/fahari/notification/email/ride-request-notification.service';
 import type { EmailClient } from '@/messaging/email/email-client';
 import { BOOKINGS_EMAIL } from '@/fahari/const';
+import Queue from '@/scheduler/queue';
 
 function araIyeRoundTrip(
   overrides: Partial<CreateRideRequestDto> = {},
@@ -62,7 +63,7 @@ describe('BookingController', () => {
       new RideRequestService(
         prismaService,
         resortLineItemPricer,
-        new RideRequestNotificationService(emailClient),
+        new Queue(prismaService),
       ),
     );
   });
