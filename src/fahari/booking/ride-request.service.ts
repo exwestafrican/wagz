@@ -14,9 +14,7 @@ import {
   RideRequestResponseDto,
   toRideRequestResponse,
 } from '@/fahari/booking/dto/ride-request-response.dto';
-import Queue from '@/scheduler/queue';
-import TaskQueue from '@/scheduler/tasks';
-import RideRequestParams from '@/scheduler/params/ride-request.params';
+import { RideRequestNotificationService } from '@/fahari/notification/email/ride-request-notification.service';
 
 @Injectable()
 export class RideRequestService {
@@ -25,7 +23,7 @@ export class RideRequestService {
   constructor(
     private readonly prismaService: PrismaService,
     private readonly resortLineItemPricer: ResortLineItemPricer,
-    private readonly queue: Queue,
+    private readonly rideRequestNotificationService: RideRequestNotificationService,
   ) {}
 
   async create(
@@ -70,10 +68,15 @@ export class RideRequestService {
     });
 
     this.logger.log(`created ride request id=${rideRequest.id}`);
-    await this.queue.add(
-      TaskQueue.NEW_RIDE_REQUEST,
-      RideRequestParams.of(rideRequest.id, experience.code),
-    );
+
+    await this.rideRequestNotificationService
+      .notify(rideRequest, experience)
+      .catch((error: unknown) => {
+        this.logger.error(
+          `Failed sending ride request email for ride request id=${rideRequest.id}: ${error instanceof Error ? error.message : 'unknown error'}`,
+        );
+      });
+
     return toRideRequestResponse(rideRequest);
   }
 

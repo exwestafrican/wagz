@@ -11,18 +11,6 @@ services:
       timeout: 5s
       retries: 10
 
-  migrate:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      target: builder
-    environment:
-      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/postgres
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: pnpm prisma migrate deploy
-
   app:
     build:
       context: .
@@ -43,5 +31,3 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      migrate:
-        condition: service_completed_successfully
