@@ -88,6 +88,14 @@ jobs:
           echo "Timed out waiting for /health"
           exit 1
 
+      - name: Migration logs
+        if: always()
+        run: docker compose -f docker-compose.ci.yml logs migrate
+
+      - name: App logs
+        if: failure()
+        run: docker compose -f docker-compose.ci.yml logs app
+
       - name: Tear down
         if: always()
         run: docker compose -f docker-compose.ci.yml down -v
