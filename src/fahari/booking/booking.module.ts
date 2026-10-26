@@ -6,10 +6,9 @@ import { BookingController } from '@/fahari/booking/booking.controller';
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { FahariNotificationModule } from '@/fahari/notification/notification.module';
-import SchedulerModule from '@/scheduler/scheduler.module';
 
 @Module({
-  imports: [FahariPermissionModule, FahariNotificationModule, SchedulerModule],
+  imports: [FahariPermissionModule, FahariNotificationModule],
   providers: [BookingService, ResortLineItemPricer, RideRequestService],
   controllers: [BookingAdminController, BookingController],
   exports: [BookingService],

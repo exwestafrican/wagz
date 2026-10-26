@@ -10,7 +10,6 @@ export async function resetDb(prismaService: PrismaService) {
   await prismaService.reservedAccount.deleteMany();
   await prismaService.booking.deleteMany();
   await prismaService.rideRequest.deleteMany();
-  await prismaService.queuedJob.deleteMany();
   await prismaService.reservedAccountRequestLog.deleteMany();
   await prismaService.user.deleteMany();
 }
