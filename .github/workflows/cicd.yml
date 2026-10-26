@@ -91,7 +91,7 @@ jobs:
 
       - name: App logs
         if: failure()
-        run: docker compose -f docker-compose.ci.yml logs app
+        run: docker compose -f docker-compose.ci.yml logs migrate app
 
       - name: Tear down
         if: always()
