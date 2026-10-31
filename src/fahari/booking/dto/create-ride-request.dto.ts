@@ -5,6 +5,7 @@ import {
   IsEmail,
   IsInt,
   IsNotEmpty,
+  IsOptional,
   IsString,
   MaxLength,
   Min,
@@ -60,6 +61,17 @@ export class CreateRideRequestDto {
   @IsNotEmpty()
   @MaxLength(255)
   pickupLocation: string;
+
+  @ApiProperty({
+    description: 'Landmark closest to the pickup location',
+    example: 'Opposite Shoprite',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  nearestLandmark?: string;
 
   @ApiProperty({
     description: 'When to pick the guest up for the trip to the resort',

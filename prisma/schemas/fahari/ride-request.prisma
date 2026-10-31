@@ -9,6 +9,7 @@ model RideRequest {
   experienceCode     String           @db.VarChar(50)
   numberOfPassengers Int
   pickupLocation     String           @db.VarChar(255)
+  nearestLandmark    String?          @db.VarChar(255)
   pickupDateTime     DateTime
   departureDateTime  DateTime
   firstName          String           @db.VarChar(100)

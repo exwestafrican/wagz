@@ -56,6 +56,7 @@ export class RideRequestService {
         experienceCode: experience.code,
         numberOfPassengers: createRideRequestDto.numberOfPassengers,
         pickupLocation: createRideRequestDto.pickupLocation,
+        nearestLandmark: createRideRequestDto.nearestLandmark,
         pickupDateTime: createRideRequestDto.pickupDateTime,
         departureDateTime: createRideRequestDto.departureDateTime,
         firstName: createRideRequestDto.firstName,
