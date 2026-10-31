@@ -24,6 +24,7 @@ export interface RideRequestReceivedTemplateProps {
   guestEmail: string;
   guestPhone: string;
   pickupLocation: string;
+  nearestLandmark: string | null;
   pickupDateTime: string;
   departureDateTime: string;
   numberOfPassengers: number;
@@ -67,6 +68,7 @@ export const RideRequestReceivedTemplate = ({
   guestEmail,
   guestPhone,
   pickupLocation,
+  nearestLandmark,
   pickupDateTime,
   departureDateTime,
   numberOfPassengers,
@@ -110,6 +112,9 @@ export const RideRequestReceivedTemplate = ({
 
               <Section className="py-4">
                 <DetailRow label="Pickup" value={pickupLocation} first />
+                {nearestLandmark && (
+                  <DetailRow label="Nearest landmark" value={nearestLandmark} />
+                )}
                 <DetailRow label="Pickup time" value={pickupDateTime} />
                 <DetailRow label="Departure" value={departureDateTime} />
                 <DetailRow
@@ -155,6 +160,7 @@ RideRequestReceivedTemplate.PreviewProps = {
   guestEmail: 'guest@example.com',
   guestPhone: '+234 8031234567',
   pickupLocation: '12 Admiralty Way, Lekki',
+  nearestLandmark: 'Opposite Shoprite',
   pickupDateTime: '21 Oct 2026, 15:00 WAT',
   departureDateTime: '22 Oct 2026, 11:00 WAT',
   numberOfPassengers: 1,

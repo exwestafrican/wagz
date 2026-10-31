@@ -27,6 +27,7 @@ function araIyeRoundTrip(
     experienceCode: 'araiye',
     numberOfPassengers: 1,
     pickupLocation: '12 Admiralty Way, Lekki',
+    nearestLandmark: 'Opposite Shoprite',
     pickupDateTime: new Date('2026-10-21T14:00:00.000Z'),
     departureDateTime: new Date('2026-10-22T10:00:00.000Z'),
     firstName: 'Amara',
@@ -129,6 +130,7 @@ describe('BookingController', () => {
       ).toMatchObject({
         minorAmount: 8_824_500,
         state: RideRequestState.PENDING,
+        nearestLandmark: 'Opposite Shoprite',
         countryCallingCode: '+234',
         nationalNumber: '8031234567',
       });
@@ -145,6 +147,18 @@ describe('BookingController', () => {
           experienceCode: 'araiye',
         },
       });
+    });
+
+    it('stores a ride request without a nearest landmark', async () => {
+      const rideRequest = await bookingController.createRideRequest(
+        araIyeRoundTrip({ nearestLandmark: undefined }),
+      );
+
+      expect(
+        await prismaService.rideRequest.findFirst({
+          where: { id: rideRequest.id },
+        }),
+      ).toMatchObject({ nearestLandmark: null });
     });
 
     it('throws NotFoundException when the experience does not exist', async () => {

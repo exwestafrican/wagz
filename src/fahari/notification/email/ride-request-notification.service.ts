@@ -28,6 +28,7 @@ export class RideRequestNotificationService {
         guestEmail: rideRequest.email,
         guestPhone: `${rideRequest.countryCallingCode} ${rideRequest.nationalNumber}`,
         pickupLocation: rideRequest.pickupLocation,
+        nearestLandmark: rideRequest.nearestLandmark,
         pickupDateTime: formatRideDateTime(rideRequest.pickupDateTime),
         departureDateTime: formatRideDateTime(rideRequest.departureDateTime),
         numberOfPassengers: rideRequest.numberOfPassengers,
