@@ -7,8 +7,15 @@ services:
       - '3001:3001'
     environment:
       - DB_HOST=postgres-db
+      - UPLOAD_DIR=/src/uploads
     env_file:
       - .env
+    volumes:
+      # Host path : path inside the app container.
+      # Nest writes to /src/uploads. Those bytes are stored in /var/lib/uploads
+      # on the Lightsail system disk, so they remain after docker compose up
+      # replaces the container.
+      - /var/lib/uploads:/src/uploads
   nginx:
     container_name: envoye-nginx
     image: nginx:latest

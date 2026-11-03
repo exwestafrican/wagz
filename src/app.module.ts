@@ -23,6 +23,7 @@ import { TrackerModule } from '@/fahari/tracker/tracker.module';
 import { PaymentsModule } from '@/fahari/payments/payments.module';
 import { BookingModule } from '@/fahari/booking/booking.module';
 import SchedulerModule from '@/scheduler/scheduler.module';
+import { StorageModule } from '@/storage/storage.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import SchedulerModule from '@/scheduler/scheduler.module';
     PaymentsModule,
     BookingModule,
     SchedulerModule,
+    StorageModule,
   ],
   controllers: [AppController],
   providers: [AppService],

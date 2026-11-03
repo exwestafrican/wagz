@@ -76,8 +76,5 @@ jobs:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script: |
             cd ${{ vars.APP_DIR }}
-            git pull origin main
-            sed -i '/^IMAGE_TAG=/d' .env
-            echo "IMAGE_TAG=sha-${{ github.sha }}" >> .env
-            docker compose pull 
-            docker compose up -d --remove-orphans
+            bash scripts/ensure_upload_path.sh  
+            bash scripts/deploy.sh "${{ github.sha }}"

@@ -40,6 +40,7 @@ services:
       MONNIFY_API_KEY: MK_TEST_8HVYD8SJ24
       MONNIFY_SECRET_KEY: ZEPMYKY843KQ6PL2RGAN4UBFXTWTTB0X
       MONNIFY_CONTRACT_CODE: 1230062731
+      UPLOAD_DIR: /src/uploads
     depends_on:
       postgres:
         condition: service_healthy
