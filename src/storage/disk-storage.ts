@@ -1,46 +1,23 @@
-import { randomUUID } from 'node:crypto';
-import { access, constants, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-} from '@nestjs/common';
-import {
-  assertImageWithinSizeLimit,
-  extensionForImageContentType,
-} from '@/storage/image-upload';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Storage } from '@/storage/storage';
+import FileManager from '@/storage/file-manager';
 
 @Injectable()
-export class DiskStorage {
+export class DiskStorage implements Storage {
   logger = new Logger(DiskStorage.name);
+  fileManager = new FileManager();
 
   constructor(private readonly uploadDirectory: string) {}
 
-  async storeImage(contentType: string, imageBytes: Buffer): Promise<string> {
-    const extension = extensionForImageContentType(contentType);
-    assertImageWithinSizeLimit(imageBytes.length);
-    await this.assertUploadDirectoryWritable();
+  async storeImage(imageBytes: Buffer): Promise<string> {
+    if (!this.fileManager.withinSizeLimit(imageBytes.length))
+      throw new BadRequestException('Image exceeds 5 MB');
 
-    const imageId = randomUUID();
-    const storedImageKey = `uploads/${imageId}.${extension}`;
-    await writeFile(
-      join(this.uploadDirectory, `${imageId}.${extension}`),
+    const imageDetails = await this.fileManager.writeImageIfSupported(
+      this.uploadDirectory,
       imageBytes,
-      {
-        flag: 'wx',
-      },
     );
-    this.logger.log(`Stored upload ${storedImageKey}`);
-    return storedImageKey;
-  }
-
-  private async assertUploadDirectoryWritable(): Promise<void> {
-    try {
-      await access(this.uploadDirectory, constants.W_OK);
-    } catch {
-      this.logger.error('Upload directory is not writable');
-      throw new InternalServerErrorException('Upload storage is unavailable');
-    }
+    this.logger.log(`Stored upload ${imageDetails.uuid}`);
+    return imageDetails.uuid;
   }
 }
