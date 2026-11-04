@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { BadRequestException } from '@nestjs/common';
 import sharp from 'sharp';
 import { DiskStorage } from '@/storage/disk-storage';
-import { MAX_IMAGE_BYTES } from '@/storage/file-manager';
+import FileManager, { MAX_IMAGE_BYTES } from '@/storage/file-manager';
 
 async function imageBytes(format: 'png' | 'webp'): Promise<Buffer> {
   const pipeline = sharp({
@@ -46,7 +46,27 @@ describe('DiskStorage', () => {
     const writtenBytes = await readFile(
       join(uploadDirectory, `${storedImageId}.png`),
     );
-    expect(writtenBytes.equals(pngBytes)).toBe(true);
+    const processedImage = await new FileManager().validateAndProcessImage(
+      pngBytes,
+    );
+    expect(writtenBytes.equals(processedImage.buffer)).toBe(true);
+  });
+
+  it('stores the re-encoded image and drops trailing upload bytes', async () => {
+    const pngBytes = await imageBytes('png');
+    const trailingPayload = Buffer.from('TRAILING-PAYLOAD');
+    const uploadBytes = Buffer.concat([pngBytes, trailingPayload]);
+
+    const storedImageId = await diskStorage.storeImage(uploadBytes);
+
+    const writtenBytes = await readFile(
+      join(uploadDirectory, `${storedImageId}.png`),
+    );
+    const processedImage = await new FileManager().validateAndProcessImage(
+      uploadBytes,
+    );
+    expect(writtenBytes.equals(processedImage.buffer)).toBe(true);
+    expect(writtenBytes.includes(trailingPayload)).toBe(false);
   });
 
   it('writes a webp using the webp extension', async () => {

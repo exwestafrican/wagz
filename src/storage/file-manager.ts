@@ -99,7 +99,7 @@ export default class FileManager {
     const imageId = randomUUID();
     await writeFile(
       join(uploadDirectory, `${imageId}.${processedImage.extension}`),
-      imageBytes,
+      processedImage.buffer, // write processed image not original one -> security issue
       {
         flag: 'wx', //so it doesn't overright if exists
         mode: 0o640,
