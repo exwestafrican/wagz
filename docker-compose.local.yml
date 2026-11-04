@@ -8,8 +8,15 @@ services:
       - '3001:3001'
     environment:
       - DB_HOST=postgres-db
+      - UPLOAD_DIR=/src/uploads
     env_file:
       - .env
+    volumes:
+      # Host path : path inside the app container.
+      # Nest writes to /src/uploads. Those bytes are stored in ./uploads
+      # on the machine running compose, so they remain after the container
+      # is replaced.
+      - ./uploads:/src/uploads
   nginx:
     container_name: envoye-nginx
     image: nginx:latest

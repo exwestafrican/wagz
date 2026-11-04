@@ -38,3 +38,8 @@ sudo certbot renew --dry-run
 
 
 
+# only run this is you want to save files locally
+sudo mkdir -p /var/lib/uploads
+sudo chown 1001:1001 /var/lib/uploads
+
+
