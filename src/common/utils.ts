@@ -101,3 +101,7 @@ export function average(array: number[]): number {
 export function sum(numbers: number[]) {
   return numbers.reduce((partialSum, a) => partialSum + a, 0);
 }
+
+export function million(number: number) {
+  return number * 1_000_000;
+}
