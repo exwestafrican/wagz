@@ -1,4 +1,4 @@
-name: Push Latest Image
+name: Deploy Latest Image
 
 on:
     push:
@@ -76,5 +76,6 @@ jobs:
           key: ${{ secrets.LIGHTSAIL_SSH_KEY }}
           script: |
             cd ${{ vars.APP_DIR }}
-            bash scripts/ensure_upload_path.sh  
+            git pull origin main
+            bash scripts/ensure_upload_path.sh
             bash scripts/deploy.sh "${{ github.sha }}"
