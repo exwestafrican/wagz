@@ -11,6 +11,8 @@ export const ALLOWED_ORIGINS = [
   'https://www.envoye.co',
   'https://www.fahari.io',
   'http://localhost:3000',
+  'http://envoye.localhost:3000',
+  'http://fahari.localhost:3000',
 ];
 
 export function setupApp(app: INestApplication) {
