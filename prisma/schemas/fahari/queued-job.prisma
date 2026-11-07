@@ -19,6 +19,7 @@ model QueuedJob {
   errorCode      String?         @db.VarChar(500)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  processingEnabled Boolean         @default(true)
 
   @@index([status, scheduledAt])
   @@map("queued_job")
