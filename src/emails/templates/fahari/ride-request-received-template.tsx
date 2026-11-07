@@ -27,6 +27,7 @@ export interface RideRequestReceivedTemplateProps {
   nearestLandmark: string | null;
   pickupDateTime: string;
   departureDateTime: string;
+  dropoffLocation: string | null;
   numberOfPassengers: number;
   amount: string;
   currency: string;
@@ -71,6 +72,7 @@ export const RideRequestReceivedTemplate = ({
   nearestLandmark,
   pickupDateTime,
   departureDateTime,
+  dropoffLocation,
   numberOfPassengers,
   amount,
   currency,
@@ -118,6 +120,10 @@ export const RideRequestReceivedTemplate = ({
                 <DetailRow label="Pickup time" value={pickupDateTime} />
                 <DetailRow label="Departure" value={departureDateTime} />
                 <DetailRow
+                  label="Drop-off"
+                  value={dropoffLocation ?? 'Same as pickup'}
+                />
+                <DetailRow
                   label="Passengers"
                   value={String(numberOfPassengers)}
                 />
@@ -163,6 +169,7 @@ RideRequestReceivedTemplate.PreviewProps = {
   nearestLandmark: 'Opposite Shoprite',
   pickupDateTime: '21 Oct 2026, 15:00 WAT',
   departureDateTime: '22 Oct 2026, 11:00 WAT',
+  dropoffLocation: '5 Bourdillon Road, Ikoyi',
   numberOfPassengers: 1,
   amount: '88245.00',
   currency: 'NGN',
