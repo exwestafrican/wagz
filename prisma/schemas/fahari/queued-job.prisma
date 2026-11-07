@@ -23,3 +23,10 @@ model QueuedJob {
   @@index([status, scheduledAt])
   @@map("queued_job")
 }
+
+model PausedTask {
+  taskName  String   @id @db.VarChar(100)
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+
+  @@map("paused_task")
+}
