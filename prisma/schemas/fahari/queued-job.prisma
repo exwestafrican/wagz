@@ -6,19 +6,19 @@ enum QueuedJobStatus {
 }
 
 model QueuedJob {
-  id             BigInt          @id @default(autoincrement())
-  taskName       String          @db.VarChar(100)
-  params         Json            @default("{}")
-  scheduledAt    DateTime        @db.Timestamptz(3)
-  startedAt      DateTime?       @db.Timestamptz(3)
-  lastRunAt      DateTime?       @db.Timestamptz(3)
-  completedAt    DateTime?       @db.Timestamptz(3)
-  status         QueuedJobStatus @default(PENDING)
-  retryCount     Int             @default(0)
-  maximumRetries Int             @default(5)
-  errorCode      String?         @db.VarChar(500)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id                BigInt          @id @default(autoincrement())
+  taskName          String          @db.VarChar(100)
+  params            Json            @default("{}")
+  scheduledAt       DateTime        @db.Timestamptz(3)
+  startedAt         DateTime?       @db.Timestamptz(3)
+  lastRunAt         DateTime?       @db.Timestamptz(3)
+  completedAt       DateTime?       @db.Timestamptz(3)
+  status            QueuedJobStatus @default(PENDING)
+  retryCount        Int             @default(0)
+  maximumRetries    Int             @default(5)
+  errorCode         String?         @db.VarChar(500)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
   processingEnabled Boolean         @default(true)
 
   @@index([status, scheduledAt])
