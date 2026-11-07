@@ -36,6 +36,23 @@ describe('TaskManager', () => {
     await app.close();
   });
 
+  async function createPendingRideRequestJob({
+    rideRequestId,
+    taskName = TaskQueue.NEW_RIDE_REQUEST,
+  }: {
+    rideRequestId: number;
+    taskName?: string;
+  }) {
+    return prismaService.queuedJob.create({
+      data: {
+        taskName,
+        params: { rideRequestId, experienceCode: 'resort' },
+        scheduledAt: new Date(),
+        status: QueuedJobStatus.PENDING,
+      },
+    });
+  }
+
   async function createRunningRideRequestJob() {
     return prismaService.queuedJob.create({
       data: {
@@ -82,5 +99,40 @@ describe('TaskManager', () => {
     expect(retriedJob.retryCount).toBe(1);
     expect(retriedJob.lastRunAt).not.toBeNull();
     expect(retriedJob.errorCode).toBe('Error');
+  });
+
+  it('skips jobs whose task is paused', async () => {
+    const pausedTaskName = 'resort_shuttle';
+    const activeRideRequestJob = await createPendingRideRequestJob({
+      rideRequestId: 1,
+    });
+    const pausedRideRequestJob = await createPendingRideRequestJob({
+      rideRequestId: 2,
+      taskName: pausedTaskName,
+    });
+    await prismaService.pausedTask.create({
+      data: { taskName: pausedTaskName },
+    });
+    runRideRequest.mockResolvedValue(undefined);
+
+    const claimedJobs = await taskManager.claimPendingJobs();
+    for (const claimedJob of claimedJobs) {
+      await taskManager.processJob(claimedJob);
+    }
+
+    const completedJob = await prismaService.queuedJob.findUniqueOrThrow({
+      where: { id: activeRideRequestJob.id },
+    });
+    const skippedJob = await prismaService.queuedJob.findUniqueOrThrow({
+      where: { id: pausedRideRequestJob.id },
+    });
+
+    expect(claimedJobs.map((claimedJob) => claimedJob.id)).toEqual([
+      activeRideRequestJob.id,
+    ]);
+    expect(completedJob.status).toBe(QueuedJobStatus.COMPLETED);
+    expect(completedJob.completedAt).not.toBeNull();
+    expect(skippedJob.status).toBe(QueuedJobStatus.PENDING);
+    expect(runRideRequest).toHaveBeenCalledTimes(1);
   });
 });

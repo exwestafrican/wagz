@@ -25,7 +25,7 @@ export default class TaskManager implements OnModuleDestroy {
     private readonly rideRequestWorker: RideRequestWorker,
   ) {}
 
-  private async claimPendingJobs(limit = 100): Promise<ClaimedJob[]> {
+  async claimPendingJobs(limit = 100): Promise<ClaimedJob[]> {
     return this.prismaService.$queryRaw<ClaimedJob[]>`
           UPDATE queued_job
           SET status = 'RUNNING',
@@ -35,6 +35,7 @@ export default class TaskManager implements OnModuleDestroy {
           FROM queued_job
           WHERE status = 'PENDING'
           AND "scheduledAt" <= NOW()
+          AND "taskName" NOT IN (SELECT "taskName" FROM paused_task)
           ORDER BY "scheduledAt" ASC
           LIMIT ${limit}
           FOR UPDATE SKIP LOCKED
