@@ -95,6 +95,18 @@ export class CreateRideRequestDto {
   @IsNotEmpty()
   departureDateTime: Date;
 
+  @ApiProperty({
+    description:
+      'Where to drop the guest off after leaving the resort. Omit to drop off at the pickup location',
+    example: '5 Bourdillon Road, Ikoyi',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  @MaxLength(255)
+  dropoffLocation?: string;
+
   @ApiProperty({ description: 'Guest first name', example: 'Amara' })
   @IsString()
   @IsNotEmpty()

@@ -161,6 +161,29 @@ describe('BookingController', () => {
       ).toMatchObject({ nearestLandmark: null });
     });
 
+    it('stores a drop-off location when the guest is not returning to their pickup', async () => {
+      const rideRequest = await bookingController.createRideRequest(
+        araIyeRoundTrip({ dropoffLocation: '5 Bourdillon Road, Ikoyi' }),
+      );
+
+      expect(
+        await prismaService.rideRequest.findFirst({
+          where: { id: rideRequest.id },
+        }),
+      ).toMatchObject({ dropoffLocation: '5 Bourdillon Road, Ikoyi' });
+    });
+
+    it('stores no drop-off location when the guest returns to their pickup', async () => {
+      const rideRequest =
+        await bookingController.createRideRequest(araIyeRoundTrip());
+
+      expect(
+        await prismaService.rideRequest.findFirst({
+          where: { id: rideRequest.id },
+        }),
+      ).toMatchObject({ dropoffLocation: null });
+    });
+
     it('throws NotFoundException when the experience does not exist', async () => {
       await expect(
         bookingController.createRideRequest(

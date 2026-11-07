@@ -59,6 +59,7 @@ export class RideRequestService {
         nearestLandmark: createRideRequestDto.nearestLandmark,
         pickupDateTime: createRideRequestDto.pickupDateTime,
         departureDateTime: createRideRequestDto.departureDateTime,
+        dropoffLocation: createRideRequestDto.dropoffLocation,
         firstName: createRideRequestDto.firstName,
         lastName: createRideRequestDto.lastName,
         email: createRideRequestDto.email,
