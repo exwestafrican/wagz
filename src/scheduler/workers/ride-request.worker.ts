@@ -1,7 +1,7 @@
 import { JsonValue } from '@prisma/client/runtime/client';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RideRequestNotificationService } from '@/fahari/notification/email/ride-request-notification.service';
-import { getExperienceOrThrow } from '@/fahari/booking/config';
+import { getClientDetailsOrThrow } from '@/fahari/booking/ride-booking/query';
 import { Injectable, Logger } from '@nestjs/common';
 import RideRequestParams from '@/scheduler/params/ride-request.params';
 import TaskRunner from '@/scheduler/workers/task-runner';
@@ -22,7 +22,7 @@ export default class RideRequestWorker implements TaskRunner {
         id: rideRequestParams.rideRequestId,
       },
     });
-    const experience = getExperienceOrThrow(rideRequestParams.experienceCode);
-    await this.rideRequestNotificationService.notify(rideRequest, experience);
+    const client = getClientDetailsOrThrow(rideRequestParams.experienceCode);
+    await this.rideRequestNotificationService.notify(rideRequest, client);
   }
 }

@@ -1,14 +1,8 @@
-import {
-  BadRequestException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { differenceInCalendarDays } from 'date-fns';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
 import { RideRequestState } from '@/generated/prisma/enums';
-import { getExperienceOrThrow } from '@/fahari/booking/config';
-import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
+import { getClientDetailsOrThrow } from '@/fahari/booking/ride-booking/query';
+import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
 import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
 import {
   RideRequestResponseDto,
@@ -24,7 +18,7 @@ export class RideRequestService {
 
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly resortLineItemPricer: ResortLineItemPricer,
+    private readonly chauffeurFare: ChauffeurFare,
     private readonly queue: Queue,
   ) {}
 
@@ -38,22 +32,23 @@ export class RideRequestService {
       throw new BadRequestException('departure must be after pickup');
     }
 
-    const experience = getExperienceOrThrow(
-      createRideRequestDto.experienceCode,
-    );
-    const numberOfNights = differenceInCalendarDays(
-      createRideRequestDto.departureDateTime,
-      createRideRequestDto.pickupDateTime,
-    );
+    const client = getClientDetailsOrThrow(createRideRequestDto.experienceCode);
+    const vehicle = client.vehicles.at(0);
+    if (
+      !vehicle ||
+      createRideRequestDto.numberOfPassengers > vehicle.maximumPassengers
+    ) {
+      throw new BadRequestException('cannot find vehicle with capacity');
+    }
 
-    const quotedAmount = this.quote(
-      experience.code,
-      numberOfNights,
-      createRideRequestDto.numberOfPassengers,
+    const quotedAmount = this.chauffeurFare.amount(
+      client,
+      createRideRequestDto.pickupDateTime,
+      createRideRequestDto.departureDateTime,
     );
     const rideRequest = await this.prismaService.rideRequest.create({
       data: {
-        experienceCode: experience.code,
+        experienceCode: client.code,
         numberOfPassengers: createRideRequestDto.numberOfPassengers,
         pickupLocation: createRideRequestDto.pickupLocation,
         nearestLandmark: createRideRequestDto.nearestLandmark,
@@ -64,7 +59,7 @@ export class RideRequestService {
         email: createRideRequestDto.email,
         countryCallingCode: createRideRequestDto.phoneNumber.countryCallingCode,
         nationalNumber: createRideRequestDto.phoneNumber.nationalNumber,
-        currency: experience.currency,
+        currency: 'NGN',
         minorAmount: quotedAmount,
         state: RideRequestState.PENDING,
       },
@@ -73,28 +68,8 @@ export class RideRequestService {
     this.logger.log(`created ride request id=${rideRequest.id}`);
     await this.queue.add(
       TaskQueue.NEW_RIDE_REQUEST,
-      RideRequestParams.of(rideRequest.id, experience.code),
+      RideRequestParams.of(rideRequest.id, client.code),
     );
     return toRideRequestResponse(rideRequest);
-  }
-
-  private quote(
-    experienceCode: string,
-    numberOfNights: number,
-    numberOfPassengers: number,
-  ) {
-    try {
-      return this.resortLineItemPricer.total(
-        experienceCode,
-        numberOfNights,
-        'ride',
-        numberOfPassengers,
-      );
-    } catch (error) {
-      if (error instanceof NotFoundException) {
-        throw new BadRequestException(error.message);
-      }
-      throw error;
-    }
   }
 }

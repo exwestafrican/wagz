@@ -55,15 +55,15 @@ describe('BookingController', () => {
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
-    const resortLineItemPricer = new ResortLineItemPricer();
+    const chauffeurFare = new ChauffeurFare();
     bookingController = new BookingController(
-      resortLineItemPricer,
+      new ResortLineItemPricer(),
       new RideRequestService(
         prismaService,
-        resortLineItemPricer,
+        chauffeurFare,
         new Queue(prismaService),
       ),
-      new ChauffeurFare(),
+      chauffeurFare,
     );
   });
 

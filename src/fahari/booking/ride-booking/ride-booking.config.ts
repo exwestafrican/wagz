@@ -41,6 +41,7 @@ export type ChauffeurClient = {
   tagLine: string;
   tripType: TripType;
   fareNote: string | null;
+  notificationEmail: string;
   meetupPoint: MeetupPoint;
   bookingPolicy: ChauffeurBookingPolicy;
   vehicles: ChauffeurVehicle[];
@@ -72,6 +73,7 @@ const chauffeurClients: ChauffeurClient[] = [
     tripType: TripType.ROUND_TRIP,
     fareNote:
       'Your car includes pickup to the resort and the return ride. The total covers both journeys',
+    notificationEmail: 'humans@fahari.io',
     meetupPoint: {
       name: 'ara iye',
       address: 'owode ogun state',
@@ -86,6 +88,7 @@ const chauffeurClients: ChauffeurClient[] = [
     tagLine: 'Slow travel for creatives in africa',
     tripType: TripType.DROPOFF_ONLY,
     fareNote: null,
+    notificationEmail: 'humans@fahari.io',
     meetupPoint: {
       name: 'seme border',
       address: 'lagos badagry express way',
