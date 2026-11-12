@@ -96,6 +96,18 @@ describe('BookingController', () => {
     });
   });
 
+  describe('listChauffeurClients', () => {
+    it('returns the chauffeur clients', () => {
+      expect(bookingController.listChauffeurClients()).toEqual([
+        expect.objectContaining({ code: 'araiye', name: 'ara iye' }),
+        expect.objectContaining({
+          code: 'softdays',
+          name: 'soft days by Ade x Ede',
+        }),
+      ]);
+    });
+  });
+
   describe('calculateBilling', () => {
     it('returns the quote in naira', () => {
       expect(

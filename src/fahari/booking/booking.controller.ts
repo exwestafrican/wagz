@@ -24,7 +24,11 @@ import { formatMinorAmount } from '@/fahari/booking/money';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { CalculateRideFareQueryDto } from '@/fahari/booking/dto/calculate-ride-fare-query.dto';
 import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
-import { getClientDetailsOrThrow } from '@/fahari/booking/ride-booking/query';
+import {
+  getChauffeurClients,
+  getClientDetailsOrThrow,
+} from '@/fahari/booking/ride-booking/query';
+import { type ChauffeurClient } from '@/fahari/booking/ride-booking/ride-booking.config';
 
 @Controller('booking')
 export class BookingController {
@@ -44,6 +48,12 @@ export class BookingController {
       return toExperienceResponse(experience);
     }
     throw new NotFoundException();
+  }
+
+  @Get('chauffeur-clients')
+  @HttpCode(HttpStatus.OK)
+  listChauffeurClients(): ChauffeurClient[] {
+    return getChauffeurClients();
   }
 
   @Get('calculate')
