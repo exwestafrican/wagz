@@ -60,10 +60,6 @@ export default class TaskManager implements OnModuleDestroy {
         }
       }
     } catch (error) {
-      this.logger.error(
-        `Job failed scheduling for retry; jobId={job.id} error=${error}`,
-        job,
-      );
       await this.scheduleJobForRetry(job, error as Error);
     }
   }

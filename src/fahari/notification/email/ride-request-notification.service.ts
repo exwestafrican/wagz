@@ -4,7 +4,7 @@ import React from 'react';
 import { EMAIL_CLIENT, type EmailClient } from '@/messaging/email/email-client';
 import { RideRequestReceivedTemplate } from '@/emails/templates/fahari/ride-request-received-template';
 import { BOOKINGS_EMAIL } from '@/fahari/const';
-import type { ChauffeurClient } from '@/fahari/booking/ride-booking/ride-booking.config';
+import type { Experience } from '@/fahari/booking/config';
 import { formatMinorAmount } from '@/fahari/booking/money';
 import type { RideRequest } from '@/generated/prisma/client';
 
@@ -18,12 +18,12 @@ export class RideRequestNotificationService {
 
   async notify(
     rideRequest: RideRequest,
-    client: ChauffeurClient,
+    experience: Experience,
   ): Promise<void> {
     const emailHtml = await render(
       React.createElement(RideRequestReceivedTemplate, {
         requestId: rideRequest.id,
-        experienceName: client.name,
+        experienceName: experience.name,
         guestName: `${rideRequest.firstName} ${rideRequest.lastName}`,
         guestEmail: rideRequest.email,
         guestPhone: `${rideRequest.countryCallingCode} ${rideRequest.nationalNumber}`,
@@ -40,10 +40,10 @@ export class RideRequestNotificationService {
     await this.emailClient.send({
       from: { email: BOOKINGS_EMAIL, name: 'Fahari Bookings' },
       to: {
-        email: client.notificationEmail,
-        name: client.name,
+        email: experience.notificationEmail,
+        name: experience.name,
       },
-      subject: `New ride request: ${client.name}`,
+      subject: `New ride request: ${experience.name}`,
       html: emailHtml,
     });
 

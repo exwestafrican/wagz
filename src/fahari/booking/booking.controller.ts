@@ -22,15 +22,6 @@ import { RideRequestResponseDto } from '@/fahari/booking/dto/ride-request-respon
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
 import { formatMinorAmount } from '@/fahari/booking/money';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
-import { CalculateRideFareQueryDto } from '@/fahari/booking/dto/calculate-ride-fare-query.dto';
-import { GetChauffeurClientQueryDto } from '@/fahari/booking/dto/get-chauffeur-client-query.dto';
-import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
-import {
-  getChauffeurClients,
-  getClientDetails,
-  getClientDetailsOrThrow,
-} from '@/fahari/booking/ride-booking/query';
-import { type ChauffeurClient } from '@/fahari/booking/ride-booking/ride-booking.config';
 
 @Controller('booking')
 export class BookingController {
@@ -39,7 +30,6 @@ export class BookingController {
   constructor(
     private resortLineItemPricer: ResortLineItemPricer,
     private readonly rideRequestService: RideRequestService,
-    private readonly chauffeurFare: ChauffeurFare,
   ) {}
 
   @Get()
@@ -48,24 +38,6 @@ export class BookingController {
     const experience = getExperience(query.code);
     if (experience) {
       return toExperienceResponse(experience);
-    }
-    throw new NotFoundException();
-  }
-
-  @Get('chauffeur-clients')
-  @HttpCode(HttpStatus.OK)
-  listChauffeurClients(): ChauffeurClient[] {
-    return getChauffeurClients();
-  }
-
-  @Get('chauffeur-client')
-  @HttpCode(HttpStatus.OK)
-  getChauffeurClient(
-    @Query() query: GetChauffeurClientQueryDto,
-  ): ChauffeurClient {
-    const client = getClientDetails(query.code);
-    if (client) {
-      return client;
     }
     throw new NotFoundException();
   }
@@ -82,21 +54,6 @@ export class BookingController {
           query.numberOfNights,
           query.lineItem,
           query.numberOfGuests,
-        ),
-      ),
-    };
-  }
-
-  @Get('calculate/ride-fare')
-  @HttpCode(HttpStatus.OK)
-  calculateRideFare(@Query() query: CalculateRideFareQueryDto) {
-    const client = getClientDetailsOrThrow(query.clientCode);
-    return {
-      amount: formatMinorAmount(
-        this.chauffeurFare.amount(
-          client,
-          query.pickupDateTime,
-          query.returnDateTime,
         ),
       ),
     };
