@@ -17,6 +17,7 @@ import { BackfillModule } from '@/envoye/backfill/backfill.module';
 import { CommandsModule } from '@/envoye/commands/commands.module';
 import { CommandsModule as FahariCommandsModule } from '@/fahari/commands/commands.module';
 import { AuthModule as FahariAuthModule } from '@/fahari/auth/auth.module';
+import { FahariPermissionModule } from '@/fahari/permission/permission.module';
 import { AdminModule } from '@/envoye/admin/admin.module';
 import { ConversationsModule } from '@/envoye/conversations/conversations.module';
 import { TrackerModule } from '@/fahari/tracker/tracker.module';
@@ -44,6 +45,7 @@ import { StorageModule } from '@/storage/storage.module';
     BackfillModule,
     CommandsModule,
     FahariAuthModule,
+    FahariPermissionModule,
     FahariCommandsModule,
     AdminModule,
     ConversationsModule,
