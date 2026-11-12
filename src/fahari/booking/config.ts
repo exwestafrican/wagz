@@ -90,45 +90,6 @@ const experiences: Experience[] = [
       },
     ],
   },
-  {
-    name: 'soft days by Ade x Ede',
-    tagLine: 'Slow travel for creatives in africa',
-    code: 'softdays',
-    address: 'seme border 34',
-    pricePerNight: formatNaira(0), //not a hotel
-    notificationEmail: 'humans@fahari.io',
-    currency: 'NGN',
-    category: 'group_trips',
-    onlyRideBooking: true,
-    bookingPolicy: {
-      maximumNights: 0, // can only book for that day
-      minAdvanceBookingDays: 5,
-      maxAdvanceBookingDays: 40,
-    },
-    schedule: {
-      startTime: '9:00', // 9am - 6pm
-      endTime: '18:00',
-    },
-    billing: {
-      // this isn't needed for group_trips we need a better way for this
-      accommodation: {
-        durationUnit: 'nights',
-        basePrice: formatNaira(0),
-        additionalNightPrice: formatNaira(0),
-      },
-    },
-    meetingPoint: {
-      name: 'seme border 22',
-    },
-    rideProviders: [
-      {
-        provider: 'fahari',
-        maximumCapacity: 3,
-        sameDayReturnPrice: formatNaira(75_000),
-        multipleDaysReturnPrice: formatNaira(150_000), // we don't have this option, just a place holder
-      },
-    ],
-  },
 ];
 
 export function getExperiences() {
