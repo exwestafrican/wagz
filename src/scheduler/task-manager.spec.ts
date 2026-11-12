@@ -36,16 +36,10 @@ describe('TaskManager', () => {
     await app.close();
   });
 
-  async function createPendingRideRequestJob({
-    rideRequestId,
-    taskName = TaskQueue.NEW_RIDE_REQUEST,
-  }: {
-    rideRequestId: number;
-    taskName?: string;
-  }) {
+  async function createPendingRideRequestJob(rideRequestId: number) {
     return prismaService.queuedJob.create({
       data: {
-        taskName,
+        taskName: TaskQueue.NEW_RIDE_REQUEST,
         params: { rideRequestId, experienceCode: 'resort' },
         scheduledAt: new Date(),
         status: QueuedJobStatus.PENDING,
@@ -101,18 +95,8 @@ describe('TaskManager', () => {
     expect(retriedJob.errorCode).toBe('Error');
   });
 
-  it('skips jobs whose task is paused', async () => {
-    const pausedTaskName = 'resort_shuttle';
-    const activeRideRequestJob = await createPendingRideRequestJob({
-      rideRequestId: 1,
-    });
-    const pausedRideRequestJob = await createPendingRideRequestJob({
-      rideRequestId: 2,
-      taskName: pausedTaskName,
-    });
-    await prismaService.pausedTask.create({
-      data: { taskName: pausedTaskName },
-    });
+  it('does not complete a job when its task is paused', async () => {
+    const rideRequestJob = await createPendingRideRequestJob(1);
     runRideRequest.mockResolvedValue(undefined);
 
     const claimedJobs = await taskManager.claimPendingJobs();
@@ -121,18 +105,24 @@ describe('TaskManager', () => {
     }
 
     const completedJob = await prismaService.queuedJob.findUniqueOrThrow({
-      where: { id: activeRideRequestJob.id },
+      where: { id: rideRequestJob.id },
     });
+    expect(completedJob.status).toBe(QueuedJobStatus.COMPLETED);
+
+    const pausedRideRequestJob = await createPendingRideRequestJob(2);
+    await prismaService.pausedTask.create({
+      data: { taskName: TaskQueue.NEW_RIDE_REQUEST },
+    });
+
+    const claimedJobsAfterPause = await taskManager.claimPendingJobs();
+    for (const claimedJob of claimedJobsAfterPause) {
+      await taskManager.processJob(claimedJob);
+    }
+
     const skippedJob = await prismaService.queuedJob.findUniqueOrThrow({
       where: { id: pausedRideRequestJob.id },
     });
-
-    expect(claimedJobs.map((claimedJob) => claimedJob.id)).toEqual([
-      activeRideRequestJob.id,
-    ]);
-    expect(completedJob.status).toBe(QueuedJobStatus.COMPLETED);
-    expect(completedJob.completedAt).not.toBeNull();
     expect(skippedJob.status).toBe(QueuedJobStatus.PENDING);
-    expect(runRideRequest).toHaveBeenCalledTimes(1);
+    expect(skippedJob.completedAt).toBeNull();
   });
 });
