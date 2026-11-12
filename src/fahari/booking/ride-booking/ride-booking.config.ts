@@ -2,11 +2,11 @@ import { formatNaira } from '@/fahari/booking/money';
 
 const TripType = {
   PICKUP_ONLY: {
-    code: 'inbound_only',
+    code: 'pickup',
     description: 'take client from meetup location back home.',
   },
   DROPOFF_ONLY: {
-    code: 'outbound_only',
+    code: 'dropoff',
     description: 'take from home to meetup location',
   },
   ROUND_TRIP: {

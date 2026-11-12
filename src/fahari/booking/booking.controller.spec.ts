@@ -141,6 +141,15 @@ describe('BookingController', () => {
   });
 
   describe('calculateRideFare', () => {
+    it('returns the same-day fare when there is no return', () => {
+      expect(
+        bookingController.calculateRideFare({
+          clientCode: 'araiye',
+          pickupDateTime: new Date('2026-10-21T14:00:00.000Z'),
+        }),
+      ).toEqual({ amount: '69660.00' });
+    });
+
     it('returns the same-day fare when the return is on the pickup day', () => {
       expect(
         bookingController.calculateRideFare({
