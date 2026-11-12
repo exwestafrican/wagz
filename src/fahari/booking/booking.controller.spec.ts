@@ -16,6 +16,7 @@ import { QueuedJobStatus, RideRequestState } from '@/generated/prisma/enums';
 import { BookingController } from '@/fahari/booking/booking.controller';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
+import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
 import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
 import Queue from '@/scheduler/queue';
 import TaskQueue from '@/scheduler/tasks';
@@ -62,6 +63,7 @@ describe('BookingController', () => {
         resortLineItemPricer,
         new Queue(prismaService),
       ),
+      new ChauffeurFare(),
     );
   });
 
@@ -104,6 +106,29 @@ describe('BookingController', () => {
           numberOfGuests: 3,
         }),
       ).toEqual({ amount: '88245.00' });
+    });
+  });
+
+  describe('calculateRideFare', () => {
+    it('returns the same-day fare in naira when there is no return', () => {
+      expect(
+        bookingController.calculateRideFare({ clientCode: 'araiye' }),
+      ).toEqual({ amount: '69660.00' });
+    });
+
+    it('returns the multi-day fare in naira when a return date is given', () => {
+      expect(
+        bookingController.calculateRideFare({
+          clientCode: 'araiye',
+          returnDateTime: new Date('2026-10-22T10:00:00.000Z'),
+        }),
+      ).toEqual({ amount: '88245.00' });
+    });
+
+    it('throws NotFoundException when the client does not exist', () => {
+      expect(() =>
+        bookingController.calculateRideFare({ clientCode: 'missing-client' }),
+      ).toThrow(NotFoundException);
     });
   });
 
