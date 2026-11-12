@@ -40,6 +40,7 @@ export type ChauffeurClient = {
   code: string;
   tagLine: string;
   tripType: TripType;
+  fareNote: string | null;
   meetupPoint: MeetupPoint;
   bookingPolicy: ChauffeurBookingPolicy;
   vehicles: ChauffeurVehicle[];
@@ -69,6 +70,8 @@ const chauffeurClients: ChauffeurClient[] = [
     code: 'araiye',
     tagLine: 'Reconnection with nature, culture, and silliness.',
     tripType: TripType.ROUND_TRIP,
+    fareNote:
+      'Your car includes pickup to the resort and the return ride. The total covers both journeys',
     meetupPoint: {
       name: 'ara iye reception',
       address: 'owode ogun state',
@@ -82,6 +85,7 @@ const chauffeurClients: ChauffeurClient[] = [
     code: 'softdays',
     tagLine: 'Slow travel for creatives in africa',
     tripType: TripType.DROPOFF_ONLY,
+    fareNote: null,
     meetupPoint: {
       name: 'seme border',
       address: 'lagos badagry express way',
