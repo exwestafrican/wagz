@@ -7,10 +7,16 @@ import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-it
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { FahariNotificationModule } from '@/fahari/notification/notification.module';
 import SchedulerModule from '@/scheduler/scheduler.module';
+import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
 
 @Module({
   imports: [FahariPermissionModule, FahariNotificationModule, SchedulerModule],
-  providers: [BookingService, ResortLineItemPricer, RideRequestService],
+  providers: [
+    BookingService,
+    ResortLineItemPricer,
+    RideRequestService,
+    ChauffeurFare,
+  ],
   controllers: [BookingAdminController, BookingController],
   exports: [BookingService],
 })
