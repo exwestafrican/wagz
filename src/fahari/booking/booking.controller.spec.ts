@@ -141,16 +141,21 @@ describe('BookingController', () => {
   });
 
   describe('calculateRideFare', () => {
-    it('returns the same-day fare in naira when there is no return', () => {
-      expect(
-        bookingController.calculateRideFare({ clientCode: 'araiye' }),
-      ).toEqual({ amount: '69660.00' });
-    });
-
-    it('returns the multi-day fare in naira when a return date is given', () => {
+    it('returns the same-day fare when the return is on the pickup day', () => {
       expect(
         bookingController.calculateRideFare({
           clientCode: 'araiye',
+          pickupDateTime: new Date('2026-10-21T14:00:00.000Z'),
+          returnDateTime: new Date('2026-10-21T22:00:00.000Z'),
+        }),
+      ).toEqual({ amount: '69660.00' });
+    });
+
+    it('returns the multi-day fare when the return is on a later day', () => {
+      expect(
+        bookingController.calculateRideFare({
+          clientCode: 'araiye',
+          pickupDateTime: new Date('2026-10-21T14:00:00.000Z'),
           returnDateTime: new Date('2026-10-22T10:00:00.000Z'),
         }),
       ).toEqual({ amount: '88245.00' });
@@ -158,7 +163,11 @@ describe('BookingController', () => {
 
     it('throws NotFoundException when the client does not exist', () => {
       expect(() =>
-        bookingController.calculateRideFare({ clientCode: 'missing-client' }),
+        bookingController.calculateRideFare({
+          clientCode: 'missing-client',
+          pickupDateTime: new Date(Date.UTC(2026, 1, 15, 17, 30, 0, 0)),
+          returnDateTime: new Date(Date.UTC(2026, 1, 16, 17, 30, 0, 0)),
+        }),
       ).toThrow(NotFoundException);
     });
   });

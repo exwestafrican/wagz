@@ -93,7 +93,11 @@ export class BookingController {
     const client = getClientDetailsOrThrow(query.clientCode);
     return {
       amount: formatMinorAmount(
-        this.chauffeurFare.amount(client, query.returnDateTime ?? null),
+        this.chauffeurFare.amount(
+          client,
+          query.pickupDateTime,
+          query.returnDateTime,
+        ),
       ),
     };
   }

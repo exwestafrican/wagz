@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsDate, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsDate, IsNotEmpty, IsString } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CalculateRideFareQueryDto {
@@ -9,14 +9,24 @@ export class CalculateRideFareQueryDto {
   clientCode: string;
 
   @ApiProperty({
+    description: 'When to pick the guest up',
+    type: String,
+    format: 'date-time',
+    example: '2026-10-21T14:00:00.000Z',
+  })
+  @Type(() => Date)
+  @IsDate()
+  @IsNotEmpty()
+  pickupDateTime: Date;
+
+  @ApiProperty({
     description: 'When the guest is brought back from the meetup',
     type: String,
     format: 'date-time',
     example: '2026-10-22T10:00:00.000Z',
-    required: false,
   })
-  @IsOptional()
   @Type(() => Date)
   @IsDate()
-  returnDateTime?: Date;
+  @IsNotEmpty()
+  returnDateTime: Date;
 }
