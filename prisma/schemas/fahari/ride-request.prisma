@@ -6,7 +6,6 @@ enum RideRequestState {
 
 enum TripType {
   PICK_UP
-  DROP_OFF
   ROUND_TRIP
 }
 
