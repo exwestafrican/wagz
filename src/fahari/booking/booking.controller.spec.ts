@@ -108,6 +108,25 @@ describe('BookingController', () => {
     });
   });
 
+  describe('getChauffeurClient', () => {
+    it('returns the ara iye client', () => {
+      expect(
+        bookingController.getChauffeurClient({ code: 'araiye' }),
+      ).toMatchObject({
+        code: 'araiye',
+        name: 'ara iye',
+        fareNote:
+          'Your car includes pickup to the resort and the return ride. The total covers both journeys',
+      });
+    });
+
+    it('throws NotFoundException when the client does not exist', () => {
+      expect(() =>
+        bookingController.getChauffeurClient({ code: 'missing-client' }),
+      ).toThrow(NotFoundException);
+    });
+  });
+
   describe('calculateBilling', () => {
     it('returns the quote in naira', () => {
       expect(

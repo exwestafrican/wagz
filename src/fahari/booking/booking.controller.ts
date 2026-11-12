@@ -23,9 +23,11 @@ import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-it
 import { formatMinorAmount } from '@/fahari/booking/money';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { CalculateRideFareQueryDto } from '@/fahari/booking/dto/calculate-ride-fare-query.dto';
+import { GetChauffeurClientQueryDto } from '@/fahari/booking/dto/get-chauffeur-client-query.dto';
 import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
 import {
   getChauffeurClients,
+  getClientDetails,
   getClientDetailsOrThrow,
 } from '@/fahari/booking/ride-booking/query';
 import { type ChauffeurClient } from '@/fahari/booking/ride-booking/ride-booking.config';
@@ -54,6 +56,18 @@ export class BookingController {
   @HttpCode(HttpStatus.OK)
   listChauffeurClients(): ChauffeurClient[] {
     return getChauffeurClients();
+  }
+
+  @Get('chauffeur-client')
+  @HttpCode(HttpStatus.OK)
+  getChauffeurClient(
+    @Query() query: GetChauffeurClientQueryDto,
+  ): ChauffeurClient {
+    const client = getClientDetails(query.code);
+    if (client) {
+      return client;
+    }
+    throw new NotFoundException();
   }
 
   @Get('calculate')

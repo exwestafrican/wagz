@@ -73,7 +73,7 @@ const chauffeurClients: ChauffeurClient[] = [
     fareNote:
       'Your car includes pickup to the resort and the return ride. The total covers both journeys',
     meetupPoint: {
-      name: 'ara iye reception',
+      name: 'ara iye',
       address: 'owode ogun state',
       nearestLandmark: null,
     },
