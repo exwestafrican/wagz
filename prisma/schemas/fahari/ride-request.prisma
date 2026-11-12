@@ -4,6 +4,12 @@ enum RideRequestState {
   CANCELLED
 }
 
+enum TripType {
+  PICK_UP
+  DROP_OFF
+  ROUND_TRIP
+}
+
 model RideRequest {
   id                 Int              @id @default(autoincrement())
   experienceCode     String           @db.VarChar(50)
@@ -11,8 +17,9 @@ model RideRequest {
   pickupLocation     String           @db.VarChar(255)
   nearestLandmark    String?          @db.VarChar(255)
   pickupDateTime     DateTime
-  departureDateTime  DateTime
+  departureDateTime  DateTime? // when do you want us to come and pick you up from drop off location
   firstName          String           @db.VarChar(100)
+  tripType           TripType         @default(ROUND_TRIP)
   lastName           String           @db.VarChar(100)
   email              String           @db.VarChar(255)
   countryCallingCode String           @db.VarChar(8)
