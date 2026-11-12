@@ -46,9 +46,9 @@ export type ChauffeurClient = {
   vehicles: ChauffeurVehicle[];
 };
 
-function defaultBookingPolicy() {
+function defaultBookingPolicy(maxDaysAfterPickup: number) {
   return {
-    maxDaysAfterPickup: 0, // if i book a pickup today, and it's a return how may days in advance can i select my return trip.
+    maxDaysAfterPickup: maxDaysAfterPickup, // if i book a pickup today, and it's a return how may days in advance can i select my return trip.
     minDaysBeforeTrip: 5,
     maxDaysBeforeTrip: 40,
   };
@@ -77,7 +77,7 @@ const chauffeurClients: ChauffeurClient[] = [
       address: 'owode ogun state',
       nearestLandmark: null,
     },
-    bookingPolicy: defaultBookingPolicy(),
+    bookingPolicy: defaultBookingPolicy(1),
     vehicles: [toyotaCamryByFahari(69_660, 88_245)],
   },
   {
@@ -91,7 +91,7 @@ const chauffeurClients: ChauffeurClient[] = [
       address: 'lagos badagry express way',
       nearestLandmark: null,
     },
-    bookingPolicy: defaultBookingPolicy(),
+    bookingPolicy: defaultBookingPolicy(0),
     vehicles: [toyotaCamryByFahari(75_000, 150_000)],
   },
 ];
