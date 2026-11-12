@@ -16,6 +16,7 @@ import { QueuedJobStatus, RideRequestState } from '@/generated/prisma/enums';
 import { BookingController } from '@/fahari/booking/booking.controller';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
+import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
 import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
 import Queue from '@/scheduler/queue';
 import TaskQueue from '@/scheduler/tasks';
@@ -54,14 +55,15 @@ describe('BookingController', () => {
 
     app = await createTestApp(module);
     prismaService = app.get(PrismaService);
-    const resortLineItemPricer = new ResortLineItemPricer();
+    const chauffeurFare = new ChauffeurFare();
     bookingController = new BookingController(
-      resortLineItemPricer,
+      new ResortLineItemPricer(),
       new RideRequestService(
         prismaService,
-        resortLineItemPricer,
+        chauffeurFare,
         new Queue(prismaService),
       ),
+      chauffeurFare,
     );
   });
 
@@ -94,6 +96,37 @@ describe('BookingController', () => {
     });
   });
 
+  describe('listChauffeurClients', () => {
+    it('returns the chauffeur clients', () => {
+      expect(bookingController.listChauffeurClients()).toEqual([
+        expect.objectContaining({ code: 'araiye', name: 'ara iye' }),
+        expect.objectContaining({
+          code: 'softdays',
+          name: 'soft days by Ade x Ede',
+        }),
+      ]);
+    });
+  });
+
+  describe('getChauffeurClient', () => {
+    it('returns the ara iye client', () => {
+      expect(
+        bookingController.getChauffeurClient({ code: 'araiye' }),
+      ).toMatchObject({
+        code: 'araiye',
+        name: 'ara iye',
+        fareNote:
+          'Your car includes pickup to the resort and the return ride. The total covers both journeys',
+      });
+    });
+
+    it('throws NotFoundException when the client does not exist', () => {
+      expect(() =>
+        bookingController.getChauffeurClient({ code: 'missing-client' }),
+      ).toThrow(NotFoundException);
+    });
+  });
+
   describe('calculateBilling', () => {
     it('returns the quote in naira', () => {
       expect(
@@ -104,6 +137,38 @@ describe('BookingController', () => {
           numberOfGuests: 3,
         }),
       ).toEqual({ amount: '88245.00' });
+    });
+  });
+
+  describe('calculateRideFare', () => {
+    it('returns the same-day fare when the return is on the pickup day', () => {
+      expect(
+        bookingController.calculateRideFare({
+          clientCode: 'araiye',
+          pickupDateTime: new Date('2026-10-21T14:00:00.000Z'),
+          returnDateTime: new Date('2026-10-21T22:00:00.000Z'),
+        }),
+      ).toEqual({ amount: '69660.00' });
+    });
+
+    it('returns the multi-day fare when the return is on a later day', () => {
+      expect(
+        bookingController.calculateRideFare({
+          clientCode: 'araiye',
+          pickupDateTime: new Date('2026-10-21T14:00:00.000Z'),
+          returnDateTime: new Date('2026-10-22T10:00:00.000Z'),
+        }),
+      ).toEqual({ amount: '88245.00' });
+    });
+
+    it('throws NotFoundException when the client does not exist', () => {
+      expect(() =>
+        bookingController.calculateRideFare({
+          clientCode: 'missing-client',
+          pickupDateTime: new Date(Date.UTC(2026, 1, 15, 17, 30, 0, 0)),
+          returnDateTime: new Date(Date.UTC(2026, 1, 16, 17, 30, 0, 0)),
+        }),
+      ).toThrow(NotFoundException);
     });
   });
 
