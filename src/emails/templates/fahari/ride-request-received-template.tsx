@@ -26,7 +26,7 @@ export interface RideRequestReceivedTemplateProps {
   pickupLocation: string;
   nearestLandmark: string | null;
   pickupDateTime: string;
-  departureDateTime?: string;
+  departureDateTime: string | null;
   numberOfPassengers: number;
   amount: string;
   currency: string;
