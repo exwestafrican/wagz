@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@/prisma/prisma.service';
-import { RideRequestState } from '@/generated/prisma/enums';
+import { RideRequestState, TripType } from '@/generated/prisma/enums';
 import { getClientDetailsOrThrow } from '@/fahari/booking/ride-booking/query';
 import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
 import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
@@ -25,12 +25,15 @@ export class RideRequestService {
   async create(
     createRideRequestDto: CreateRideRequestDto,
   ): Promise<RideRequestResponseDto> {
+    const departureDateTime = createRideRequestDto.departureDateTime;
     if (
-      createRideRequestDto.departureDateTime.getTime() <=
-      createRideRequestDto.pickupDateTime.getTime()
+      departureDateTime &&
+      departureDateTime.getTime() <=
+        createRideRequestDto.pickupDateTime.getTime()
     ) {
       throw new BadRequestException('departure must be after pickup');
     }
+    const tripType = departureDateTime ? TripType.ROUND_TRIP : TripType.ONE_WAY;
 
     const client = getClientDetailsOrThrow(createRideRequestDto.experienceCode);
     const vehicle = client.vehicles.at(0);
@@ -44,7 +47,7 @@ export class RideRequestService {
     const quotedAmount = this.chauffeurFare.amount(
       client,
       createRideRequestDto.pickupDateTime,
-      createRideRequestDto.departureDateTime,
+      departureDateTime,
     );
     const rideRequest = await this.prismaService.rideRequest.create({
       data: {
@@ -53,7 +56,8 @@ export class RideRequestService {
         pickupLocation: createRideRequestDto.pickupLocation,
         nearestLandmark: createRideRequestDto.nearestLandmark,
         pickupDateTime: createRideRequestDto.pickupDateTime,
-        departureDateTime: createRideRequestDto.departureDateTime,
+        departureDateTime: departureDateTime ?? null,
+        tripType,
         firstName: createRideRequestDto.firstName,
         lastName: createRideRequestDto.lastName,
         email: createRideRequestDto.email,

@@ -12,7 +12,11 @@ import { PrismaModule } from '@/prisma/prisma.module';
 import { PrismaService } from '@/prisma/prisma.service';
 import { createTestApp } from '@/test-helpers/test-app';
 import { resetDb } from '@/test-helpers/rest-db';
-import { QueuedJobStatus, RideRequestState } from '@/generated/prisma/enums';
+import {
+  QueuedJobStatus,
+  RideRequestState,
+  TripType,
+} from '@/generated/prisma/enums';
 import { BookingController } from '@/fahari/booking/booking.controller';
 import { RideRequestService } from '@/fahari/booking/ride-request.service';
 import { ResortLineItemPricer } from '@/fahari/booking/calculator/resort-line-item-pricer';
@@ -192,6 +196,7 @@ describe('BookingController', () => {
         currency: 'NGN',
         experienceCode: 'araiye',
         numberOfPassengers: 1,
+        tripType: TripType.ROUND_TRIP,
       });
       expect(rideRequest).not.toHaveProperty('minorAmount');
       expect(rideRequest).not.toHaveProperty('email');
@@ -207,6 +212,7 @@ describe('BookingController', () => {
         nearestLandmark: 'Opposite Shoprite',
         countryCallingCode: '+234',
         nationalNumber: '8031234567',
+        tripType: TripType.ROUND_TRIP,
       });
       expect(await prismaService.booking.count()).toBe(0);
 
@@ -220,6 +226,29 @@ describe('BookingController', () => {
           rideRequestId: rideRequest.id,
           experienceCode: 'araiye',
         },
+      });
+    });
+
+    it('stores a one-way ride request when departure is omitted', async () => {
+      const oneWayRideRequest = araIyeRoundTrip();
+      delete oneWayRideRequest.departureDateTime;
+
+      const rideRequest =
+        await bookingController.createRideRequest(oneWayRideRequest);
+
+      expect(rideRequest).toMatchObject({
+        amount: '69660.00',
+        tripType: TripType.ONE_WAY,
+        departureDateTime: null,
+      });
+      expect(
+        await prismaService.rideRequest.findFirst({
+          where: { id: rideRequest.id },
+        }),
+      ).toMatchObject({
+        minorAmount: 6_966_000,
+        tripType: TripType.ONE_WAY,
+        departureDateTime: null,
       });
     });
 
