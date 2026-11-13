@@ -5,10 +5,12 @@ enum RideRequestState {
 }
 
 enum TripType {
-  PICK_UP
+  ONE_WAY
   ROUND_TRIP
 }
 
+//TODO add dropOffLocation
+// dropOffNearestLandMark
 model RideRequest {
   id                 Int              @id @default(autoincrement())
   experienceCode     String           @db.VarChar(50)
