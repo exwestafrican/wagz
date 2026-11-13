@@ -196,11 +196,11 @@ describe('BookingController', () => {
         currency: 'NGN',
         experienceCode: 'araiye',
         numberOfPassengers: 1,
-        tripType: TripType.ROUND_TRIP,
       });
       expect(rideRequest).not.toHaveProperty('minorAmount');
       expect(rideRequest).not.toHaveProperty('email');
       expect(rideRequest).not.toHaveProperty('phoneNumber');
+      expect(rideRequest).not.toHaveProperty('tripType');
 
       expect(
         await prismaService.rideRequest.findFirst({
@@ -238,9 +238,9 @@ describe('BookingController', () => {
 
       expect(rideRequest).toMatchObject({
         amount: '69660.00',
-        tripType: TripType.ONE_WAY,
         departureDateTime: null,
       });
+      expect(rideRequest).not.toHaveProperty('tripType');
       expect(
         await prismaService.rideRequest.findFirst({
           where: { id: rideRequest.id },

@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { RideRequest } from '@/generated/prisma/client';
-import { RideRequestState, TripType } from '@/generated/prisma/enums';
+import { RideRequestState } from '@/generated/prisma/enums';
 import { formatMinorAmount } from '@/fahari/booking/money';
 
 export class RideRequestResponseDto {
@@ -33,9 +33,6 @@ export class RideRequestResponseDto {
     nullable: true,
   })
   departureDateTime: Date | null;
-
-  @ApiProperty({ enum: TripType, description: 'One-way or round trip' })
-  tripType: TripType;
 }
 
 export function toRideRequestResponse(
@@ -50,6 +47,5 @@ export function toRideRequestResponse(
     numberOfPassengers: rideRequest.numberOfPassengers,
     pickupDateTime: rideRequest.pickupDateTime,
     departureDateTime: rideRequest.departureDateTime,
-    tripType: rideRequest.tripType,
   };
 }
