@@ -3,7 +3,8 @@ import { formatNaira } from '@/fahari/booking/money';
 const TripType = {
   ONE_WAY: {
     code: 'one_way',
-    description: 'take client from home to meetup location.',
+    description:
+      'take client from home to meetup location or meet up location home only.',
   },
   ROUND_TRIP: {
     code: 'round_trip',
