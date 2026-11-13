@@ -114,6 +114,11 @@ export class BookingController {
   createRideRequest(
     @Body() createRideRequestDto: CreateRideRequestDto,
   ): Promise<RideRequestResponseDto> {
-    return this.rideRequestService.create(createRideRequestDto);
+    try {
+      return this.rideRequestService.create(createRideRequestDto);
+    } catch (error) {
+      this.logger.error(error);
+      throw error;
+    }
   }
 }
