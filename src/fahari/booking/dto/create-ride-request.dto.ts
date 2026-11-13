@@ -85,15 +85,16 @@ export class CreateRideRequestDto {
   pickupDateTime: Date;
 
   @ApiProperty({
-    description: 'When to leave the resort',
+    description: 'When to leave the resort. Omit for a one-way trip.',
     type: String,
     format: 'date-time',
     example: '2026-10-22T10:00:00.000Z',
+    required: false,
   })
+  @IsOptional()
   @Type(() => Date)
   @IsDate()
-  @IsNotEmpty()
-  departureDateTime: Date;
+  departureDateTime?: Date;
 
   @ApiProperty({ description: 'Guest first name', example: 'Amara' })
   @IsString()
