@@ -26,7 +26,7 @@ export interface RideRequestReceivedTemplateProps {
   pickupLocation: string;
   nearestLandmark: string | null;
   pickupDateTime: string;
-  departureDateTime: string;
+  departureDateTime: string | null;
   numberOfPassengers: number;
   amount: string;
   currency: string;
@@ -116,7 +116,9 @@ export const RideRequestReceivedTemplate = ({
                   <DetailRow label="Nearest landmark" value={nearestLandmark} />
                 )}
                 <DetailRow label="Pickup time" value={pickupDateTime} />
-                <DetailRow label="Departure" value={departureDateTime} />
+                {departureDateTime && (
+                  <DetailRow label="Departure" value={departureDateTime} />
+                )}
                 <DetailRow
                   label="Passengers"
                   value={String(numberOfPassengers)}
