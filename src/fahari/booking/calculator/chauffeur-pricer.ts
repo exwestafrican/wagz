@@ -4,10 +4,14 @@ import { ChauffeurClient } from '@/fahari/booking/ride-booking/ride-booking.conf
 import { toKobo } from '@/fahari/booking/money';
 
 export default class ChauffeurFare {
-  amount(client: ChauffeurClient, pickupDateTime: Date, returnDateTime: Date) {
+  amount(client: ChauffeurClient, pickupDateTime: Date, returnDateTime?: Date) {
     //TODO: later we can take in car-code or dynamically figure out the car
     const defaultVehicle = client.vehicles.at(0);
     if (!defaultVehicle) throw Error('No vehicles available');
+
+    if (!returnDateTime) {
+      return toKobo(defaultVehicle.sameDayPrice);
+    }
 
     const daysUntilReturn = differenceInCalendarDays(
       returnDateTime,

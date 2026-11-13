@@ -1,13 +1,10 @@
 import { formatNaira } from '@/fahari/booking/money';
 
 const TripType = {
-  PICKUP_ONLY: {
-    code: 'inbound_only',
-    description: 'take client from meetup location back home.',
-  },
-  DROPOFF_ONLY: {
-    code: 'outbound_only',
-    description: 'take from home to meetup location',
+  ONE_WAY: {
+    code: 'one_way',
+    description:
+      'take client from home to meetup location or meet up location home only.',
   },
   ROUND_TRIP: {
     code: 'round_trip',
@@ -86,7 +83,7 @@ const chauffeurClients: ChauffeurClient[] = [
     name: 'soft days by Ade x Ede',
     code: 'softdays',
     tagLine: 'Slow travel for creatives in africa',
-    tripType: TripType.DROPOFF_ONLY,
+    tripType: TripType.ONE_WAY,
     fareNote: null,
     notificationEmail: 'humans@fahari.io',
     meetupPoint: {

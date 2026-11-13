@@ -7,6 +7,10 @@ describe('ChauffeurFare', () => {
   const softDays = getClientDetailsOrThrow('softdays');
   const pickupDateTime = new Date('2026-10-21T14:00:00.000Z');
 
+  it('prices a trip with no return at the same-day price', () => {
+    expect(chauffeurFare.amount(araIye, pickupDateTime)).toBe(6_966_000);
+  });
+
   it('prices a return on the pickup day at the same-day price', () => {
     expect(
       chauffeurFare.amount(
