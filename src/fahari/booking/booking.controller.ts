@@ -6,9 +6,13 @@ import {
   HttpStatus,
   Logger,
   NotFoundException,
+  Param,
   Post,
   Query,
+  ServiceUnavailableException,
+  UseGuards,
 } from '@nestjs/common';
+import { Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import { ApiBody, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { getExperience } from '@/fahari/booking/config';
 import {
@@ -31,6 +35,19 @@ import {
   getClientDetailsOrThrow,
 } from '@/fahari/booking/ride-booking/query';
 import { type ChauffeurClient } from '@/fahari/booking/ride-booking/ride-booking.config';
+import { AddressSuggestionsQueryDto } from '@/fahari/booking/dto/address-suggestions-query.dto';
+import {
+  PlaceLocationParamsDto,
+  PlaceLocationQueryDto,
+} from '@/fahari/booking/dto/place-location-query.dto';
+import { GooglePlacesClient } from '@/fahari/booking/places/google-places.client';
+import {
+  AddressSuggestion,
+  PlaceLocation,
+  PlacesUnavailableError,
+} from '@/fahari/booking/places/places.types';
+
+const ONE_MINUTE_MS = 60_000;
 
 @Controller('booking')
 export class BookingController {
@@ -40,6 +57,7 @@ export class BookingController {
     private resortLineItemPricer: ResortLineItemPricer,
     private readonly rideRequestService: RideRequestService,
     private readonly chauffeurFare: ChauffeurFare,
+    private readonly placesClient: GooglePlacesClient,
   ) {}
 
   @Get()
@@ -118,6 +136,53 @@ export class BookingController {
       return this.rideRequestService.create(createRideRequestDto);
     } catch (error) {
       this.logger.error(error);
+      throw error;
+    }
+  }
+
+  // Rate limited per visitor: these call Google with our key, and Google bills us per call.
+  @Get('address-suggestions')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 30, ttl: ONE_MINUTE_MS } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Suggest pickup addresses as the guest types' })
+  @ApiResponse({
+    status: HttpStatus.SERVICE_UNAVAILABLE,
+    description: 'Google is switched off or failing; use a plain address field',
+  })
+  suggestAddresses(
+    @Query() query: AddressSuggestionsQueryDto,
+  ): Promise<AddressSuggestion[]> {
+    return this.runIfPlacesAvailable(() =>
+      this.placesClient.suggest(query.input, query.sessionToken),
+    );
+  }
+
+  @Get('places/:placeId')
+  @UseGuards(ThrottlerGuard)
+  @Throttle({ default: { limit: 10, ttl: ONE_MINUTE_MS } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Get the location of a suggested address' })
+  @ApiResponse({
+    status: HttpStatus.SERVICE_UNAVAILABLE,
+    description: 'Google is switched off or failing',
+  })
+  locatePlace(
+    @Param() params: PlaceLocationParamsDto,
+    @Query() query: PlaceLocationQueryDto,
+  ): Promise<PlaceLocation> {
+    return this.runIfPlacesAvailable(() =>
+      this.placesClient.locate(params.placeId, query.sessionToken),
+    );
+  }
+
+  private async runIfPlacesAvailable<T>(action: () => Promise<T>): Promise<T> {
+    try {
+      return await action();
+    } catch (error) {
+      if (error instanceof PlacesUnavailableError) {
+        throw new ServiceUnavailableException();
+      }
       throw error;
     }
   }

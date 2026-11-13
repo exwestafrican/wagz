@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import type { Express } from 'express';
 
 export const ALLOWED_ORIGINS = [
   'https://www.envoye.co',
@@ -19,6 +20,12 @@ export function setupApp(app: INestApplication) {
   const configService = app.get(ConfigService);
   const isProduction = configService.get<string>('NODE_ENV') === 'production';
   const enableSwagger = !isProduction;
+
+  // nginx sits in front of the app on the private Docker network. Trusting only private
+  // addresses makes req.ip the visitor's address (for rate limiting) without letting a
+  // caller on the public internet pick their own address via X-Forwarded-For.
+  const server = app.getHttpAdapter().getInstance() as Express;
+  server.set('trust proxy', 'loopback, linklocal, uniquelocal');
 
   app.enableCors({
     origin: ALLOWED_ORIGINS,
