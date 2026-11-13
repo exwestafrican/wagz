@@ -28,7 +28,10 @@ export class RideRequestResponseDto {
   @ApiProperty({ description: 'Pickup date and time' })
   pickupDateTime: Date;
 
-  @ApiProperty({ description: 'Departure date and time' })
+  @ApiProperty({
+    description: 'Departure date and time. Absent for a one-way trip.',
+    nullable: true,
+  })
   departureDateTime: Date | null;
 }
 
