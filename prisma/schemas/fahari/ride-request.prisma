@@ -9,7 +9,7 @@ enum TripType {
   ROUND_TRIP
 }
 
-//TODO add dropOffLocation
+//TODO add dropOffLocation or destination
 // dropOffNearestLandMark
 model RideRequest {
   id                 Int              @id @default(autoincrement())

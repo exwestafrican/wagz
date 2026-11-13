@@ -29,7 +29,7 @@ export class RideRequestResponseDto {
   pickupDateTime: Date;
 
   @ApiProperty({ description: 'Departure date and time' })
-  departureDateTime: Date;
+  departureDateTime?: Date;
 }
 
 export function toRideRequestResponse(
