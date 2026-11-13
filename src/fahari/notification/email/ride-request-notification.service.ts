@@ -30,7 +30,9 @@ export class RideRequestNotificationService {
         pickupLocation: rideRequest.pickupLocation,
         nearestLandmark: rideRequest.nearestLandmark,
         pickupDateTime: formatRideDateTime(rideRequest.pickupDateTime),
-        departureDateTime: formatRideDateTime(rideRequest.departureDateTime),
+        departureDateTime:
+          rideRequest.departureDateTime &&
+          formatRideDateTime(rideRequest.departureDateTime),
         numberOfPassengers: rideRequest.numberOfPassengers,
         amount: formatMinorAmount(rideRequest.minorAmount),
         currency: rideRequest.currency,
