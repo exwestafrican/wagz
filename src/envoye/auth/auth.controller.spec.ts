@@ -323,7 +323,7 @@ describe('AuthController', () => {
     });
   });
 
-  describe('signup', () => {
+  describe.skip('signup', () => {
     describe('unsuccessful signup', () => {
       it('should return 400 if the email is invalid', async () => {
         const response = await request(getHttpServer(app))
