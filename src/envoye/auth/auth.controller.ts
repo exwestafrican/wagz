@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   ConflictException,
   Controller,
@@ -102,26 +103,7 @@ export class AuthController {
     description: 'User already exists.',
   })
   @ApiBadRequestResponse()
-  async signup(@Body() signupDto: SignupEmailDto): Promise<void> {
-    try {
-      await this.authService.emailOnlySignup(
-        SignupEmailDto.toSignupDetails(signupDto),
-      );
-    } catch (error) {
-      if (error instanceof AccountExistsException) {
-        this.logger.error(error);
-        throw new ConflictException(error.message);
-      } else if (error instanceof ServiceUnavailableException) {
-        this.logger.error(error);
-        this.logger.error('Supabase is currently unavailable for user sign up');
-        throw new ServiceUnavailableException(
-          "Sign up process is currently unavailable. We will email you with a sign up link when it's back online.",
-        );
-      } else {
-        this.logger.error(error);
-        this.logger.error('Something went wrong when signing up user');
-        throw new InternalServerErrorException('something went wrong');
-      }
-    }
+  signup(): Promise<void> {
+    throw new BadRequestException('');
   }
 }
