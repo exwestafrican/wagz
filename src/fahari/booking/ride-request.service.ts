@@ -11,6 +11,8 @@ import {
 import Queue from '@/scheduler/queue';
 import TaskQueue from '@/scheduler/tasks';
 import RideRequestParams from '@/scheduler/params/ride-request.params';
+import { getExperienceOrThrow } from '@/fahari/booking/config';
+import { ChauffeurClient } from '@/fahari/booking/ride-booking/ride-booking.config';
 
 @Injectable()
 export class RideRequestService {
@@ -36,6 +38,7 @@ export class RideRequestService {
     const tripType = departureDateTime ? TripType.ROUND_TRIP : TripType.ONE_WAY;
 
     const client = getClientDetailsOrThrow(createRideRequestDto.experienceCode);
+    const meetupDetails = client.meetupPoint;
     const vehicle = client.vehicles.at(0);
     if (
       !vehicle ||
@@ -57,6 +60,8 @@ export class RideRequestService {
         nearestLandmark: createRideRequestDto.nearestLandmark,
         pickupDateTime: createRideRequestDto.pickupDateTime,
         departureDateTime: departureDateTime ?? null,
+        dropOffLocation: meetupDetails.address,
+        dropOffNearestLandmark: meetupDetails.nearestLandmark,
         tripType,
         firstName: createRideRequestDto.firstName,
         lastName: createRideRequestDto.lastName,
