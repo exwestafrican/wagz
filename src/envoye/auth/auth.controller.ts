@@ -1,20 +1,16 @@
 import {
   BadRequestException,
   Body,
-  ConflictException,
   Controller,
   HttpCode,
   HttpStatus,
-  InternalServerErrorException,
   Logger,
   Post,
-  ServiceUnavailableException,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { MagicLinkAuthDto } from './dto/magic-link-auth';
 import { SignupEmailDto } from './dto/signup.dto';
-import { AccountExistsException } from './exceptions/account.exists';
 import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { OtpVerificationDto } from './dto/otp-verification.dto';
 import { OtpVerificationResponseDto } from '@/envoye/auth/dto/otp-verification-response.dto';
