@@ -8,13 +8,12 @@ import { BadRequestException } from '@nestjs/common';
 describe('S3 cloud storage', () => {
   let fileManager: FileManager;
   let s3CloudStorage: S3CloudStorage;
-  let mockS3Client: S3Client;
+  let send: jest.Mock;
 
   beforeEach(() => {
     fileManager = new FileManager();
-    mockS3Client = {
-      send: jest.fn(),
-    } as unknown as S3Client;
+    send = jest.fn();
+    const mockS3Client = { send } as unknown as S3Client;
     s3CloudStorage = new S3CloudStorage(mockS3Client, fileManager);
   });
 
@@ -41,7 +40,7 @@ describe('S3 cloud storage', () => {
         UPLOAD_SUBDIRECTORIES.INVOICES,
       ),
     ).rejects.toThrow();
-    expect(mockS3Client.send).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('rejects an image over 5 MB before writing', async () => {
@@ -51,7 +50,7 @@ describe('S3 cloud storage', () => {
       s3CloudStorage.storeImage(oversizedImage, UPLOAD_SUBDIRECTORIES.INVOICES),
     ).rejects.toBeInstanceOf(BadRequestException);
 
-    expect(mockS3Client.send).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('stores the re-encoded image and drops trailing upload bytes', async () => {
@@ -67,7 +66,7 @@ describe('S3 cloud storage', () => {
     const processedImage =
       await fileManager.validateAndProcessImage(uploadBytes);
 
-    expect(mockS3Client.send).toHaveBeenCalledWith(
+    expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
           Bucket: UPLOAD_SUBDIRECTORIES.EVENTS.bucket,
