@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DiskStorage } from '@/storage/disk-storage';
-import { STORAGE, ImageStore } from '@/storage/image-store';
+import { ImageStore } from '@/storage/image-store';
 import { S3Client } from '@aws-sdk/client-s3';
 
 export const S3CloudClient = {
