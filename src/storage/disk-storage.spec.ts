@@ -2,26 +2,10 @@ import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { BadRequestException } from '@nestjs/common';
-import sharp from 'sharp';
 import { DiskStorage } from '@/storage/disk-storage';
 import FileManager, { MAX_IMAGE_BYTES } from '@/storage/file-manager';
 import { UPLOAD_SUBDIRECTORIES } from '@/storage/storage';
-
-async function imageBytes(format: 'png' | 'webp'): Promise<Buffer> {
-  const pipeline = sharp({
-    create: {
-      width: 2,
-      height: 2,
-      channels: 3,
-      background: { r: 20, g: 80, b: 160 },
-    },
-  });
-
-  if (format === 'png') {
-    return pipeline.png().toBuffer();
-  }
-  return pipeline.webp().toBuffer();
-}
+import { imageBytes } from '@/storage/test.common';
 
 describe('DiskStorage', () => {
   let uploadDirectory: string;
@@ -39,7 +23,7 @@ describe('DiskStorage', () => {
   it('writes a png and returns its id', async () => {
     const pngBytes = await imageBytes('png');
 
-    const storedImageId = await diskStorage.storeImage(
+    const { uuid: storedImageId } = await diskStorage.storeImage(
       pngBytes,
       UPLOAD_SUBDIRECTORIES.INVOICES,
     );
@@ -61,7 +45,7 @@ describe('DiskStorage', () => {
     const trailingPayload = Buffer.from('TRAILING-PAYLOAD');
     const uploadBytes = Buffer.concat([pngBytes, trailingPayload]);
 
-    const storedImageId = await diskStorage.storeImage(
+    const { uuid: storedImageId } = await diskStorage.storeImage(
       uploadBytes,
       UPLOAD_SUBDIRECTORIES.INVOICES,
     );
@@ -79,19 +63,21 @@ describe('DiskStorage', () => {
   it('writes a webp using the webp extension', async () => {
     const webpBytes = await imageBytes('webp');
 
-    const storedImageId = await diskStorage.storeImage(
+    const { uuid: storedImageId, path } = await diskStorage.storeImage(
       webpBytes,
       UPLOAD_SUBDIRECTORIES.INVOICES,
     );
 
     const storedFileNames = await readdir(join(uploadDirectory, 'invoices'));
     expect(storedFileNames).toEqual([`${storedImageId}.webp`]);
+    const slitPaths = path.split('/');
+    expect(slitPaths.at(slitPaths.length - 1)).toEqual(`${storedImageId}.webp`);
   });
 
   it('writes an image into the events subdirectory', async () => {
     const pngBytes = await imageBytes('png');
 
-    const storedImageId = await diskStorage.storeImage(
+    const { uuid: storedImageId } = await diskStorage.storeImage(
       pngBytes,
       UPLOAD_SUBDIRECTORIES.EVENTS,
     );
@@ -104,11 +90,11 @@ describe('DiskStorage', () => {
   it('stores another image when the subdirectory already exists', async () => {
     const pngBytes = await imageBytes('png');
 
-    const firstImageId = await diskStorage.storeImage(
+    const { uuid: firstImageId } = await diskStorage.storeImage(
       pngBytes,
       UPLOAD_SUBDIRECTORIES.INVOICES,
     );
-    const secondImageId = await diskStorage.storeImage(
+    const { uuid: secondImageId } = await diskStorage.storeImage(
       pngBytes,
       UPLOAD_SUBDIRECTORIES.INVOICES,
     );

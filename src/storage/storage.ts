@@ -1,14 +1,29 @@
+import { ImageDetails } from '@/storage/file-manager';
+
 export const STORAGE = Symbol('STORAGE');
 
+const S3Buckets = {
+  UPLOADS: 'fahari-app-uploads',
+};
+
+function subDirectoryInDefaultBucket(subDirProperties: {
+  description: string;
+  name: string;
+}) {
+  return {
+    ...subDirProperties,
+    bucket: S3Buckets.UPLOADS,
+  };
+}
 export const UPLOAD_SUBDIRECTORIES = {
-  INVOICES: {
+  INVOICES: subDirectoryInDefaultBucket({
     description: 'Store invoice images',
     name: 'invoices',
-  },
-  EVENTS: {
+  }),
+  EVENTS: subDirectoryInDefaultBucket({
     description: 'Store images for events',
     name: 'events',
-  },
+  }),
 } as const;
 
 export type UploadSubdirectory =
@@ -18,5 +33,5 @@ export interface Storage {
   storeImage(
     imageBytes: Buffer,
     subdirectory: UploadSubdirectory,
-  ): Promise<string>;
+  ): Promise<ImageDetails>;
 }
