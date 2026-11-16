@@ -24,6 +24,7 @@ import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
 import { CreateRideRequestDto } from '@/fahari/booking/dto/create-ride-request.dto';
 import Queue from '@/scheduler/queue';
 import TaskQueue from '@/scheduler/tasks';
+import { UnavailablePlacesClient } from '@/fahari/booking/places/unavailable-places.client';
 
 function araIyeRoundTrip(
   overrides: Partial<CreateRideRequestDto> = {},
@@ -68,6 +69,7 @@ describe('BookingController', () => {
         new Queue(prismaService),
       ),
       chauffeurFare,
+      new UnavailablePlacesClient(),
     );
   });
 
