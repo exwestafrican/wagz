@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
-import { Storage, UploadSubdirectory } from '@/storage/storage';
+import { ImageStore, UploadSubdirectory } from '@/storage/image-store';
 import FileManager, { ImageDetails } from '@/storage/file-manager';
 
 @Injectable()
-export class DiskStorage implements Storage {
+export class DiskStorage implements ImageStore {
   logger = new Logger(DiskStorage.name);
   fileManager = new FileManager();
 

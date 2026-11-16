@@ -1,4 +1,4 @@
-import { Storage, UploadSubdirectory } from '@/storage/storage';
+import { ImageStore, UploadSubdirectory } from '@/storage/image-store';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import FileManager, {
@@ -8,7 +8,7 @@ import FileManager, {
 import { randomUUID } from 'node:crypto';
 
 @Injectable()
-export default class S3CloudStorage implements Storage {
+export default class S3CloudStorage implements ImageStore {
   constructor(
     private readonly s3Client: S3Client,
     private readonly fileManager: FileManager,
