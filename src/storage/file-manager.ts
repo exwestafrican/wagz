@@ -26,6 +26,7 @@ const SUPPORTED_FORMAT = {
 
 export type ImageDetails = {
   uuid: string;
+  path: string;
 };
 
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
@@ -97,8 +98,12 @@ export default class FileManager {
     const processedImage = await this.validateAndProcessImage(imageBytes);
 
     const imageId = randomUUID();
+    const path = join(
+      uploadDirectory,
+      `${imageId}.${processedImage.extension}`,
+    );
     await writeFile(
-      join(uploadDirectory, `${imageId}.${processedImage.extension}`),
+      path,
       processedImage.buffer, // write processed image not original one -> security issue
       {
         flag: 'wx', //so it doesn't overright if exists
@@ -107,6 +112,7 @@ export default class FileManager {
     );
     return {
       uuid: imageId,
+      path: path,
     };
   }
 }

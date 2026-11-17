@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { Storage, UploadSubdirectory } from '@/storage/storage';
-import FileManager from '@/storage/file-manager';
+import FileManager, { ImageDetails } from '@/storage/file-manager';
 
 @Injectable()
 export class DiskStorage implements Storage {
@@ -14,7 +14,7 @@ export class DiskStorage implements Storage {
   async storeImage(
     imageBytes: Buffer,
     subdirectory: UploadSubdirectory,
-  ): Promise<string> {
+  ): Promise<ImageDetails> {
     if (!this.fileManager.withinSizeLimit(imageBytes.length))
       throw new BadRequestException('Image exceeds 5 MB');
 
@@ -27,6 +27,6 @@ export class DiskStorage implements Storage {
       imageBytes,
     );
     this.logger.log(`Stored upload ${imageDetails.uuid}`);
-    return imageDetails.uuid;
+    return imageDetails;
   }
 }
