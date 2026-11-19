@@ -1,10 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DiskStorage } from '@/storage/disk-storage';
-import { STORAGE, Storage } from '@/storage/storage';
+import { ImageStore } from '@/storage/image-store';
 import { S3Client } from '@aws-sdk/client-s3';
-
-export const S3_CLIENT = Symbol('S3_CLIENT');
 
 export const S3CloudClient = {
   provide: S3Client,
@@ -20,16 +18,21 @@ export const S3CloudClient = {
   },
 };
 
+export const ImageStoreClient = {
+  provide: ImageStore,
+  inject: [ConfigService],
+  useFactory: (configService: ConfigService) => {
+    const isProduction = configService.get<string>('NODE_ENV') === 'production';
+    if (isProduction) {
+      return S3CloudClient;
+    } else {
+      return new DiskStorage(configService.getOrThrow<string>('UPLOAD_DIR'));
+    }
+  },
+};
+
 @Module({
-  providers: [
-    {
-      provide: STORAGE,
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService): Storage =>
-        new DiskStorage(configService.getOrThrow<string>('UPLOAD_DIR')),
-    },
-    S3CloudClient,
-  ],
-  exports: [STORAGE, S3CloudClient],
+  providers: [ImageStoreClient],
+  exports: [ImageStoreClient],
 })
 export class StorageModule {}

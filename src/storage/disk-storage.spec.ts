@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { BadRequestException } from '@nestjs/common';
 import { DiskStorage } from '@/storage/disk-storage';
 import FileManager, { MAX_IMAGE_BYTES } from '@/storage/file-manager';
-import { UPLOAD_SUBDIRECTORIES } from '@/storage/storage';
+import { UPLOAD_SUBDIRECTORIES } from '@/storage/image-store';
 import { imageBytes } from '@/storage/test.common';
 
 describe('DiskStorage', () => {

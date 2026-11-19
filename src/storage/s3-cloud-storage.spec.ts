@@ -2,7 +2,7 @@ import S3CloudStorage from '@/storage/s3-cloud-storage';
 import { S3Client } from '@aws-sdk/client-s3';
 import FileManager, { MAX_IMAGE_BYTES } from '@/storage/file-manager';
 import { imageBytes } from '@/storage/test.common';
-import { UPLOAD_SUBDIRECTORIES } from '@/storage/storage';
+import { UPLOAD_SUBDIRECTORIES } from '@/storage/image-store';
 import { BadRequestException } from '@nestjs/common';
 
 describe('S3 cloud storage', () => {
