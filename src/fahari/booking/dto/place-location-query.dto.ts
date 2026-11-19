@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsOptional, Matches } from 'class-validator';
+import { Matches } from 'class-validator';
 import { SESSION_TOKEN_PATTERN } from '@/fahari/booking/dto/address-suggestions-query.dto';
 
 export class PlaceLocationParamsDto {
@@ -15,9 +15,7 @@ export class PlaceLocationQueryDto {
   @ApiProperty({
     description: 'The sessionToken used for the suggestions',
     example: '3f1c9c3e-6c55-4c1a-9a43-2b1f0f8e7d21',
-    required: false,
   })
-  @IsOptional()
   @Matches(SESSION_TOKEN_PATTERN)
-  sessionToken?: string;
+  sessionToken: string;
 }
