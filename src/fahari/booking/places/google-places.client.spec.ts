@@ -54,7 +54,7 @@ describe('GooglePlacesClient', () => {
     it('returns no suggestions when Google finds none', async () => {
       fetchMock.mockResolvedValue(jsonResponse({}));
 
-      expect(await client.suggest('zzzz')).toEqual([]);
+      expect(await client.suggest('zzzz', 'session-1')).toEqual([]);
     });
 
     it('throws PlacesUnavailableError when Google refuses the key', async () => {
@@ -62,7 +62,7 @@ describe('GooglePlacesClient', () => {
         jsonResponse({ error: { status: 'PERMISSION_DENIED' } }, 403),
       );
 
-      await expect(client.suggest('Admiralty')).rejects.toThrow(
+      await expect(client.suggest('Admiralty', 'session-1')).rejects.toThrow(
         PlacesUnavailableError,
       );
     });
@@ -91,7 +91,7 @@ describe('GooglePlacesClient', () => {
     it('throws PlacesUnavailableError when the place has no location', async () => {
       fetchMock.mockResolvedValue(jsonResponse({ id: 'admiralty-way' }));
 
-      await expect(client.locate('admiralty-way')).rejects.toThrow(
+      await expect(client.locate('admiralty-way', 'session-1')).rejects.toThrow(
         PlacesUnavailableError,
       );
     });

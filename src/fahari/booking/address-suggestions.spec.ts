@@ -53,10 +53,10 @@ describe('Pickup address suggestions', () => {
     await app.close();
   });
 
-  function suggest(input: string, sessionToken?: string) {
+  function suggest(input: string, sessionToken = 'session-1') {
     return request(getHttpServer(app))
       .get('/booking/address-suggestions')
-      .query({ input, ...(sessionToken && { sessionToken }) });
+      .query({ input, sessionToken });
   }
 
   it('returns suggestions for what the guest typed', async () => {
@@ -70,6 +70,15 @@ describe('Pickup address suggestions', () => {
 
   it('does not ask Google until the guest has typed 3 letters', async () => {
     await suggest('Ad').expect(400);
+
+    expect(placesClient.suggest).not.toHaveBeenCalled();
+  });
+
+  it('rejects a search without a session token', async () => {
+    await request(getHttpServer(app))
+      .get('/booking/address-suggestions')
+      .query({ input: 'Admiralty' })
+      .expect(400);
 
     expect(placesClient.suggest).not.toHaveBeenCalled();
   });
@@ -117,6 +126,15 @@ describe('Pickup address suggestions', () => {
   it('rejects a place id that is not a Google place id', async () => {
     await request(getHttpServer(app))
       .get('/booking/places/..%2Fsecrets')
+      .query({ sessionToken: 'session-1' })
+      .expect(400);
+
+    expect(placesClient.locate).not.toHaveBeenCalled();
+  });
+
+  it('rejects a location lookup without a session token', async () => {
+    await request(getHttpServer(app))
+      .get('/booking/places/admiralty-way')
       .expect(400);
 
     expect(placesClient.locate).not.toHaveBeenCalled();
@@ -129,6 +147,7 @@ describe('Pickup address suggestions', () => {
 
     await request(getHttpServer(app))
       .get('/booking/places/admiralty-way')
+      .query({ sessionToken: 'session-1' })
       .expect(503);
   });
 });
