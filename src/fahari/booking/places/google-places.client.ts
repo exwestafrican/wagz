@@ -25,7 +25,7 @@ export class GooglePlacesClient {
   // sessionToken groups a guest's searches and their final pick into one billed session.
   async suggest(
     input: string,
-    sessionToken?: string,
+    sessionToken: string,
   ): Promise<AddressSuggestion[]> {
     const response = await fetch(`${PLACES_BASE_URL}/places:autocomplete`, {
       method: 'POST',
@@ -59,12 +59,9 @@ export class GooglePlacesClient {
     );
   }
 
-  async locate(placeId: string, sessionToken?: string): Promise<PlaceLocation> {
-    const query = sessionToken
-      ? `?sessionToken=${encodeURIComponent(sessionToken)}`
-      : '';
+  async locate(placeId: string, sessionToken: string): Promise<PlaceLocation> {
     const response = await fetch(
-      `${PLACES_BASE_URL}/places/${encodeURIComponent(placeId)}${query}`,
+      `${PLACES_BASE_URL}/places/${encodeURIComponent(placeId)}?sessionToken=${encodeURIComponent(sessionToken)}`,
       {
         method: 'GET',
         headers: {

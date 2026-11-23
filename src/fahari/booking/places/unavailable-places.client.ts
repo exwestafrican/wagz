@@ -5,7 +5,7 @@ import {
   PlacesUnavailableError,
 } from '@/fahari/booking/places/places.types';
 
-// Used when GOOGLE_MAPS_API_KEY is not set: guests get the plain pickup field instead.
+// Used in tests so they never call Google. Every lookup fails like a switched-off Google would.
 export class UnavailablePlacesClient extends GooglePlacesClient {
   constructor() {
     super('');

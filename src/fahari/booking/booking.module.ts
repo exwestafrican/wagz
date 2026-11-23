@@ -12,16 +12,21 @@ import SchedulerModule from '@/scheduler/scheduler.module';
 import ChauffeurFare from '@/fahari/booking/calculator/chauffeur-pricer';
 import { GooglePlacesClient } from '@/fahari/booking/places/google-places.client';
 import { UnavailablePlacesClient } from '@/fahari/booking/places/unavailable-places.client';
+import { ENVIROMENT } from '@/common/const';
 
 const GooglePlacesClientProvider = {
   provide: GooglePlacesClient,
   inject: [ConfigService],
   useFactory: (configService: ConfigService) => {
-    const apiKey = configService.get<string>('GOOGLE_MAPS_API_KEY');
-    if (apiKey) {
-      return new GooglePlacesClient(apiKey);
+    switch (configService.get('NODE_ENV')) {
+      case ENVIROMENT.PRODUCTION:
+      case ENVIROMENT.DEVELOPMENT:
+        return new GooglePlacesClient(
+          configService.getOrThrow<string>('GOOGLE_MAPS_API_KEY'),
+        );
+      default:
+        return new UnavailablePlacesClient();
     }
-    return new UnavailablePlacesClient();
   },
 };
 
