@@ -28,7 +28,7 @@ describe('S3 cloud storage', () => {
 
       expect(imageDetails).toEqual({
         uuid: imageDetails.uuid,
-        path: `${imageDetails.uuid}.${extension}`,
+        path: `events/${imageDetails.uuid}.${extension}`,
       });
     },
   );
@@ -70,7 +70,7 @@ describe('S3 cloud storage', () => {
       expect.objectContaining({
         input: {
           Bucket: UPLOAD_SUBDIRECTORIES.EVENTS.bucket,
-          Key: `${imageDetails.uuid}.png`,
+          Key: `events/${imageDetails.uuid}.png`,
           Body: processedImage.buffer,
         },
       }),

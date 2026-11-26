@@ -18,12 +18,11 @@ export default class S3CloudStorage implements ImageStore {
     imageBytes: Buffer,
     subdirectory: UploadSubdirectory,
   ): Promise<ImageDetails> {
-    // got to s3 and save image
     if (this.fileManager.withinSizeLimit(imageBytes.length)) {
       const processedImage =
         await this.fileManager.validateAndProcessImage(imageBytes);
       const imageId = randomUUID();
-      const path = `${imageId}.${processedImage.extension}`; //TODO move this into a class that can return the key
+      const path = `${subdirectory.name}/${imageId}.${processedImage.extension}`;
       await this.s3Client.send(
         new PutObjectCommand({
           Bucket: subdirectory.bucket,
