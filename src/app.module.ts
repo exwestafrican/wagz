@@ -22,6 +22,7 @@ import { ConversationsModule } from '@/envoye/conversations/conversations.module
 import { TrackerModule } from '@/fahari/tracker/tracker.module';
 import { PaymentsModule } from '@/fahari/payments/payments.module';
 import { BookingModule } from '@/fahari/booking/booking.module';
+import { UploadsModule } from '@/fahari/uploads/uploads.module';
 import SchedulerModule from '@/scheduler/scheduler.module';
 import { StorageModule } from '@/storage/storage.module';
 
@@ -50,6 +51,7 @@ import { StorageModule } from '@/storage/storage.module';
     TrackerModule,
     PaymentsModule,
     BookingModule,
+    UploadsModule,
     SchedulerModule,
     StorageModule,
   ],

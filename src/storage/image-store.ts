@@ -2,32 +2,14 @@ import { ImageDetails } from '@/storage/file-manager';
 
 export const STORAGE = Symbol('STORAGE');
 
-const S3Buckets = {
-  UPLOADS: 'fahari-app-uploads',
-};
+export const UPLOADS_BUCKET = 'fahari-app-uploads';
 
-function subDirectoryInDefaultBucket(subDirProperties: {
-  description: string;
-  name: string;
-}) {
-  return {
-    ...subDirProperties,
-    bucket: S3Buckets.UPLOADS,
-  };
+export enum UploadSubdirectory {
+  // Keeps invoice images
+  INVOICES = 'invoices',
+  // Keeps images for events
+  EVENTS = 'events',
 }
-export const UPLOAD_SUBDIRECTORIES = {
-  INVOICES: subDirectoryInDefaultBucket({
-    description: 'Store invoice images',
-    name: 'invoices',
-  }),
-  EVENTS: subDirectoryInDefaultBucket({
-    description: 'Store images for events',
-    name: 'events',
-  }),
-} as const;
-
-export type UploadSubdirectory =
-  (typeof UPLOAD_SUBDIRECTORIES)[keyof typeof UPLOAD_SUBDIRECTORIES];
 
 export abstract class ImageStore {
   abstract storeImage(

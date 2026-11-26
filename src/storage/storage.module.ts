@@ -1,33 +1,27 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DiskStorage } from '@/storage/disk-storage';
-import { ImageStore } from '@/storage/image-store';
 import { S3Client } from '@aws-sdk/client-s3';
-
-export const S3CloudClient = {
-  provide: S3Client,
-  inject: [ConfigService],
-  useFactory: (configService: ConfigService) => {
-    return new S3Client({
-      region: configService.getOrThrow('AWS_FAHARI_S3_REGION'),
-      credentials: {
-        accessKeyId: configService.getOrThrow('AWS_FAHARI_S3_ACESS_KEY'),
-        secretAccessKey: configService.getOrThrow('AWS_FAHARI_S3_SECRET_KEY'),
-      },
-    });
-  },
-};
+import { ENVIROMENT } from '@/common/const';
+import { DiskStorage } from '@/storage/disk-storage';
+import FileManager from '@/storage/file-manager';
+import { ImageStore } from '@/storage/image-store';
+import S3CloudStorage from '@/storage/s3-cloud-storage';
 
 export const ImageStoreClient = {
   provide: ImageStore,
   inject: [ConfigService],
-  useFactory: (configService: ConfigService) => {
-    const isProduction = configService.get<string>('NODE_ENV') === 'production';
-    if (isProduction) {
-      return S3CloudClient;
-    } else {
-      return new DiskStorage(configService.getOrThrow<string>('UPLOAD_DIR'));
+  useFactory: (configService: ConfigService): ImageStore => {
+    if (configService.get<string>('NODE_ENV') === ENVIROMENT.PRODUCTION) {
+      const s3Client = new S3Client({
+        region: configService.getOrThrow('AWS_FAHARI_S3_REGION'),
+        credentials: {
+          accessKeyId: configService.getOrThrow('AWS_FAHARI_S3_ACESS_KEY'),
+          secretAccessKey: configService.getOrThrow('AWS_FAHARI_S3_SECRET_KEY'),
+        },
+      });
+      return new S3CloudStorage(s3Client, new FileManager());
     }
+    return new DiskStorage(configService.getOrThrow<string>('UPLOAD_DIR'));
   },
 };
 

@@ -2,7 +2,7 @@ import S3CloudStorage from '@/storage/s3-cloud-storage';
 import { S3Client } from '@aws-sdk/client-s3';
 import FileManager, { MAX_IMAGE_BYTES } from '@/storage/file-manager';
 import { imageBytes } from '@/storage/test.common';
-import { UPLOAD_SUBDIRECTORIES } from '@/storage/image-store';
+import { UPLOADS_BUCKET, UploadSubdirectory } from '@/storage/image-store';
 import { BadRequestException } from '@nestjs/common';
 
 describe('S3 cloud storage', () => {
@@ -23,12 +23,12 @@ describe('S3 cloud storage', () => {
       const bytesOfImage = await imageBytes(extension);
       const imageDetails = await s3CloudStorage.storeImage(
         bytesOfImage,
-        UPLOAD_SUBDIRECTORIES.EVENTS,
+        UploadSubdirectory.EVENTS,
       );
 
       expect(imageDetails).toEqual({
         uuid: imageDetails.uuid,
-        path: `${imageDetails.uuid}.${extension}`,
+        path: `events/${imageDetails.uuid}.${extension}`,
       });
     },
   );
@@ -37,7 +37,7 @@ describe('S3 cloud storage', () => {
     await expect(
       s3CloudStorage.storeImage(
         Buffer.from('not-an-image'),
-        UPLOAD_SUBDIRECTORIES.INVOICES,
+        UploadSubdirectory.INVOICES,
       ),
     ).rejects.toThrow();
     expect(send).not.toHaveBeenCalled();
@@ -47,7 +47,7 @@ describe('S3 cloud storage', () => {
     const oversizedImage = Buffer.alloc(MAX_IMAGE_BYTES + 1);
 
     await expect(
-      s3CloudStorage.storeImage(oversizedImage, UPLOAD_SUBDIRECTORIES.INVOICES),
+      s3CloudStorage.storeImage(oversizedImage, UploadSubdirectory.INVOICES),
     ).rejects.toBeInstanceOf(BadRequestException);
 
     expect(send).not.toHaveBeenCalled();
@@ -60,7 +60,7 @@ describe('S3 cloud storage', () => {
 
     const imageDetails = await s3CloudStorage.storeImage(
       uploadBytes,
-      UPLOAD_SUBDIRECTORIES.EVENTS,
+      UploadSubdirectory.EVENTS,
     );
 
     const processedImage =
@@ -69,8 +69,8 @@ describe('S3 cloud storage', () => {
     expect(send).toHaveBeenCalledWith(
       expect.objectContaining({
         input: {
-          Bucket: UPLOAD_SUBDIRECTORIES.EVENTS.bucket,
-          Key: `${imageDetails.uuid}.png`,
+          Bucket: UPLOADS_BUCKET,
+          Key: `events/${imageDetails.uuid}.png`,
           Body: processedImage.buffer,
         },
       }),

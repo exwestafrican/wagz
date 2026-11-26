@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { BadRequestException } from '@nestjs/common';
 import { DiskStorage } from '@/storage/disk-storage';
 import FileManager, { MAX_IMAGE_BYTES } from '@/storage/file-manager';
-import { UPLOAD_SUBDIRECTORIES } from '@/storage/image-store';
+import { UploadSubdirectory } from '@/storage/image-store';
 import { imageBytes } from '@/storage/test.common';
 
 describe('DiskStorage', () => {
@@ -25,7 +25,7 @@ describe('DiskStorage', () => {
 
     const { uuid: storedImageId } = await diskStorage.storeImage(
       pngBytes,
-      UPLOAD_SUBDIRECTORIES.INVOICES,
+      UploadSubdirectory.INVOICES,
     );
 
     expect(storedImageId).toMatch(
@@ -47,7 +47,7 @@ describe('DiskStorage', () => {
 
     const { uuid: storedImageId } = await diskStorage.storeImage(
       uploadBytes,
-      UPLOAD_SUBDIRECTORIES.INVOICES,
+      UploadSubdirectory.INVOICES,
     );
 
     const writtenBytes = await readFile(
@@ -65,7 +65,7 @@ describe('DiskStorage', () => {
 
     const { uuid: storedImageId, path } = await diskStorage.storeImage(
       webpBytes,
-      UPLOAD_SUBDIRECTORIES.INVOICES,
+      UploadSubdirectory.INVOICES,
     );
 
     const storedFileNames = await readdir(join(uploadDirectory, 'invoices'));
@@ -79,7 +79,7 @@ describe('DiskStorage', () => {
 
     const { uuid: storedImageId } = await diskStorage.storeImage(
       pngBytes,
-      UPLOAD_SUBDIRECTORIES.EVENTS,
+      UploadSubdirectory.EVENTS,
     );
 
     const eventFileNames = await readdir(join(uploadDirectory, 'events'));
@@ -92,11 +92,11 @@ describe('DiskStorage', () => {
 
     const { uuid: firstImageId } = await diskStorage.storeImage(
       pngBytes,
-      UPLOAD_SUBDIRECTORIES.INVOICES,
+      UploadSubdirectory.INVOICES,
     );
     const { uuid: secondImageId } = await diskStorage.storeImage(
       pngBytes,
-      UPLOAD_SUBDIRECTORIES.INVOICES,
+      UploadSubdirectory.INVOICES,
     );
 
     const invoiceFileNames = await readdir(join(uploadDirectory, 'invoices'));
@@ -109,7 +109,7 @@ describe('DiskStorage', () => {
     await expect(
       diskStorage.storeImage(
         Buffer.from('not-an-image'),
-        UPLOAD_SUBDIRECTORIES.INVOICES,
+        UploadSubdirectory.INVOICES,
       ),
     ).rejects.toThrow();
     expect(await readdir(join(uploadDirectory, 'invoices'))).toEqual([]);
@@ -119,7 +119,7 @@ describe('DiskStorage', () => {
     const oversizedImage = Buffer.alloc(MAX_IMAGE_BYTES + 1);
 
     await expect(
-      diskStorage.storeImage(oversizedImage, UPLOAD_SUBDIRECTORIES.INVOICES),
+      diskStorage.storeImage(oversizedImage, UploadSubdirectory.INVOICES),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(await readdir(uploadDirectory)).toEqual([]);
   });

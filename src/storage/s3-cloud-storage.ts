@@ -1,4 +1,8 @@
-import { ImageStore, UploadSubdirectory } from '@/storage/image-store';
+import {
+  ImageStore,
+  UPLOADS_BUCKET,
+  UploadSubdirectory,
+} from '@/storage/image-store';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import FileManager, {
@@ -18,15 +22,14 @@ export default class S3CloudStorage implements ImageStore {
     imageBytes: Buffer,
     subdirectory: UploadSubdirectory,
   ): Promise<ImageDetails> {
-    // got to s3 and save image
     if (this.fileManager.withinSizeLimit(imageBytes.length)) {
       const processedImage =
         await this.fileManager.validateAndProcessImage(imageBytes);
       const imageId = randomUUID();
-      const path = `${imageId}.${processedImage.extension}`; //TODO move this into a class that can return the key
+      const path = `${subdirectory}/${imageId}.${processedImage.extension}`;
       await this.s3Client.send(
         new PutObjectCommand({
-          Bucket: subdirectory.bucket,
+          Bucket: UPLOADS_BUCKET,
           Key: path,
           Body: processedImage.buffer,
         }),
