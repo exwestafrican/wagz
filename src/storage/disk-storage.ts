@@ -18,7 +18,7 @@ export class DiskStorage implements ImageStore {
     if (!this.fileManager.withinSizeLimit(imageBytes.length))
       throw new BadRequestException('Image exceeds 5 MB');
 
-    const destinationDirectory = join(this.uploadDirectory, subdirectory.name);
+    const destinationDirectory = join(this.uploadDirectory, subdirectory);
 
     await mkdir(destinationDirectory, { recursive: true });
 

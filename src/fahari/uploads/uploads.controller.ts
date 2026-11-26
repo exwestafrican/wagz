@@ -24,15 +24,13 @@ import ApiBadRequestResponse from '@/common/decorators/bad-response';
 import { UploadImageDto } from '@/fahari/uploads/dto/upload-image.dto';
 import { UploadedImageResponseDto } from '@/fahari/uploads/dto/uploaded-image-response.dto';
 import { MAX_IMAGE_BYTES } from '@/storage/file-manager';
-import {
-  ImageStore,
-  UPLOAD_SUBDIRECTORY_NAMES,
-  uploadSubdirectoryByName,
-} from '@/storage/image-store';
+import { ImageStore, UploadSubdirectory } from '@/storage/image-store';
 
 type UploadedImageFile = {
   buffer: Buffer;
 };
+
+const knownUploadSubdirectories: string[] = Object.values(UploadSubdirectory);
 
 @Controller('fahari/uploads')
 @ApiTags('fahari-uploads')
@@ -46,19 +44,7 @@ export class UploadsController {
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload an image into a known subdirectory' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      required: ['image', 'subdirectory'],
-      properties: {
-        image: { type: 'string', format: 'binary' },
-        subdirectory: {
-          type: 'string',
-          enum: [...UPLOAD_SUBDIRECTORY_NAMES],
-        },
-      },
-    },
-  })
+  @ApiBody({ type: UploadImageDto })
   @ApiResponse({
     status: HttpStatus.CREATED,
     description: 'Image stored',
@@ -80,11 +66,13 @@ export class UploadsController {
       throw new BadRequestException(`Image exceeds ${MAX_IMAGE_BYTES}`);
     }
 
-    const subdirectory = uploadSubdirectoryByName(uploadImageDto.subdirectory);
-    if (!subdirectory) {
+    if (!knownUploadSubdirectories.includes(uploadImageDto.subdirectory)) {
       throw new BadRequestException('Unknown upload subdirectory');
     }
 
-    return this.imageStore.storeImage(image.buffer, subdirectory);
+    return this.imageStore.storeImage(
+      image.buffer,
+      uploadImageDto.subdirectory,
+    );
   }
 }

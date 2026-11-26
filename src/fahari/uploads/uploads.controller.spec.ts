@@ -2,7 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import { UploadImageDto } from '@/fahari/uploads/dto/upload-image.dto';
 import { UploadsController } from '@/fahari/uploads/uploads.controller';
 import { ImageDetails, MAX_IMAGE_BYTES } from '@/storage/file-manager';
-import { ImageStore, UPLOAD_SUBDIRECTORIES } from '@/storage/image-store';
+import { ImageStore, UploadSubdirectory } from '@/storage/image-store';
 
 describe('UploadsController', () => {
   const storedInvoiceImage: ImageDetails = {
@@ -24,19 +24,21 @@ describe('UploadsController', () => {
 
     const uploadedImage = await uploadsController.uploadImage(
       { buffer: invoiceBytes },
-      { subdirectory: 'invoices' },
+      { subdirectory: UploadSubdirectory.INVOICES },
     );
 
     expect(storeImage).toHaveBeenCalledWith(
       invoiceBytes,
-      UPLOAD_SUBDIRECTORIES.INVOICES,
+      UploadSubdirectory.INVOICES,
     );
     expect(uploadedImage).toEqual(storedInvoiceImage);
   });
 
   it('rejects a request with no image', async () => {
     await expect(
-      uploadsController.uploadImage(undefined, { subdirectory: 'events' }),
+      uploadsController.uploadImage(undefined, {
+        subdirectory: UploadSubdirectory.EVENTS,
+      }),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(storeImage).not.toHaveBeenCalled();
   });
@@ -45,7 +47,7 @@ describe('UploadsController', () => {
     await expect(
       uploadsController.uploadImage({ buffer: Buffer.from('png-bytes') }, {
         subdirectory: 'avatars',
-      } as UploadImageDto),
+      } as unknown as UploadImageDto),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(storeImage).not.toHaveBeenCalled();
   });
@@ -56,7 +58,7 @@ describe('UploadsController', () => {
     await expect(
       uploadsController.uploadImage(
         { buffer: oversizedImage },
-        { subdirectory: 'invoices' },
+        { subdirectory: UploadSubdirectory.INVOICES },
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
     expect(storeImage).not.toHaveBeenCalled();
